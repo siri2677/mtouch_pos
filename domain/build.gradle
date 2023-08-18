@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+}
+
+android {
+    namespace 'com.example.domain'
+    compileSdk 33
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 33
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.github.mik3y:usb-serial-for-android:3.5.1'
+//    def dagger2_version = '2.46'
+//    api "com.google.dagger:dagger:$dagger2_version"
+//    api "com.google.dagger:dagger-android:$dagger2_version"
+//    api "com.google.dagger:dagger-android-support:$dagger2_version"
+//    kapt "com.google.dagger:dagger-android-processor:$dagger2_version"
+//    kapt "com.google.dagger:dagger-compiler:$dagger2_version"
+
+    implementation 'io.reactivex.rxjava3:rxjava:3.1.5'
+    implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
+    implementation "io.nrbtech.rxandroidble:rxandroidble:2.2.0"
+
+    implementation 'com.google.code.gson:gson:2.8.8'
+    implementation files('libs\\com.ksnet.library_v1.1.4.jar')
+
+}

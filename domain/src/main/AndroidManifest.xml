@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <service android:name=".service.BluetoothConnectService"/>
+        <service android:name=".service.UsbConnectService"/>
+        <service android:name=".service.ForecdTerminationService"
+            android:stopWithTask="false" />
+    </application>
+</manifest>

@@ -1,0 +1,188 @@
+<resources>
+    <string name="app_name">NewMtouch</string>
+
+    <!--    <string name="SWModelName">#######KSCIC1174</string>  -->
+    <string name="SWModelName">######MTOUCH1101</string>
+    <string name="ksr03ReaderName">######KSR-031101</string>
+    <string name="ksr05ReaderName">######KSR-051101</string>
+
+    <string name="device">Device:</string>
+    <string name="no_device">&lt;Select a device&gt;</string>
+    <string name="select_device">Select a device</string>
+    <string name="status">Status</string>
+    <string name="llsWrite">LinkLossAlert</string>
+    <string name="iasWrite">ImmediateAlert</string>
+    <string name="scanning">Scanning for devices...</string>
+    <string name="no_ble_devices">No LE devices found.</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Not connected</string>
+    <string name="ready">Ready</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="connect">connect</string>
+    <string name="unpair">unpair</string>
+    <string name="pair">pair</string>
+    <string name="RadioButton1">Alert level high</string>
+    <string name="RadioButton2">Alert level mid</string>
+    <string name="RadioButton3">Stop alerting</string>
+    <string name="SystemId">SystemId</string>
+    <string name="ModelNumber">ModelNumber</string>
+    <string name="SerialNumber">SerialNumber</string>
+    <string name="FirmwareRevision">FirmwareRevision</string>
+    <string name="HardwareRevision">HardwareRevision</string>
+    <string name="SoftwareRevision">SoftwareRevision</string>
+    <string name="ManufactureName">ManufactureName</string>
+    <string name="RegCertDataList">RegCertDataList</string>
+    <string name="ManufactureId">    ManufactureId</string>
+    <string name="BatteryLevel">    Battery Level</string>
+    <string name="OrgId">    OrganizationId</string>
+    <string name="Txpower">    Txpower Level</string>
+    <string name="Noupdate">    No Update</string>
+    <string name="ReadTxPower">ReadTxPower</string>
+    <string name="high_alert">HIGH Alert triggered!</string>
+    <string name="low_alert">LOW Alert triggered!</string>
+    <string name="writeTxnoti">TxNoti</string>
+    <string name="readRssi">Read Rssi Value</string>
+    <string name="Readdummy">D Read</string>
+    <string name="removeBond">Remove Bond</string>
+    <string name="paired">paired</string>
+    <string name="popup_title">Quit nRF UART</string>
+    <string name="popup_message">Do you want to quit this Application?</string>
+    <string name="popup_yes">YES</string>
+    <string name="popup_no">NO</string>
+    <string name="ble_not_supported">Bluetooth Low Energy not supported</string>
+    <string name="scan">Scan</string>
+    <string name="cancel">Cancel</string>
+    <string name="camera_button_text">Upload</string>
+    <string name="sign_in_prompt">Sign In to begin</string>
+    <string name="take_photo_prompt">Upload a Photo</string>
+    <string name="download">Download</string>
+    <string name="sign_in_anonymously">Sign In</string>
+    <string name="rationale_storage">This sample reads images from your camera to demonstrate uploading.</string>
+    <string name="label_link">Link to Uploaded File</string>
+    <string name="label_download">Download File</string>
+    <string name="log_out">Log out</string>
+    <string name="success">Success</string>
+    <string name="progress_downloading">Downloading…</string>
+    <string name="progress_uploading">Uploading…</string>
+    <string name="progress_auth">Signing In…</string>
+
+
+    <string name="rationale_title">권한요청</string>
+    <string name="rationale_message">권한이 필요합니다</string>
+
+    <!--  DeviceListActivity -->
+    <string name="none_paired">No matching devices</string>
+    <string name="none_found">No device found</string>
+    <string name="title_paired_devices">블루투스 프린터 선택</string>
+    <string name="title_other_devices">Other useful equipment</string>
+    <string name="button_scan">Scanning device</string>
+
+    <!--- message -->
+    <string name="reader_iccard_cancel_length_fail">-1:승인일이 잘못되었습니다</string>
+    <string name="phone_not_bluetooth">-2:핸드폰의 블루투스가 켜져 있지 않습니다</string>
+    <string name="btreader_not_search">-3:리더기가 연결되지 않았습니다</string>
+    <string name="btprint_not_search">-4:블루투스 프린터가 연결되지 않았습니다</string>
+    <string name="bterror">블루투스 통신이 원활하지 않습니다.\n다시 시도해주세요.</string>
+
+
+    <!-- Dialog-->
+    <string name="reader_search">리더기를 연결중입니다</string>
+    <string name="reader_card_read">카드를 읽혀주세요</string>
+    <string name="reader_card_read_fail">사용불가 카드 입니다 다른 카드를 사용하세요</string>
+    <string name="reader_card_read_fail2">카드인식 실패</string>
+    <string name="reader_card_read_ic">카드를 IC슬롯에 넣어주세요</string>
+    <string name="reader_card_read_msr">카드를 MSR로 읽혀주세요</string>
+    <string name="reader_terminal_connect">단말기가 연결되었습니다</string>
+    <string name="reader_card_reading">카드를 읽고 있는 중입니다</string>
+    <string name="reader_iccard_approce">IC승인이 진행중입니다</string>
+    <string name="reader_iccard_cash">현금영수증카드 IC승인이 진행중입니다</string>
+    <string name="reader_iccard_approce_complete">승인이 완료되었습니다</string>
+    <string name="reader_iccard_cancel_approce_complete">승인취소가 완료되었습니다</string>
+    <string name="reader_iccard_instantment_start">무결성 점검을 시작합니다</string>
+    <string name="reader_iccard_instantment_succes">무결성 점검 성공하였습니다</string>
+    <string name="reader_iccard_instantment_fail">무결성 점검 실패로 프로그램을 종료합니다</string>
+
+    <string name="reader_iccard_reject">카드가 제거되었습니다</string>
+    <string name="reader_iccard_reject_end">카드가 제거되어 승인을 종료합니다</string>
+    <string name="reader_iccard_fbprocess">FallBack거래발생.\n마그네틱으로 카드를 삽입하세요.\n</string>
+    <string name="reader_iccard_signfail">5만원이상은 서명을 하셔야합니다</string>
+    <string name="reader_iccard_key_backpress">고객의 요청으로 취소 되었습니다</string>
+    <string name="sign_error">5만원 이상은 싸인을 해야 합니다 </string>
+
+    <string name="not_use_internet">통신을  할 수 없습니다</string>
+    <string name="routing_msg">단말기 플랫폼 위변조 발견되어 시작을 할 수 없습니다</string>
+    <string name="intergrity_msg">앱 무결성 점검에 실패하여 프로그램을 종료합니다</string>
+
+    <string name="terminal">단말기</string>
+    <string name="not_connect">접속된 단말기가 없습니다</string>
+    <string name="pleat_power_on">접속된 단말기가 없습니다</string>
+
+    <string name="reader_iccard_connect">선택 하신 단말기로 접속하겠습니까?</string>
+
+    <string name="reader_code">식별자를 다시 입력해주세요</string>
+    <string name="reader_passwd">비밀번호를 다시 입력해주세요</string>
+    <string name="reader_not_confirm">식별자와 비밀번호가 다릅니다</string>
+
+    <string name="approve_success">정상 승인이 되었습니다</string>
+    <string name="approve_cenvel_success">정상 승인 취소가  되었습니다</string>
+    <string name="approve_fail">카드승인오류</string>
+
+
+    /*이곳은 음성안내에 대한 내용입니다*/
+    <string name="speech1">연결되었습니다</string>
+    <string name="speech2">연결이종료되었습니다</string>
+    <string name="speech3">결재승인요청중입니다</string>
+    <string name="speech4">다른카드를 넣어주세요</string>
+    <string name="speech5">승인이 완료되었습니다</string>
+
+    <!--
+    //vs[2] = "210.181.28.116";  210.181.28.137   "210.181.28.116"
+    //     Server IP Address. Real: 210.181.28.137 Test: 210.181.28.116
+    //vs[3] = "9582"; //9562
+    -->
+    <!--
+    DPT0TEST03 (대행승인) / DPT0TEST05 (카드사 테스트 승인)
+    -->
+
+    <string name="ksnet_server_ip">210.181.28.137</string>
+    <string name="ksnet_server_port">9562</string>
+    <string name="ksnet_telegrametype">5</string>
+    <string name="ksnet_timeout">16000</string>
+
+    <!-- TEST : DPT0TEST03    -->
+
+    <string name="ksnet_DPT">DPT0TEST03</string>
+    <string name="ksnet_biz">1208197322</string>
+    <!--<string name="ksnet_DPT">DPT0TEST03</string>-->
+
+    <string name="agreement">I agree the terms and conditions.</string>
+    <string name="clear_pad">Clear Pad</string>
+    <string name="save_signature">Save Signature</string>
+
+
+    <string name="error_msg">네트워크에러가 발생했습니다.\n관리자에게 문의하세요.</string>
+    <string name="network_error_msg">네트워크 에러</string>
+
+    <!--신규 네이티브-->
+    <string name="intro_text_1">가맹점 계약시 사용할 수 있는\n비공개 Application입니다.</string>
+    <string name="intro_text_2">먼저,가맹점 계약을 하여 주시기 바라며\n어플리케이션 사용 시 가맹점 아이디,\n단말기 아이디가 필요합니다.</string>
+
+    <string name="tmn_setting_error">터미널설정이 잘못되었습니다\n담당자에게 연락하시기 바랍니다.</string>
+
+    <string name="cancel_error_offline">수기결제는 단말기에서 취소가 불가능합니다.\n관리자에게 문의하시기 바랍니다.</string>
+
+    <string name="select_days_error">날짜를 선택해주세요.</string>
+
+    <string name="channel_name">mtouch channel</string>
+    <string name="channel_description">mtouch description</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_activity_intro">IntroActivity</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_recyler">recyler</string>
+    <string name="title_activity_main3">MainActivity3</string>
+    <string name="title_activity_main4">MainActivity4</string>
+    <string name="title_activity_connectdevice">ConnectdeviceActivity</string>
+    <string name="title_activity_main_view">MainView</string>
+    <string name="title_activity_credit_payment_view">CreditPaymentView</string>
+
+</resources>

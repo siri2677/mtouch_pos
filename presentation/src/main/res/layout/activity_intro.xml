@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".IntroActivity"
+    android:background="@drawable/intro_background_shape">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/logoImageView"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+
+        <TextView
+            android:layout_marginTop="37dp"
+            android:textSize="18dp"
+            android:textColor="@color/white"
+            android:gravity="center_horizontal"
+            android:fontFamily="@font/ns_acb"
+            android:lineSpacingMultiplier="1.5"
+            android:text="@string/intro_text_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_marginTop="18.5dp"
+            android:textSize="12dp"
+            android:textColor="@color/white"
+            android:fontFamily="@font/ns_acr"
+            android:gravity="center_horizontal"
+            android:lineHeight="27.5dp"
+            android:lineSpacingMultiplier="1.2"
+            android:text="@string/intro_text_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+    
+    
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/white"
+        android:text="시작하기"
+        android:textColor="@color/watermelon"
+        android:textSize="25dp"
+        android:fontFamily="@font/ns_fonts"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="63dp"
+        app:layout_constraintBottom_toBottomOf="@id/resetButton"/>
+
+    <Button
+        android:id="@+id/resetButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@color/white"
+        android:text="카드리더기 등록"
+        android:textColor="@color/watermelon"
+        android:textSize="25dp"
+        android:fontFamily="@font/ns_fonts"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="63dp"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <TextView
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="1.20"
+        android:layout_margin="3dp"
+        android:textColor="@color/white"
+        android:id="@+id/versionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

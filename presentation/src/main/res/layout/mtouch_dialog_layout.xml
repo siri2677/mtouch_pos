@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:paddingStart="40dp"
+    android:paddingEnd="40dp"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:background="@color/white"
+        android:orientation="vertical"
+        android:paddingBottom="37.5dp">
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:fontFamily="@font/ns_aceb"
+            android:gravity="center"
+            android:text="알림"
+            android:textColor="@color/black"
+            android:textSize="20dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/white_three" />
+
+        <TextView
+            android:id="@+id/contentTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:layout_marginBottom="30dp"
+            android:fontFamily="@font/ns_acb"
+            android:gravity="center"
+            android:lineSpacingMultiplier="1.5"
+            android:textColor="@color/black"
+            tools:text="광원_테스트_본사용\n가맹점 정보를 입력해주세요." />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/confirmButton"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="50dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:background="@drawable/line_shape"
+                android:fontFamily="@font/ns_aceb"
+                android:text="확인"
+                android:textColor="@color/white"
+                android:textSize="20dp" />
+
+            <Button
+                android:id="@+id/cancelButton"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:visibility="gone"
+                tools:visibility="visible"
+                android:layout_height="50dp"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/line_shape"
+                android:fontFamily="@font/ns_aceb"
+                android:text="취소"
+                android:textColor="@color/white"
+                android:textSize="20dp" />
+
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+</FrameLayout>
