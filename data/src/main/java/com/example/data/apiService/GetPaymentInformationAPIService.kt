@@ -10,7 +10,7 @@ import retrofit2.http.Header
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
-interface GetPaymentInfomationAPIService {
+interface GetPaymentInformationAPIService {
     @Headers("Content-Type: application/json")
     @POST("/v0/trx/statistics")
     fun statistics(

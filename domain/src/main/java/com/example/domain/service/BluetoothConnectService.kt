@@ -78,7 +78,7 @@ class BluetoothConnectService: Service(){
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("mtouch앱 실행중입니다.")
             .setContentText("블루투스 연결 진행 상태입니다.")
-            .setSmallIcon(dagger.android.support.R.drawable.notification_bg)
+            .setSmallIcon(R.drawable.sym_def_app_icon)
             .build()
         startForeground(NOTIFICATION_ID, notification)
 //        notificationManager.notify(0, notification)

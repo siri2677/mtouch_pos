@@ -1,23 +1,29 @@
 package com.example.domain.usecase
 
 import android.content.Context
-import android.hardware.usb.UsbDevice
-import android.hardware.usb.UsbManager
-import android.util.Log
 import com.example.domain.enumclass.DeviceSharedPreferenceKey
 import com.example.domain.enumclass.DeviceType
-import com.example.domain.usecase.usb.UsbDeviceSearchUseCase
+import com.example.domain.model.DeviceInformation
+import com.example.domain.usecaseinterface.DeviceSettingSharedPreference
 import com.google.gson.Gson
 
 
-
-class DeviceSettingSharedPreferenceImpl(val context: Context) {
-    fun getCurrentRegisteredDeviceType(): String {
+class DeviceSettingSharedPreferenceImpl(val context: Context): DeviceSettingSharedPreference {
+    override fun getCurrentRegisteredDeviceType(): DeviceInformation {
         val sharedPreferences = context.getSharedPreferences(DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(), Context.MODE_PRIVATE)
-        return sharedPreferences.getString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), DeviceSharedPreferenceKey.EMPTY_STRING.toString())!!
+        val userDataJson = sharedPreferences.getString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), DeviceSharedPreferenceKey.EMPTY_STRING.toString())!!
+        return Gson().fromJson(userDataJson, DeviceInformation::class.java)
     }
 
-    fun deleteCurrentRegisteredDeviceType() {
+    override fun setCurrentRegisteredDeviceType(deviceType: DeviceType, information: String) {
+        val sharedPreferences = context.getSharedPreferences(DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(), Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val gson = Gson().toJson(DeviceInformation(deviceType, information))
+        editor.putString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), gson)
+        editor.commit()
+    }
+
+    override fun clearCurrentRegisteredDeviceType() {
         val sharedPreferences = context.getSharedPreferences(DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(), Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
         editor.putString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), DeviceSharedPreferenceKey.EMPTY_STRING.toString())

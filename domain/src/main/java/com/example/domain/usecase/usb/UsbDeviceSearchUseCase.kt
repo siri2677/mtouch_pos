@@ -4,7 +4,7 @@ import android.content.Context
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import com.example.domain.usecase.DeviceSettingSharedPreferenceImpl
-import com.example.domain.usecaseinterface.usb.UsbDeviceSearchUsecaseImpl
+import com.example.domain.usecaseinterface.UsbDeviceSearchUsecaseImpl
 import javax.inject.Inject
 
 class UsbDeviceSearchUseCase @Inject constructor(private val context: Context)
@@ -20,7 +20,7 @@ class UsbDeviceSearchUseCase @Inject constructor(private val context: Context)
 
     fun getUsbDevice(): UsbDevice? {
         for(device in UsbDeviceSearchUseCase(context).searchUsbDevice()) {
-            if(stringFormat(device.toString()) == stringFormat(DeviceSettingSharedPreferenceImpl(context).getUsbDeviceInformation())) {
+            if(stringFormat(device.toString()) == stringFormat(DeviceSettingSharedPreferenceImpl(context).getCurrentRegisteredDeviceType().deviceInformation)) {
                 return device
             }
         }

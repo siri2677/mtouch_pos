@@ -11,7 +11,5 @@ interface DeviceSetting {
     fun deviceDisConnect()
     fun bindingService()
     fun unBindingService()
-//    fun deviceResister(bluetoothDevice: BluetoothDevice)
-//    fun deviceUnResister()
     fun requestDeviceSerialCommunication(byteArray: ByteArray)
 }

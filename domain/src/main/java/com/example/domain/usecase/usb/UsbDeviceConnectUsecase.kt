@@ -12,7 +12,6 @@ import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat.startForegroundService
 import androidx.lifecycle.MutableLiveData
-import com.example.domain.usecaseinterface.usb.UsbDeviceConnectUsecaseImpl
 import com.example.domain.service.UsbConnectService
 import com.example.domain.usecase.DeviceSettingSharedPreferenceImpl
 import com.example.domain.usecase.ResponseDeviceSerialCommunicationImpl
@@ -67,6 +66,4 @@ class UsbDeviceConnectUsecase {
         val intent = Intent(context, UsbConnectService::class.java)
         context.stopService(intent)
     }
-
-
 }

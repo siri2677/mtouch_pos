@@ -5,7 +5,6 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -59,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.createRoute
@@ -66,15 +66,14 @@ import androidx.navigation.NavOptions
 import cn.pedant.SweetAlert.SweetAlertDialog
 import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
-import com.example.cleanarchitech_text_0506.util.NavigationView
-import com.example.cleanarchitech_text_0506.view.ui.ui.theme.CleanArchitech_text_0506Theme
+import com.example.cleanarchitech_text_0506.enum.NavigationView
+import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DeviceSerialCommunicateViewModel
 import com.example.domain.enumclass.DeviceType
 import com.example.domain.enumclass.SerialCommunicationMessage
 import com.mtouch.ksr02_03_04_v2.Domain.Model.EncMSRManager
-import com.mtouch.ksr02_03_04_v2.Ui.UsbViewModel
+import kotlinx.coroutines.delay
 
-//data class numberPad(val number: Int)
 class CreditPaymentView {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -125,15 +124,7 @@ class CreditPaymentView {
     }
 
     @Composable
-    fun dialogFormat1(viewModel: DeviceSerialCommunicateViewModel, backGround: Int) {
-        var minute: Int = remember { 15 }
-        viewModel.startCountDownTimer(15)
-        viewModel?.leftTime?.observe(viewModel.ownerProperty!!) {
-            it?.getContentIfNotHandled()?.let { scanResult ->
-                minute = scanResult
-                Log.w("minute", scanResult.toString())
-            }
-        }
+    fun dialogFormat1(backGround: Int, timer: Int) {
         Column(
             modifier = Modifier
                 .width(300.dp)
@@ -143,12 +134,12 @@ class CreditPaymentView {
                     contentScale = ContentScale.FillBounds
                 ),
             verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                modifier = Modifier.padding(top = 40.dp),
+                modifier = Modifier.padding(bottom = 15.dp),
                 color = colorResource(R.color.white),
-                text = minute.toString()
+                text = if(timer == -1) "결제 대기 시간이 초과 되었습니다" else  "결제 대기 시간: $timer"
             )
         }
     }
@@ -172,21 +163,43 @@ class CreditPaymentView {
     fun usbDevicePaymentDialog(navHostController: NavController, viewModel: DeviceSerialCommunicateViewModel) {
         Dialog(
             onDismissRequest = {
-                navHostController.popBackStack()
                 viewModel.init()
+                navHostController.popBackStack()
             }
         ) {
+            var timer by remember { mutableStateOf(15) }
             when (viewModel.dialogMessageProperty) {
-                SerialCommunicationMessage.icCardInsertRequest.message ->
-                    dialogFormat1(viewModel, R.drawable.pb2_4)
-                SerialCommunicationMessage.paymentProgressing.message ->
+                SerialCommunicationMessage.IcCardInsertRequest.message -> {
+                    LaunchedEffect(key1 = timer) {
+                        if (timer > -1) {
+                            delay(1000)
+                            timer -= 1
+                        }
+                    }
+                    dialogFormat1(R.drawable.pb2_4, timer)
+                    if(timer == -1) {
+                        viewModel.init()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            navHostController.popBackStack(
+                                route = NavigationView.CreditPayment.name,
+                                inclusive = false
+                            )
+                        },700)
+                    }
+                }
+                SerialCommunicationMessage.PaymentProgressing.message ->
                     dialogFormat(R.drawable.pb2_2)
-                SerialCommunicationMessage.fallBackMessage.message ->
+                SerialCommunicationMessage.FallBackMessage.message ->
                     dialogFormat(R.drawable.pb2_3)
-                SerialCommunicationMessage.completePayment.message ->
+                SerialCommunicationMessage.CompletePayment.message ->
                     dialogFormat(Arrangement.Center, Alignment.CenterHorizontally, R.drawable.pb4, viewModel.dialogMessageProperty)
-                SerialCommunicationUsbDialogData.SerialCommunicationFinish.name ->
-                    navHostController.popBackStack(route = NavigationView.creditPayment.name, inclusive = false)
+                SerialCommunicationUsbDialogData.SerialCommunicationFinish.name -> {
+                    viewModel.init()
+                    navHostController.popBackStack(
+                        route = NavigationView.CreditPayment.name,
+                        inclusive = false
+                    )
+                }
             }
         }
     }
@@ -202,7 +215,7 @@ class CreditPaymentView {
         navHostController: NavController,
         context: Context?,
         owner: LifecycleOwner?,
-        deviceSerialCommunicateVieModel: DeviceSerialCommunicateViewModel
+        deviceSerialCommunicateVieModel: DeviceSerialCommunicateViewModel = hiltViewModel()
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
         var sweetAlertDialog by remember {
@@ -216,35 +229,35 @@ class CreditPaymentView {
 
         var account by remember { mutableStateOf("") }
         DisposableEffect(Unit) {
-            deviceSerialCommunicateVieModel.errorOccur?.observe(owner!!) {
-                it?.getContentIfNotHandled()?.let { data ->
-                    if (data) errorDialog(context!!)
-                }
-            }
+//            deviceSerialCommunicateVieModel.errorOccur?.observe(owner!!) {
+//                it?.getContentIfNotHandled()?.let { data ->
+//                    if (data) errorDialog(context!!)
+//                }
+//            }
             deviceSerialCommunicateVieModel.serialCommunicateMessage?.observe(owner!!) {
                 it?.getContentIfNotHandled()?.let { data ->
                     when(deviceSerialCommunicateVieModel.getCurrentRegisteredDeviceType()) {
-                        DeviceType.BLUETOOTH.name -> {
+                        DeviceType.BLUETOOTH -> {
                             if(!sweetAlertDialog.isShowing) {
                                 sweetAlertDialog = SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE)
                                 sweetAlertDialog.progressHelper?.barColor = Color.Green.toArgb()
                                 sweetAlertDialog.setCancelable(true)
                                 sweetAlertDialog.setOnCancelListener(DialogInterface.OnCancelListener {
+                                    deviceSerialCommunicateVieModel.init()
                                     sweetAlertDialog.dismiss()
-                                    deviceSerialCommunicateVieModel?.init()
                                 })
                             }
                             sweetAlertDialog.titleText = data
                             sweetAlertDialog.show()
                         }
-                        DeviceType.USB.name -> {
+                        DeviceType.USB -> {
                             deviceSerialCommunicateVieModel.dialogMessageProperty = data
                             deviceSerialCommunicateVieModel.ownerProperty = owner
                             val params = bundleOf(
                                 SerialCommunicationUsbDialogData.ViewModel.name to deviceSerialCommunicateVieModel
                             )
                             navHostController.navigate(
-                                NavigationView.creditPaymentUsbDialog.name,
+                                NavigationView.CreditPaymentUsbDialog.name,
                                 params,
                                 NavOptions.Builder().setLaunchSingleTop(true).build()
                             )
@@ -260,17 +273,17 @@ class CreditPaymentView {
             deviceSerialCommunicateVieModel.isCompletePayment?.observe(owner!!) {
                 it?.getContentIfNotHandled()?.let {
                     when(deviceSerialCommunicateVieModel.getCurrentRegisteredDeviceType()) {
-                        DeviceType.BLUETOOTH.name -> {
+                        DeviceType.BLUETOOTH -> {
                             sweetAlertDialog.dismiss()
                         }
-                        DeviceType.USB.name -> {
+                        DeviceType.USB -> {
                             deviceSerialCommunicateVieModel.dialogMessageProperty = SerialCommunicationUsbDialogData.SerialCommunicationFinish.name
                             deviceSerialCommunicateVieModel.ownerProperty = owner
                             val params = bundleOf(
                                 SerialCommunicationUsbDialogData.ViewModel.name to deviceSerialCommunicateVieModel
                             )
                             navHostController.navigate(
-                                NavigationView.creditPaymentUsbDialog.name,
+                                NavigationView.CreditPaymentUsbDialog.name,
                                 params,
                                 NavOptions.Builder().setLaunchSingleTop(true).build()
                             )
@@ -280,7 +293,7 @@ class CreditPaymentView {
             }
 
             onDispose {
-//                LocalViewModelStoreOwner.current?.viewModelStore?.clear()
+                deviceSerialCommunicateVieModel.unbindService()
             }
         }
 
@@ -376,7 +389,7 @@ class CreditPaymentView {
                         fontSize = 20.sp,
                         onClick = {
                             deviceSerialCommunicateVieModel!!.requestDeviceSerialCommunication(
-                                EncMSRManager.makeDongleInfo()
+                                EncMSRManager().makeDongleInfo()
                             )
                         }
                     )

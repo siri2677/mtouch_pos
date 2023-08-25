@@ -28,7 +28,7 @@ class LoginUseCase @Inject constructor(val context: Context, private var loginRe
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun checkAppDestloy() {
+    override fun checkAppDestroy() {
         val intent = Intent(context, ForecdTerminationService::class.java)
         ContextCompat.startForegroundService(context, intent)
     }

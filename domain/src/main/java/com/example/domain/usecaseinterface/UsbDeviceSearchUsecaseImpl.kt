@@ -1,4 +1,4 @@
-package com.example.domain.usecaseinterface.usb
+package com.example.domain.usecaseinterface
 
 import android.hardware.usb.UsbDevice
 

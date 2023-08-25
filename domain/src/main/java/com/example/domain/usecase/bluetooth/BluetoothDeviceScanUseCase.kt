@@ -12,7 +12,6 @@ import android.content.Context
 import android.content.Context.BLUETOOTH_SERVICE
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Handler
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -20,7 +19,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.MutableLiveData
 import com.example.domain.model.BluetoothScanResult
 import com.example.domain.model.DomainLayerConstantObject.Companion.SERVICE_STRING
-import com.example.domain.usecaseinterface.bluetooth.BluetoothDeviceScanUsecaseImpl
+import com.example.domain.usecaseinterface.BluetoothDeviceScanUsecaseImpl
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
 import java.util.UUID
 import javax.inject.Inject

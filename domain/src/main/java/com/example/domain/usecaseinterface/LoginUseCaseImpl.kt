@@ -8,5 +8,5 @@ import io.reactivex.rxjava3.core.Single
 interface LoginUseCaseImpl {
     suspend fun getLoginToken(keyTmsRequestData: KeyTmsRequestData): Single<KeyTmsResponseData>
     fun getPaymentSummaryAboutTerminalId(key: String): Single<SummaryTmsResponseData>
-    fun checkAppDestloy()
+    fun checkAppDestroy()
 }

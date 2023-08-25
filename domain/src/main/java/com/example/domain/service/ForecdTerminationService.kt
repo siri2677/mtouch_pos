@@ -12,7 +12,6 @@ class ForecdTerminationService: Service() {
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
-
     override fun onTaskRemoved(rootIntent: Intent) { //핸들링 하는 부분
         Log.w("onTaskRemoved", "onTaskRemoved - 강제 종료 $rootIntent")
         Toast.makeText(this, "onTaskRemoved ", Toast.LENGTH_SHORT).show()

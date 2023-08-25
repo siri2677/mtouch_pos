@@ -5,10 +5,10 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,22 +57,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
-import androidx.navigation.NavGraph
-import androidx.navigation.NavOptions
 import com.example.cleanarchitech_text_0506.R
-import com.example.cleanarchitech_text_0506.enum.DeviceConnectView
-import com.example.cleanarchitech_text_0506.util.NavigationView
+import com.example.cleanarchitech_text_0506.enum.NavigationView
 import com.example.cleanarchitech_text_0506.viewmodel.BluetoothViewModel
-import com.example.domain.enumclass.DeviceType
 import com.mtouch.ksr02_03_04_v2.Ui.UsbViewModel
-import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
-import kotlinx.coroutines.delay
 
 class DeviceSettingView {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -116,7 +107,6 @@ class DeviceSettingView {
                     )
                 }
             }
-
             "usb" -> {
                 return modifier.drawBehind {
                     val strokeWidth = 3 * density
@@ -129,7 +119,6 @@ class DeviceSettingView {
                     )
                 }
             }
-
             else -> {
                 return modifier
             }
@@ -170,8 +159,6 @@ class DeviceSettingView {
             }
         }
 
-        Log.w("isConnectDevice23", isConnectingDevice.toString())
-
         if(isConnectingDevice) {
             Text(text = ("success"))
         } else {
@@ -201,17 +188,12 @@ class DeviceSettingView {
         }
     }
 
-    private fun NavController.navigate(route: String, bundle: Bundle = Bundle(), navOptions: NavOptions) {
-        val r = NavDestination.createRoute(route)
-        navigate(r.hashCode(), bundle, navOptions)
-    }
-
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun bluetoothDevice(
         context: Context?,
         owner: LifecycleOwner?,
-        bluetoothViewModel: BluetoothViewModel = viewModel(),
+        bluetoothViewModel: BluetoothViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
         var deviceType by remember { mutableStateOf("bluetooth") }
@@ -232,9 +214,15 @@ class DeviceSettingView {
             }
         var deviceSearchingText = if (isDeviceSearching) "장치 검색중..." else "장치 검색"
         var deviceContactSettingText = if (isAlwaysConnecting) "연결 항상 유지" else "결제 시에만 연결"
+        BackHandler {
+            navHostController.popBackStack(
+                route = NavigationView.Main.name,
+                inclusive = false
+            )
+        }
         DisposableEffect(Unit) {
             onDispose {
-                bluetoothViewModel?.bluetoothDeviceUnBinding()
+                bluetoothViewModel.bluetoothDeviceUnBinding()
             }
         }
         Scaffold(
@@ -262,21 +250,11 @@ class DeviceSettingView {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if(deviceType == "usb") {
-                        val params = bundleOf(
-                            DeviceConnectView.DeviceType.name to DeviceType.USB.name
-                        )
-                        navHostController.navigate(
-                            NavigationView.deviceSetting.name,
-                            params,
-                            NavOptions.Builder().setLaunchSingleTop(true).build()
-                        )
-                    }
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "bluetooth" }),
+                            .padding(bottom = 10.dp),
+//                            .clickable(onClick = { deviceType = "bluetooth" }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -286,7 +264,9 @@ class DeviceSettingView {
                         modifier = Modifier
                             .weight(1f)
                             .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "usb" }),
+                            .clickable(onClick = {
+                                navHostController.navigate(NavigationView.DeviceSettingUSB.name)
+                            }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -378,7 +358,6 @@ class DeviceSettingView {
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
         var selectedIndex by rememberSaveable { mutableStateOf(-2) }
-//    var permissionCheck by remember { mutableStateOf(permissionCheck) }
 
         LazyColumn(
             modifier = Modifier
@@ -407,13 +386,19 @@ class DeviceSettingView {
     fun usbDevice(
         context: Context,
         owner: LifecycleOwner,
-        usbViewModel: UsbViewModel = viewModel(),
+        usbViewModel: UsbViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
         val usbDeviceListState by usbViewModel?.listUpdate!!.observeAsState()
         var isPermissionGranted by remember { mutableStateOf(false) }
         var deviceType by remember { mutableStateOf("usb") }
         var modifier = DeviceTypeSelection(deviceType)
+        BackHandler {
+            navHostController.popBackStack(
+                route = NavigationView.Main.name,
+                inclusive = false
+            )
+        }
         DisposableEffect(Unit){
             onDispose {
                 usbViewModel?.usbDeviceUnBindingService()
@@ -444,21 +429,13 @@ class DeviceSettingView {
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if(deviceType == "bluetooth") {
-                        val params = bundleOf(
-                            DeviceConnectView.DeviceType.name to DeviceType.BLUETOOTH.name
-                        )
-                        navHostController.navigate(
-                            NavigationView.deviceSetting.name,
-                            params,
-                            NavOptions.Builder().setLaunchSingleTop(true).build()
-                        )
-                    }
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "bluetooth" }),
+                            .clickable(onClick = {
+                                navHostController.navigate(NavigationView.DeviceSettingBluetooth.name)
+                            }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -467,8 +444,8 @@ class DeviceSettingView {
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "usb" }),
+                            .padding(bottom = 10.dp),
+//                            .clickable(onClick = { deviceType = "usb" }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -527,75 +504,6 @@ class DeviceSettingView {
                                 fontFamily = FontFamily(Font(R.font.ns_acr)),
                             )
                         }
-                    }
-                }
-            }
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun connectDeviceView(
-        usbViewModel: UsbViewModel,
-        bluetoothViewModel: BluetoothViewModel,
-        context: Context?,
-        owner: LifecycleOwner?
-    ) {
-        var deviceType by remember { mutableStateOf("bluetooth") }
-        var modifier = DeviceTypeSelection(deviceType)
-        Scaffold(
-            topBar = {
-                topNavigationConnectDevice()
-            }
-        ) { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .drawBehind {
-                            val strokeWidth = 2 * density
-                            drawLine(
-                                Color.LightGray,
-                                Offset(0f, 0f),
-                                Offset(size.width, 0f),
-                                strokeWidth
-                            )
-                        },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Row(
-                    modifier = modifier,
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "bluetooth" }),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "블루투스", fontSize = 15.sp)
-                    }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(bottom = 10.dp)
-                            .clickable(onClick = { deviceType = "usb" }),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "USB", fontSize = 15.sp)
-                    }
-                }
-
-                when (deviceType) {
-                    "bluetooth" -> {
-//                        bluetoothDevice(context!!, owner!!, bluetoothViewModel)
-                    }
-                    "usb" -> {
-//                        usbDevice(context!!, owner!!, usbViewModel)
                     }
                 }
             }

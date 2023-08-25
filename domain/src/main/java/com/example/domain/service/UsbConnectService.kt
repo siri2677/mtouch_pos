@@ -1,5 +1,6 @@
 package com.example.domain.service
 
+import android.R
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -66,7 +67,7 @@ class UsbConnectService : Service(), SerialInputOutputManager.Listener {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("mtouch앱 실행중입니다.")
             .setContentText("usb 연결 진행 상태입니다.")
-            .setSmallIcon(dagger.android.support.R.drawable.notification_bg)
+            .setSmallIcon(R.drawable.sym_def_app_icon)
             .build()
         startForeground(NOTIFICATION_ID, notification)
     }
@@ -75,7 +76,7 @@ class UsbConnectService : Service(), SerialInputOutputManager.Listener {
         return UsbDeviceSearchUseCase(this).getUsbDevice()
     }
 
-    fun connectDevice() {
+    private fun connectDevice() {
         val usbManager: UsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
         var driver: UsbSerialDriver = UsbSerialProber.getDefaultProber().probeDevice(getUsbDevice())
         if (usbManager.hasPermission(driver.device)) {
@@ -103,47 +104,7 @@ class UsbConnectService : Service(), SerialInputOutputManager.Listener {
                 PendingIntent.getBroadcast(this, 0, intent, flags)
             usbManager.requestPermission(getUsbDevice(), permissionIntent)
         }
-//        val usbManager: UsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-//        val usbDevice = getUsbDevice()
-//        var driver = UsbSerialProber.getDefaultProber().probeDevice(usbDevice)
-//        val usbConnection = usbManager.openDevice(driver.device)
-//        usbSerialPort = driver.ports[0]
-//        usbSerialPort?.open(usbConnection)
-//        usbSerialPort?.setParameters(38400, 8, 1, UsbSerialPort.PARITY_NONE)
-//        usbIoManager = SerialInputOutputManager(usbSerialPort, this@UsbConnectService)
-//        usbIoManager?.start()
-//        if (usbManager.hasPermission(usbDevice)) {
-//            val usbConnection = usbManager.openDevice(driver.device)
-//            usbSerialPort = driver.ports[0]
-//            usbSerialPort?.open(usbConnection)
-//            usbSerialPort?.setParameters(38400, 8, 1, UsbSerialPort.PARITY_NONE)
-//            usbIoManager = SerialInputOutputManager(usbSerialPort, this@UsbConnectService)
-//            usbIoManager?.start()
-//            return
-//        }
-//        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-//        val permissionIntent: PendingIntent =
-//            PendingIntent.getBroadcast(this, 0, Intent(actionGrantUsb), flags)
-//        usbManager.requestPermission(usbDevice, permissionIntent)
     }
-
-    fun isDevicePermissionGrant(): Boolean {
-        val usbManager: UsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        val usbDevice = getUsbDevice()
-        return usbManager.hasPermission(usbDevice)
-    }
-
-    fun requestPermission() {
-        val usbManager: UsbManager = getSystemService(Context.USB_SERVICE) as UsbManager
-        val usbDevice = getUsbDevice()
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        var intent = Intent(actionGrantUsb)
-        intent.putExtra("usbDevice", usbDevice)
-        val permissionIntent: PendingIntent =
-            PendingIntent.getBroadcast(this, 0, intent, flags)
-        usbManager.requestPermission(usbDevice, permissionIntent)
-    }
-
 
     fun requestSerialCommunication(byteArray: ByteArray?) {
         usbSerialPort?.write(byteArray, 0)
@@ -151,7 +112,6 @@ class UsbConnectService : Service(), SerialInputOutputManager.Listener {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.w("usbIOmanager", usbIoManager.toString())
         if (usbIoManager != null) {
             usbIoManager.also {
                 it?.listener = null

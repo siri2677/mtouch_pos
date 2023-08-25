@@ -4,24 +4,22 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cleanarchitech_text_0506.util.SingleLiveEvent
+import com.example.data.apiService.LoginRelatedAPIService
 import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestData
 import com.mtouch.domain.useCaseInterface.LoginUseCaseImpl
 import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.KeyTmsResponseData
 import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.SummaryTmsResponseData
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.schedulers.Schedulers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import retrofit2.HttpException
 
 import javax.inject.Inject
-import kotlin.coroutines.resumeWithException
 
-
+@HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val loginUseCaseInterface: LoginUseCaseImpl
+    private val loginUseCaseInterface: LoginRelatedAPIService
 ) : ViewModel(){
 
     private val _KeyTmsResponseData = MutableLiveData<KeyTmsResponseData>()
@@ -35,64 +33,39 @@ class MainActivityViewModel @Inject constructor(
 
     fun login(keyTmsRequestData: KeyTmsRequestData) {
         viewModelScope.launch {
-            val data = loginUseCaseInterface.getLoginToken(keyTmsRequestData)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { successData ->
-                        _KeyTmsResponseData.value = successData
-                        loginUseCaseInterface.getPaymentSummaryAboutTerminalId(successData.data?.key.toString())
-                            .subscribe(
-                                { successData ->
-                                    _SummaryTmsResponseData.value = successData
-                                },
-                                { error ->
-                                    if (error is HttpException) {
-                                        val errorResponse = error.response()?.errorBody()
-                                        val statusCode = error.code()
-
-                                        Log.w("test", errorResponse.toString())
-                                        _ApiErrorMessage.value = errorResponse.toString()!!
-                                    }
-                                }
-                            )
-                    },
-                    { error ->
-                        if (error is HttpException) {
-                            val errorResponse = error.response()
-                            val statusCode = error.code()
-
-                            Log.w("errorResponse", errorResponse.toString())
-                            val test =  errorResponse?.errorBody()?.string()
-                            Log.w("errorResponse", test.toString())
-//                            Log.w("errorResponse", errorResponse.toString())
-//                            Log.w("errorResponse", errorResponse.toString())
-//                            Log.w("errorResponse", errorResponse.toString())
-//                            Log.w("errorResponse", errorResponse.toString())
-//                            Log.w("errorResponse", errorResponse.toString())
-
-                            Log.w("statusCode", statusCode.toString())
-                            _ApiErrorMessage.value = test.toString()
+            loginUseCaseInterface.key(keyTmsRequestData).let {
+                if(it.isSuccessful) {
+                    _KeyTmsResponseData.value = it.body()
+                    loginUseCaseInterface.summary(it.body()?.data?.key).let { summary ->
+                        if(summary.isSuccessful) {
+                            _SummaryTmsResponseData.value = summary.body()
+                        } else {
+                            _SummaryTmsResponseData.value = summary.body()
                         }
                     }
-                )
+                } else {
+                    _KeyTmsResponseData.value = it.body()
+                }
+            }
         }
     }
 
 
-    fun getDailyAndMonthlyPaymentDataAboutTerminalId(keyTmsResponseDataToken: String) {
-        loginUseCaseInterface.getPaymentSummaryAboutTerminalId(keyTmsResponseDataToken)
-            .subscribe(
-                { successData ->
-                    _SummaryTmsResponseData.value = successData
-                },
-                { error ->
-                    _SummaryTmsResponseData.value = error.message as SummaryTmsResponseData
-                }
-            )
-    }
 
-    fun checkAppDestroy() {
-        loginUseCaseInterface.checkAppDestloy()
-    }
+
+//    fun getDailyAndMonthlyPaymentDataAboutTerminalId(keyTmsResponseDataToken: String) {
+//        loginUseCaseInterface.getPaymentSummaryAboutTerminalId(keyTmsResponseDataToken)
+//            .subscribe(
+//                { successData ->
+//                    _SummaryTmsResponseData.value = successData
+//                },
+//                { error ->
+//                    _SummaryTmsResponseData.value = error.message as SummaryTmsResponseData
+//                }
+//            )
+//    }
+//
+//    fun checkAppDestroy() {
+//        loginUseCaseInterface.checkAppDestroy()
+//    }
 }

@@ -18,14 +18,12 @@ interface SmsRelatedAPIService {
     suspend fun smsSendMessage(
         @Body body: Request?
     ): Single<ResponseBody>
-
     @Headers("Content-Type: application/json", "Accept: application/json", "Accept-Language: ko_KR")
     @POST("/sms/v3/multiple-destinations")
     fun sendSMS(
         @Header("Authorization") token: String?,
         @Body body: HashMap<*, *>?
     ): Single<ResponseBody>
-
     @Multipart //    @Headers({"Content-Type: multipart/form-data; boundary=\"mtouch_sms_file\"","Accept: application/json","Accept-Language: ko_KR"})
     @POST("/sms/v3/file")
     fun uploadReceipt(

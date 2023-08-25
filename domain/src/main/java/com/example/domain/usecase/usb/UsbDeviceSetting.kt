@@ -22,6 +22,8 @@ import com.example.domain.usecase.bluetooth.BluetoothDeviceSetting
 import com.example.domain.usecaseinterface.ResponseDeviceSerialCommunication
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.disposables.Disposable
 import io.reactivex.rxjava3.schedulers.Schedulers
 import java.lang.Exception
 import javax.inject.Inject
@@ -33,11 +35,12 @@ class UsbDeviceSetting @Inject constructor(
 
     override val isFirstConnectComplete = MutableLiveData<Event<Boolean>>()
     override val permissionCheckComplete = MutableLiveData<Event<Boolean>>()
-    private var usbConnectService: UsbConnectService? = null
+    private val compositeDisposable = CompositeDisposable()
 
-    private var requestDataSerialCommunication: ByteArray? = null
+    lateinit var requestDataSerialCommunication: ByteArray
+    private var usbConnectService: UsbConnectService? = null
     private var isDeviceSerialCommunication = false
-    private var isFirstBindingService = false
+    private var isFirstBindingService = true
 
     override fun deviceConnect(usbDeviceInformation: String) {
         if (usbConnectService == null) bindingService()
@@ -66,6 +69,7 @@ class UsbDeviceSetting @Inject constructor(
         usbConnectService = null
         try {
             Log.w("unBindingService2", "unBindingService")
+            compositeDisposable.dispose()
             context.unbindService(this)
         } catch (e: Exception){
             Log.w("exception2", e.toString())
@@ -73,7 +77,6 @@ class UsbDeviceSetting @Inject constructor(
     }
 
     override fun requestDeviceSerialCommunication(requestDataSerialCommunication: ByteArray) {
-
         if (usbConnectService == null) {
             isDeviceSerialCommunication = true
             this.requestDataSerialCommunication = requestDataSerialCommunication
@@ -83,8 +86,8 @@ class UsbDeviceSetting @Inject constructor(
         }
     }
 
-    private fun getResultDataSerialCommunication(){
-        usbConnectService?.dataSubject?.subscribeOn(Schedulers.io())
+    private fun getResultDataSerialCommunication(usbConnectService: UsbConnectService): Disposable? {
+        return usbConnectService?.dataSubject?.subscribeOn(Schedulers.io())
             ?.observeOn(AndroidSchedulers.mainThread())
             ?.subscribe(
                 { successData ->
@@ -100,9 +103,9 @@ class UsbDeviceSetting @Inject constructor(
     override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
         val binder = service as UsbConnectService.MyBinder
         usbConnectService = binder.getService()
-        if(!isFirstBindingService) {
-            isFirstBindingService = true
-            getResultDataSerialCommunication()
+        if(isFirstBindingService) {
+            isFirstBindingService = false
+            getResultDataSerialCommunication(usbConnectService!!)?.let { compositeDisposable.add(it) }
         }
         if(isDeviceSerialCommunication) {
             isDeviceSerialCommunication = false

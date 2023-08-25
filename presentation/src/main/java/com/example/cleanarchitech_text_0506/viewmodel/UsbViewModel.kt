@@ -1,30 +1,29 @@
 package com.mtouch.ksr02_03_04_v2.Ui
 
 import android.hardware.usb.UsbDevice
-import android.util.Log
 import androidx.lifecycle.*
-import com.example.domain.usecaseinterface.RequestDeviceSerialCommunication
-import com.example.domain.usecaseinterface.usb.UsbDeviceSearchUsecaseImpl
+import com.example.cleanarchitech_text_0506.ditest.hiltmodule.DeviceCommunicateViewModelModule
+import com.example.domain.enumclass.DeviceType
+import com.example.domain.usecaseinterface.DeviceSetting
+import com.example.domain.usecaseinterface.DeviceSettingSharedPreference
+import com.example.domain.usecaseinterface.UsbDeviceSearchUsecaseImpl
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.ArrayList
 import javax.inject.Inject
 
+@HiltViewModel
 class UsbViewModel @Inject constructor(
-    private val requestDeviceSerialCommunication: RequestDeviceSerialCommunication,
     private val usbDeviceSearchUsecaseImpl: UsbDeviceSearchUsecaseImpl,
-//    private val usbDeviceSerialCommunicationUsecaseImpl: UsbDeviceSerialCommunicationUsecaseImpl,
-//    private val bluetoothDeviceSerialCommunicationUseCaseImpl: BluetoothDeviceSerialCommunicationUseCaseImpl
+    private val deviceSettingSharedPreference: DeviceSettingSharedPreference,
+    @DeviceCommunicateViewModelModule.Usb private val usbDeviceSerialCommunicate: DeviceSetting
 ) : ViewModel() {
-//    val statusTxt: LiveData<String>
-//        get() = usbRepository.usbStatusMessage().asLiveData(viewModelScope.coroutineContext)
-
     private val _listUpdate = MutableLiveData<ArrayList<UsbDevice>?>()
     val listUpdate : MutableLiveData<ArrayList<UsbDevice>?>
         get() = _listUpdate
 
     val permissionCheck : MutableLiveData<Event<Boolean>>?
-        get() = requestDeviceSerialCommunication.getDeviceType()?.permissionCheckComplete
-
+        get() = usbDeviceSerialCommunicate.permissionCheckComplete
 
     fun usbDeviceScan(){
         var usbDevices = usbDeviceSearchUsecaseImpl.searchUsbDevice()
@@ -34,27 +33,17 @@ class UsbViewModel @Inject constructor(
     }
 
     fun usbDeviceConnect(usbDevice: UsbDevice){
-//        bluetoothDeviceSerialCommunicationUseCaseImpl.unBindingBluetoothConnectService()
-//        bluetoothDeviceConnectUseCaseImpl.bluetoothDeviceDisConnect()
-//        usbDeviceConnectUsecaseImpl.usbDeviceConnect(usbDevice)
-        requestDeviceSerialCommunication.setUsbDevice(usbDevice)
-        Log.w("getDeviceSetting", requestDeviceSerialCommunication.getDeviceType().toString())
-        requestDeviceSerialCommunication.getDeviceType()?.deviceConnect(usbDevice.toString())
+        deviceSettingSharedPreference.setCurrentRegisteredDeviceType(DeviceType.USB, usbDevice.toString())
+        usbDeviceSerialCommunicate.deviceConnect(usbDevice.toString())
     }
 
     fun usbDeviceDisconnect(){
-        requestDeviceSerialCommunication.getDeviceType()?.deviceDisConnect()
-        requestDeviceSerialCommunication.deleteCurrentRegisteredDeviceType()
-//        usbDeviceSerialCommunicationUsecaseImpl.unBindingUsbConnectService()
+        usbDeviceSerialCommunicate.deviceDisConnect()
+        deviceSettingSharedPreference.clearCurrentRegisteredDeviceType()
     }
 
     fun usbDeviceUnBindingService(){
-        Log.w("usbDeviceService", "usbDeviceUnBindingService")
-        Log.w("getDeviceSetting", requestDeviceSerialCommunication.getDeviceType().toString())
-        requestDeviceSerialCommunication.getDeviceType()?.unBindingService()
-//        usbDeviceSerialCommunicationUsecaseImpl.unBindingUsbConnectService()
+        usbDeviceSerialCommunicate.unBindingService()
     }
-
-
 }
 

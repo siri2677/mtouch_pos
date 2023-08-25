@@ -15,7 +15,6 @@ import com.example.domain.usecase.DeviceSettingSharedPreferenceImpl
 import com.example.domain.usecase.ResponseDeviceSerialCommunicationImpl
 import com.example.domain.usecase.usb.UsbDeviceConnectUsecase
 import com.example.domain.usecase.usb.UsbDeviceSetting
-import com.example.domain.usecaseinterface.bluetooth.BluetoothDeviceConnectUseCaseImpl
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.schedulers.Schedulers

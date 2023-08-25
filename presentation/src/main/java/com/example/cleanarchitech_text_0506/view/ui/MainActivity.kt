@@ -2,6 +2,7 @@ package com.example.cleanarchitech_text_0506.view.ui
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -38,7 +39,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,7 +61,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModelProvider
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -66,46 +69,25 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.cleanarchitech_text_0506.R
-import com.example.cleanarchitech_text_0506.enum.DeviceConnectView
 import com.example.cleanarchitech_text_0506.enum.MainViewFunction
+import com.example.cleanarchitech_text_0506.enum.NavigationView
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
-import com.example.cleanarchitech_text_0506.util.NavigationView
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
-import com.example.cleanarchitech_text_0506.viewmodel.BluetoothViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.DeviceSerialCommunicateViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.domain.enumclass.DeviceType
 import com.google.accompanist.flowlayout.FlowRow
-import com.mtouch.ksr02_03_04_v2.Ui.UsbViewModel
-import dagger.android.AndroidInjection
-import javax.inject.Inject
+import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestBody
+import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestData
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject
-    lateinit var viewModelFactory: ViewModelProvider.Factory
-
-    @Inject
-    lateinit var mainActivityViewModel: MainActivityViewModel
-
-    @Inject
-    lateinit var bluetoothViewModel: BluetoothViewModel
-
-    @Inject
-    lateinit var usbViewModel: UsbViewModel
-
-    @Inject lateinit var deviceSerialCommunicateViewModel: DeviceSerialCommunicateViewModel
-
+//    private val mainActivityViewModel: MainActivityViewModel by viewModels()
+//    private val usbViewModel: UsbViewModel by viewModels()
+//    private val bluetoothViewModel: BluetoothViewModel by viewModels()
+//    private val deviceSerialCommunicateViewModel: DeviceSerialCommunicateViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this@MainActivity)
-        mainActivityViewModel =
-            ViewModelProvider(this, viewModelFactory)[MainActivityViewModel::class.java]
-        usbViewModel = ViewModelProvider(this, viewModelFactory)[UsbViewModel::class.java]
-        bluetoothViewModel =
-            ViewModelProvider(this, viewModelFactory)[BluetoothViewModel::class.java]
-        deviceSerialCommunicateViewModel =
-            ViewModelProvider(this, viewModelFactory)[DeviceSerialCommunicateViewModel::class.java]
-
         super.onCreate(savedInstanceState)
         setContent {
             CleanArchitech_text_0506Theme {
@@ -117,21 +99,21 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = NavigationView.main.name
+                        startDestination = NavigationView.Main.name
                     ) {
-                        composable(NavigationView.main.name) {
+                        composable(NavigationView.Main.name) {
                             mainView(navHostController = navController)
                         }
-                        dialog(NavigationView.login.name) {
+                        dialog(NavigationView.Login.name) {
                             LoginView().loginDialog(navController)
                         }
-                        dialog(NavigationView.pgIdLogin.name) {
+                        dialog(NavigationView.PgIdLogin.name) {
                             LoginView().pgIdLoginDialog(navController)
                         }
-                        dialog(NavigationView.vanIdLogin.name) {
+                        dialog(NavigationView.VanIdLogin.name) {
                             LoginView().vanIdLoginDialog(navHostController = navController)
                         }
-                        dialog(NavigationView.registeredId.name) {
+                        dialog(NavigationView.RegisteredId.name) {
                             LoginView().registeredIdDialog(navHostController = navController)
                         }
 //                        composable(NavigationView.deviceSetting.name){
@@ -143,56 +125,32 @@ class MainActivity : ComponentActivity() {
 //                            )
 //                        }
 
-                        composable(NavigationView.deviceSetting.name) { backStackEntry ->
-//                            DeviceSettingView().connectDeviceView(
-//                                usbViewModel = usbViewModel,
-//                                bluetoothViewModel = bluetoothViewModel,
-//                                context = this@MainActivity,
-//                                owner = this@MainActivity
-//                            )
-//                            DeviceSettingView().bluetoothDevice(
-//                                bluetoothViewModel = bluetoothViewModel,
-//                                context = this@MainActivity,
-//                                owner = this@MainActivity,
-//                                navHostController = navController
-//                            )
-
-                            var deviceType = backStackEntry.arguments?.getString(DeviceConnectView.DeviceType.name)
-                            if(deviceType == null) {
-                                deviceType = DeviceType.BLUETOOTH.name
-                            }
-
-                            when(deviceType) {
-                                DeviceType.BLUETOOTH.name -> {
-                                    DeviceSettingView().bluetoothDevice(
-                                        bluetoothViewModel = bluetoothViewModel,
-                                        context = this@MainActivity,
-                                        owner = this@MainActivity,
-                                        navHostController = navController
-                                    )
-                                }
-                                DeviceType.USB.name -> {
-                                    DeviceSettingView().usbDevice(
-                                        usbViewModel = usbViewModel,
-                                        context = this@MainActivity,
-                                        owner = this@MainActivity,
-                                        navHostController = navController
-                                    )
-                                }
-                                else -> {}
-                            }
+                        composable(NavigationView.DeviceSettingBluetooth.name) { backStackEntry ->
+                            DeviceSettingView().bluetoothDevice(
+                                context = this@MainActivity,
+                                owner = this@MainActivity,
+                                navHostController = navController
+                            )
                         }
 
-                        composable(NavigationView.creditPayment.name) {
-//                            test(bluetoothViewModel = bluetoothViewModel, context = this@MainActivity3, owner = this@MainActivity3)
+                        composable(NavigationView.DeviceSettingUSB.name) {
+                            DeviceSettingView().usbDevice(
+                                context = this@MainActivity,
+                                owner = this@MainActivity,
+                                navHostController = navController
+                            )
+                        }
+
+
+                        composable(NavigationView.CreditPayment.name) { backStackEntry ->
+//                            test(bluetoothViewModel = bluetoothViewModel, context = this@MainActivity3, owner = this@MainActivity3
                             CreditPaymentView().creditPaymentView(
                                 navHostController = navController,
-                                deviceSerialCommunicateVieModel = deviceSerialCommunicateViewModel,
                                 context = this@MainActivity,
                                 owner = this@MainActivity
                             )
                         }
-                        dialog(NavigationView.creditPaymentUsbDialog.name) { backStackEntry ->
+                        dialog(NavigationView.CreditPaymentUsbDialog.name) { backStackEntry ->
                             var viewModel: DeviceSerialCommunicateViewModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                 backStackEntry.arguments?.getSerializable(
                                     SerialCommunicationUsbDialogData.ViewModel.name,
@@ -217,11 +175,23 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun mainView(navHostController: NavHostController) {
+    fun mainView(
+        navHostController: NavHostController,
+        mainViewModel: MainActivityViewModel = hiltViewModel()
+    ) {
+        LaunchedEffect(Unit){
+            mainViewModel.login(KeyTmsRequestData(KeyTmsRequestBody(
+                tmnId = "test0003",
+                serial = "12345",
+                mchtId = "ktest"
+            )))
+        }
+        val test = mainViewModel.data.observeAsState()
+        test.value?.data?.key?.let { Log.w("mainViewModel", it) }
         val screenWidth = LocalConfiguration.current.screenWidthDp
         Scaffold(
             bottomBar = {
-                bottomNavigation(navHostController, screenWidth)
+                bottomNavigation(navHostController)
             },
             topBar = {
                 topNavigation()
@@ -326,19 +296,19 @@ class MainActivity : ComponentActivity() {
     private fun gridItemSetting(type: String): MainGridItem? {
         when (type) {
             MainViewFunction.CreditCardPayment.name ->
-                return MainGridItem(R.drawable.card_icon_main, "신용결제", NavigationView.creditPayment.name)
+                return MainGridItem(R.drawable.card_icon_main, "신용결제", NavigationView.CreditPayment.name)
             MainViewFunction.ManualPayment.name ->
-                return MainGridItem(R.drawable.card_icon_main, "수기결제", NavigationView.main.name)
+                return MainGridItem(R.drawable.card_icon_main, "수기결제", NavigationView.Main.name)
             MainViewFunction.DeviceManagement.name ->
-                return MainGridItem(R.drawable.card_icon_main, "장치관리", NavigationView.deviceSetting.name)
+                return MainGridItem(R.drawable.card_icon_main, "장치관리", NavigationView.DeviceSettingBluetooth.name)
             MainViewFunction.CashReceipt.name ->
-                return MainGridItem(R.drawable.card_icon_main, "현금영수증", NavigationView.main.name)
+                return MainGridItem(R.drawable.card_icon_main, "현금영수증", NavigationView.Main.name)
             MainViewFunction.TransactionHistory.name ->
-                return MainGridItem(R.drawable.card_icon_main, "거래내역", NavigationView.main.name)
+                return MainGridItem(R.drawable.card_icon_main, "거래내역", NavigationView.Main.name)
             MainViewFunction.AggregateSummary.name ->
-                return MainGridItem(R.drawable.card_icon_main, "집계내역", NavigationView.main.name)
+                return MainGridItem(R.drawable.card_icon_main, "집계내역", NavigationView.Main.name)
             MainViewFunction.NoticeAnnouncement.name ->
-                return MainGridItem(R.drawable.card_icon_main, "공지사항", NavigationView.main.name)
+                return MainGridItem(R.drawable.card_icon_main, "공지사항", NavigationView.Main.name)
         }
         return null
     }
@@ -420,7 +390,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun bottomNavigation(navHostController: NavHostController, screenWidth: Int) {
+    fun bottomNavigation(navHostController: NavHostController) {
         BottomNavigation(
             backgroundColor = colorResource(id = R.color.white)
         ) {
@@ -440,8 +410,8 @@ class MainActivity : ComponentActivity() {
                         fontSize = 12.sp,
                     )
                 },
-                selected = currentRoute == NavigationView.login.name,
-                onClick = { navHostController.navigate(NavigationView.login.name) }
+                selected = currentRoute == NavigationView.Login.name,
+                onClick = { navHostController.navigate(NavigationView.Login.name) }
             )
 
             BottomNavigationItem(
@@ -460,7 +430,7 @@ class MainActivity : ComponentActivity() {
                 icon = {
                     Icon(
                         painterResource(id = R.drawable.customer_service_center_icon),
-                        contentDescription = NavigationView.main.name,
+                        contentDescription = NavigationView.Main.name,
                         modifier = Modifier
                             .size(22.5.dp)
                             .padding(bottom = 2.dp)
@@ -472,7 +442,7 @@ class MainActivity : ComponentActivity() {
                         fontSize = 12.sp,
                     )
                 },
-                selected = currentRoute == NavigationView.main.name,
+                selected = currentRoute == NavigationView.Main.name,
                 onClick = { }
             )
         }

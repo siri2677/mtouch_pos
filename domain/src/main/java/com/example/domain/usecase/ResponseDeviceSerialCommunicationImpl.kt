@@ -7,7 +7,6 @@ import android.text.SpannableStringBuilder
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.example.domain.enumclass.CardReadingType
-import com.example.domain.enumclass.DeviceType
 import com.example.domain.enumclass.FallbackMessage
 import com.example.domain.enumclass.KsnetParsingByte
 import com.example.domain.enumclass.SerialCommunicationInsertCardStatus
@@ -19,7 +18,6 @@ import com.example.domain.usecaseinterface.ResponseDeviceSerialCommunication
 import com.ksnet.interfaces.Approval
 import com.mtouch.ksr02_03_04_v2.Domain.Model.EncMSRManager
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
-import kotlinx.coroutines.delay
 import kotlin.experimental.xor
 
 
@@ -69,7 +67,7 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
                 0xD0.toByte() -> {
 //                    serialCommunicationInsetCardStatus = SerialCommunicationInsertCardStatus.D0
                     isFirstPayment = true
-                    serialCommunicationMessage.value = Event(SerialCommunicationMessage.icCardInsertRequest.message)
+                    serialCommunicationMessage.value = Event(SerialCommunicationMessage.IcCardInsertRequest.message)
 //                    clearTempBuffer()
 //                    deviceSetting?.requestDeviceSerialCommunication(EncMSRManager.makeRequestCardInOutStatus())
 //                       test()
@@ -218,10 +216,10 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
                         }
                     } else {
                         serialCommunicationInsetCardStatus = SerialCommunicationInsertCardStatus.D5
-                        val data: ByteArray = EncMSRManager.makeFallBackCardReq(cardType, "99")
+                        val data: ByteArray = EncMSRManager().makeFallBackCardReq(cardType, "99")
                         deviceSetting?.requestDeviceSerialCommunication(data)
                         Log.w("fallbackMessage", fallbackMessage(cardType))
-                        serialCommunicationMessage.value = Event(SerialCommunicationMessage.fallBackMessage.fallbackDetail(fallbackMessage(cardType)))
+                        serialCommunicationMessage.value = Event(SerialCommunicationMessage.FallBackMessage.fallbackDetail(fallbackMessage(cardType)))
                     }
                     //IC우선거래가 아닌 일반 MS 거래시 거래진행
 //                            if (ICGubu.equals("MS")) {
@@ -349,7 +347,7 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
                 0xD3.toByte() -> {
                     Log.w("0xD3", KsnetUtils().byteToString(resultData, 4, 2))
                     if(KsnetUtils().byteToString(resultData, 4, 2) == "00") {
-                        serialCommunicationMessage.value = Event(SerialCommunicationMessage.completePayment.message)
+                        serialCommunicationMessage.value = Event(SerialCommunicationMessage.CompletePayment.message)
 //                        clearTempBuffer()
                         Log.w("0xD3", "0xD3")
                     }
@@ -446,12 +444,12 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
                         if ((KsnetUtils().byteToString(resultData, 4, 3)) == "INS") {
                             isFirstPayment = false
                             serialCommunicationInsetCardStatus = null
-                            val data: ByteArray = EncMSRManager.makeCardNumSendReq(
+                            val data: ByteArray = EncMSRManager().makeCardNumSendReq(
                                 "000001004".toByteArray(), "10".toByteArray()
                             )
                             deviceSetting?.requestDeviceSerialCommunication(data)
                             serialCommunicationMessage.value =
-                                Event(SerialCommunicationMessage.paymentProgressing.message)
+                                Event(SerialCommunicationMessage.PaymentProgressing.message)
                         }
 //                            when(serialCommunicationInsetCardStatus) {
 //                                SerialCommunicationInsertCardStatus.D0 -> {
@@ -490,7 +488,7 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
         for (i in 0..29) mchtDataField[i] = " ".toByteArray()[0]
         val telegramNo = KsnetUtils().generateString(12)?.toByteArray()
         val responseTelegram = ByteArray(2048)
-        val requestTelegram = EncMSRManager.makeRequestTelegram(
+        val requestTelegram = EncMSRManager().makeRequestTelegram(
             "IC".toByteArray(), //adminInfo.getTransType(),
             "0420".toByteArray(), //adminInfo.getTelegramType(),
             "01".toByteArray(), //adminInfo.getWorkType(),
@@ -533,7 +531,7 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
             KsnetUtils().respGetHashData(responseTelegram)
 
             if (rtn >= 0) {
-                serialCommunicationMessage.postValue(Event(SerialCommunicationMessage.completePayment.message))
+                serialCommunicationMessage.postValue(Event(SerialCommunicationMessage.CompletePayment.message))
                 Handler(Looper.getMainLooper()).postDelayed({
                     isCompletePayment.postValue(Event(true))
                 },2000)
@@ -550,14 +548,14 @@ class ResponseDeviceSerialCommunicationImpl : ResponseDeviceSerialCommunication 
         isFirstPayment = false
     }
 
-    fun isFallbackMessage(message: String): Boolean {
+    private fun isFallbackMessage(message: String): Boolean {
         for(fallbackMessage in FallbackMessage.values()) {
              if(fallbackMessage.keyValue() == message) return true
         }
         return false
     }
 
-    fun fallbackMessage(message: String): String {
+    private fun fallbackMessage(message: String): String {
         for(fallbackMessage in FallbackMessage.values()) {
             if(fallbackMessage.keyValue() == message) fallbackMessage.toString()
         }

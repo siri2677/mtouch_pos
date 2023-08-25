@@ -8,23 +8,22 @@ import java.util.Date
 import kotlin.experimental.and
 
 
-object EncMSRManager {
-    val YYMMDDhhmmss = getTime()!!.substring(0, 12)
-    val STX: Byte = 0x02
-    val ETX: Byte = 0x03.toByte()
+class EncMSRManager {
+    private val yymmddhhmmss = getTime()!!.substring(0, 12)
+    private val stx: Byte = 0x02
+    private val etx: Byte = 0x03.toByte()
+    private val ksnet_dongle_info_req = 0xC0.toByte()
+    private val KSNET_READER_SET_REQ = 0xC1.toByte()
+    private val KSNET_CARDNO_REQ = 0xC2.toByte()
+    private val KSNET_IC_2ND_REQ = 0xC3.toByte()
+    private val KSNET_INTEGRITY_REQ = 0xC4.toByte()
+    private val KSNET_FALLBACK_REQ = 0xC5.toByte()
+    private val KSNET_IC_STATE_REQ = 0xC6.toByte()
+    private val KSNET_KEY_SHARED_REQ = 0xC7.toByte()
+    private val KSNET_Device_INFO_REQ = 0xCF.toByte()
 
-    var packet = ByteArray(1024)
-
-    var Year: String? = getTime()?.substring(0, 2)
-    val KSNET_DONGLE_INFO_REQ = 0xC0.toByte()
-    val KSNET_READER_SET_REQ = 0xC1.toByte()
-    val KSNET_CARDNO_REQ = 0xC2.toByte()
-    val KSNET_IC_2ND_REQ = 0xC3.toByte()
-    val KSNET_INTEGRITY_REQ = 0xC4.toByte()
-    val KSNET_FALLBACK_REQ = 0xC5.toByte()
-    val KSNET_IC_STATE_REQ = 0xC6.toByte()
-    val KSNET_KEY_SHARED_REQ = 0xC7.toByte()
-    val KSNET_Device_INFO_REQ = 0xCF.toByte()
+    private var packet = ByteArray(1024)
+    private var year: String? = getTime()?.substring(0, 2)
 
     private fun getTime(): String? {
         val time = System.currentTimeMillis()
@@ -44,19 +43,19 @@ object EncMSRManager {
     fun makeDongleInfo(): ByteArray {
         var packet = ByteArray(1024)
         var idx = 0
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
 
         packet[idx++] = 0x00 //Length 2바이트
 
         packet[idx++] = 0x05
-        packet[idx++] = KSNET_DONGLE_INFO_REQ // 'C0' Command
+        packet[idx++] = ksnet_dongle_info_req // 'C0' Command
 
-        packet[idx++] = Year!![0].toByte()
+        packet[idx++] = year!![0].toByte()
 
-        packet[idx++] = Year!![1].toByte()
+        packet[idx++] = year!![1].toByte()
         packet[idx++] = '1'.toByte() //카드데이터형식 1:카드번호 마스킹 2: 논마스킹 3: 16자리 암호화 + 마스킹
 
-        packet[idx++] = ETX
+        packet[idx++] = etx
         val bLRC: Byte = lrc(packet, idx).toByte()
         packet[idx++] = bLRC //LRC
 
@@ -79,7 +78,7 @@ object EncMSRManager {
 //        if(isKSR05) {
 //            packet[idx++] = SOH;                   //SOH
 //        }else{
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
 
 //        }
         //        }
@@ -96,7 +95,7 @@ object EncMSRManager {
         System.arraycopy(resTime, 0, packet, idx, 2)
         idx += 2
 
-        packet[idx++] = ETX
+        packet[idx++] = etx
         val bLRC = lrc(packet, idx).toByte()
         packet[idx++] = bLRC //LRC
 
@@ -115,7 +114,7 @@ object EncMSRManager {
 //        if(isKSR05) {
 //            packet[idx++] = SOH;                   //SOH
 //        }else{
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
         //        }
         packet[idx++] = 0x00 //Length 2바이트
         packet[idx++] = 0x05
@@ -123,7 +122,7 @@ object EncMSRManager {
         packet[idx++] = " ".toByteArray()[0] //공백 3바이트
         packet[idx++] = " ".toByteArray()[0]
         packet[idx++] = " ".toByteArray()[0]
-        packet[idx++] = ETX
+        packet[idx++] = etx
         val bLRC = lrc(packet, idx).toByte()
         packet[idx++] = bLRC //LRC
         val txPacket = ByteArray(idx)
@@ -205,18 +204,18 @@ object EncMSRManager {
     fun makeDeviceInfoReq(): ByteArray {
         var packet = ByteArray(1024)
         var idx = 0
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
 
         packet[idx++] = 0x00 //Length 2바이트
 
         packet[idx++] = 0x04
         packet[idx++] = KSNET_Device_INFO_REQ // 'CF' Command
 
-        packet[idx++] = Year!![0].toByte()
+        packet[idx++] = year!![0].toByte()
 
-        packet[idx++] = Year!![1].toByte()
+        packet[idx++] = year!![1].toByte()
 
-        packet[idx++] = ETX
+        packet[idx++] = etx
 
         val bLRC: Byte = lrc(packet, idx).toByte()
         packet[idx++] = bLRC //LRC
@@ -397,7 +396,7 @@ object EncMSRManager {
 //        if(isKSR05) {
 //            packet[idx++] = SOH;                   //SOH
 //        }else{
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
         //        }
         val Length = 27 + resEMVData.size + 1 //Length : CommandID 부터 ETX 까지
         System.arraycopy(KsnetUtils().make2ByteLengh(Length), 0, packet, idx, 2)
@@ -419,7 +418,7 @@ object EncMSRManager {
         Log.w("resEMVData", resEMVData.toString())
         System.arraycopy(resEMVData, 0, packet, idx, resEMVData.size)
         idx += resEMVData.size
-        packet[idx++] = ETX
+        packet[idx++] = etx
         val bLRC = lrc(packet, idx).toByte()
         packet[idx++] = bLRC //LRC
         val txPacket = ByteArray(idx)
@@ -433,12 +432,12 @@ object EncMSRManager {
         timeOut: String,
     ): ByteArray {
         var idx = 0
-        packet[idx++] = STX //STX
+        packet[idx++] = stx //STX
         System.arraycopy(KsnetUtils().make2ByteLengh(25), 0, packet, idx, 2)
         val idx2 = idx + 2
         val idx3 = idx2 + 1
         packet[idx2] = KSNET_FALLBACK_REQ
-        System.arraycopy(YYMMDDhhmmss.toByteArray(), 0, packet, idx3, 12)
+        System.arraycopy(yymmddhhmmss.toByteArray(), 0, packet, idx3, 12)
         val idx4 = idx3 + 12
         System.arraycopy(
             String.format("%09d", *arrayOf<Any>(Integer.valueOf(FallBcack_ErrCode.toInt())))

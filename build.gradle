@@ -5,10 +5,10 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        def nav_version = "2.5.3"
+        def hilt_version = "2.44"
         classpath 'com.android.tools.build:gradle:8.0.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.20"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version"
+        classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"
     }
 
 }
@@ -17,7 +17,7 @@ subprojects {
     afterEvaluate{
         def isLibraryPlugin = pluginManager.hasPlugin("com.android.library")
         def isApplicationPlugin = pluginManager.hasPlugin("com.android.application")
-
+        pluginManager.hasPlugin('com.google.dagger.hilt.android')
         if (isLibraryPlugin || isApplicationPlugin) {
             android {
                 defaultConfig {
@@ -52,12 +52,16 @@ subprojects {
             }
 
             dependencies {
-                def dagger2_version = '2.46'
-                api "com.google.dagger:dagger:$dagger2_version"
-                api "com.google.dagger:dagger-android:$dagger2_version"
-                api "com.google.dagger:dagger-android-support:$dagger2_version"
-                kapt "com.google.dagger:dagger-android-processor:$dagger2_version"
-                kapt "com.google.dagger:dagger-compiler:$dagger2_version"
+//                def dagger2_version = '2.46'
+                def hilt_version = "2.44"
+//                api "com.google.dagger:dagger:$dagger2_version"
+//                api "com.google.dagger:dagger-android:$dagger2_version"
+//                api "com.google.dagger:dagger-android-support:$dagger2_version"
+//                kapt "com.google.dagger:dagger-android-processor:$dagger2_version"
+//                kapt "com.google.dagger:dagger-compiler:$dagger2_version"
+
+                implementation "com.google.dagger:hilt-android:$hilt_version"
+                kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
             }
         }
     }

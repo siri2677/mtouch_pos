@@ -1,22 +1,23 @@
 package com.example.cleanarchitech_text_0506.viewmodel
 
 import android.bluetooth.*
-import android.content.Context
 import androidx.lifecycle.*
+import com.example.cleanarchitech_text_0506.ditest.hiltmodule.DeviceCommunicateViewModelModule
+import com.example.domain.enumclass.DeviceType
 import com.example.domain.model.BluetoothScanResult
-import com.example.domain.usecaseinterface.RequestDeviceSerialCommunication
-import com.example.domain.usecaseinterface.bluetooth.BluetoothDeviceScanUsecaseImpl
+import com.example.domain.usecaseinterface.DeviceSetting
+import com.example.domain.usecaseinterface.DeviceSettingSharedPreference
+import com.example.domain.usecaseinterface.BluetoothDeviceScanUsecaseImpl
 import com.mtouch.ksr02_03_04_v2.Utils.Device.Event
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.*
 import javax.inject.Inject
 
+@HiltViewModel
 class BluetoothViewModel @Inject constructor(
-    private var requestDeviceSerialCommunication: RequestDeviceSerialCommunication,
     private var bluetoothDeviceScanUsecaseImpl: BluetoothDeviceScanUsecaseImpl,
-//    private var bluetoothDeviceConnectUseCaseImpl: BluetoothDeviceConnectUseCaseImpl,
-//    private var bluetoothDeviceSerialCommunicationUseCaseImpl: BluetoothDeviceSerialCommunicationUseCaseImpl,
-//    private var usbDeviceConnectUsecaseImpl: UsbDeviceConnectUsecaseImpl,
-//    private var usbDeviceSerialCommunicationUseCaseImpl: UsbDeviceSerialCommunicationUsecaseImpl,
+    private val deviceSettingSharedPreference: DeviceSettingSharedPreference,
+    @DeviceCommunicateViewModelModule.Bluetooth private val bluetoothDeviceSerialCommunicate: DeviceSetting
 ) : ViewModel() {
     val listUpdate : MutableLiveData<Event<ArrayList<BluetoothDevice>?>>
         get() = bluetoothDeviceScanUsecaseImpl.listUpdate
@@ -26,7 +27,7 @@ class BluetoothViewModel @Inject constructor(
         get() = bluetoothDeviceScanUsecaseImpl.scanBluetoothScanResult
 
     val isFirstConnectComplete : MutableLiveData<Event<Boolean>>?
-        get() = requestDeviceSerialCommunication.getDeviceType()?.isFirstConnectComplete
+        get() = bluetoothDeviceSerialCommunicate.isFirstConnectComplete
 
 
     fun scanBluetoothDevice() {
@@ -38,30 +39,24 @@ class BluetoothViewModel @Inject constructor(
     }
 
     fun bluetoothDeviceConnect(bluetoothDevice: BluetoothDevice){
-        requestDeviceSerialCommunication.setBluetoothDevice(bluetoothDevice.address)
-        requestDeviceSerialCommunication.getDeviceType()?.deviceConnect(bluetoothDevice.address)
+        deviceSettingSharedPreference.setCurrentRegisteredDeviceType(DeviceType.BLUETOOTH, bluetoothDevice.address)
+        bluetoothDeviceSerialCommunicate.deviceConnect(bluetoothDevice.address)
     }
 
     fun bluetoothDeviceDisConnect(){
-        requestDeviceSerialCommunication.getDeviceType()?.deviceDisConnect()
-        requestDeviceSerialCommunication.deleteCurrentRegisteredDeviceType()
+        deviceSettingSharedPreference.clearCurrentRegisteredDeviceType()
+        bluetoothDeviceSerialCommunicate.deviceDisConnect()
     }
 
     fun bluetoothDeviceResister(bluetoothDevice: BluetoothDevice) {
-        requestDeviceSerialCommunication.setBluetoothDevice(bluetoothDevice.address)
+        deviceSettingSharedPreference.setCurrentRegisteredDeviceType(DeviceType.BLUETOOTH, bluetoothDevice.address)
     }
 
     fun bluetoothDeviceUnResister() {
-        requestDeviceSerialCommunication.deleteCurrentRegisteredDeviceType()
+        deviceSettingSharedPreference.clearCurrentRegisteredDeviceType()
     }
 
     fun bluetoothDeviceUnBinding(){
-        requestDeviceSerialCommunication.getDeviceType()?.unBindingService()
+        bluetoothDeviceSerialCommunicate.unBindingService()
     }
-
-
-//        bluetoothDeviceSerialCommunicationUseCaseImpl.requestBluetoothDeviceSerialCommunication(byteArray)
-//        BluetoothDeviceCommunicate(context).communicate(byteArray)
-//        BluetoothDeviceCommunicate(context).connectDevice2()
-
 }

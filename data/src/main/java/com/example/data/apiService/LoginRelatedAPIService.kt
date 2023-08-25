@@ -7,6 +7,7 @@ import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.MchtNameTmsResponse
 import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.SummaryTmsResponseData
 import io.reactivex.rxjava3.core.Single
 import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -22,19 +23,19 @@ interface LoginRelatedAPIService {
 
     @Headers("Content-Type: application/json")
     @POST("/v0/key")
-    fun key(
+    suspend fun key(
         @Body body: KeyTmsRequestData
-    ): Single<KeyTmsResponseData>
+    ): Response<KeyTmsResponseData>
 
     @Headers("Content-Type: application/json")
     @POST("/v0/trx/summary")
-    fun summary(
+    suspend fun summary(
         @Header("Authorization") token: String?
-    ): Single<SummaryTmsResponseData>
+    ): Response<SummaryTmsResponseData>
 
     @Headers("Content-Type: application/json")
     @POST("/v0/mcht/name")
-    fun mchtName(
+    suspend fun mchtName(
         @Body body: MchtNameTmsRequestData
-    ): Single<MchtNameTmsResponseData>
+    ): Response<MchtNameTmsResponseData>
 }

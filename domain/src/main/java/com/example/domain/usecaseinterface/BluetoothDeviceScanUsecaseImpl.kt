@@ -1,4 +1,4 @@
-package com.example.domain.usecaseinterface.bluetooth
+package com.example.domain.usecaseinterface
 
 import android.bluetooth.BluetoothDevice
 import androidx.lifecycle.MutableLiveData

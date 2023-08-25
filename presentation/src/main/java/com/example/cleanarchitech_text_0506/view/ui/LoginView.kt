@@ -40,14 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.cleanarchitech_text_0506.R
-import com.example.cleanarchitech_text_0506.util.ConstantObject
-import com.example.cleanarchitech_text_0506.util.NavigationView
-import com.example.cleanarchitech_text_0506.view.ui.ui.theme.CleanArchitech_text_0506Theme
+import com.example.cleanarchitech_text_0506.enum.NavigationView
 
 data class MainGridItem(val imageRes: Int, val text: String, val navigator: String)
 data class GridItem(val imageRes: Int, val text: String)
@@ -281,7 +276,7 @@ class LoginView {
                         modifier = Modifier
                             .width((screenWidth * 0.7).dp)
                             .padding(vertical = 10.dp)
-                            .clickable(onClick = { navHostController.navigate(NavigationView.pgIdLogin.name) }),
+                            .clickable(onClick = { navHostController.navigate(NavigationView.PgIdLogin.name) }),
                         fontSize = 16.sp
                     )
                     GradientButton(
@@ -289,7 +284,7 @@ class LoginView {
                         modifier = Modifier
                             .width((screenWidth * 0.7).dp)
                             .padding(vertical = 10.dp)
-                            .clickable(onClick = { navHostController.navigate(NavigationView.vanIdLogin.name) }),
+                            .clickable(onClick = { navHostController.navigate(NavigationView.VanIdLogin.name) }),
                         fontSize = 16.sp
                     )
                     GradientButton(
@@ -297,7 +292,7 @@ class LoginView {
                         modifier = Modifier
                             .width((screenWidth * 0.7).dp)
                             .padding(vertical = 10.dp)
-                            .clickable(onClick = { navHostController.navigate(NavigationView.registeredId.name) }),
+                            .clickable(onClick = { navHostController.navigate(NavigationView.RegisteredId.name) }),
                         fontSize = 16.sp
                     )
                 }
