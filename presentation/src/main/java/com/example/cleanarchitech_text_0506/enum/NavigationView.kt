@@ -1,6 +1,6 @@
 package com.example.cleanarchitech_text_0506.enum
 
-enum class NavigationView {
+enum class MainView {
     Main,
     Login,
     PgIdLogin,
@@ -9,5 +9,10 @@ enum class NavigationView {
     DeviceSettingBluetooth,
     DeviceSettingUSB,
     CreditPayment,
-    CreditPaymentUsbDialog
+    CreditPaymentUsbDialog,
+    DirectPayment,
+    CompletePayment,
+    PaymentHistory,
+    PaymentHistoryDetail,
+    Calendar
 }

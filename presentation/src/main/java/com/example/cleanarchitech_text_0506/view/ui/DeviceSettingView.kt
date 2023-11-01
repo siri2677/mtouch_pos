@@ -5,8 +5,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -35,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,9 +58,18 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import com.example.cleanarchitech_text_0506.R
-import com.example.cleanarchitech_text_0506.enum.NavigationView
-import com.example.cleanarchitech_text_0506.viewmodel.BluetoothViewModel
-import com.mtouch.ksr02_03_04_v2.Ui.UsbViewModel
+import com.example.cleanarchitech_text_0506.sealed.Device
+import com.example.cleanarchitech_text_0506.sealed.DeviceList
+import com.example.cleanarchitech_text_0506.enum.DeviceType
+import com.example.cleanarchitech_text_0506.enum.MainView
+import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
+import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 class DeviceSettingView {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -129,41 +135,53 @@ class DeviceSettingView {
     fun bluetoothDeviceList(
         isAlwaysConnecting: Boolean,
         context: Context,
-        bluetoothViewModel: BluetoothViewModel,
+        testCommunicationViewModel: TestCommunicationViewModel,
         owner: LifecycleOwner?
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
         var selectedIndex by rememberSaveable { mutableStateOf(-2) }
         var observerDataSize by remember { mutableStateOf(0) }
         var isConnectingDevice by remember { mutableStateOf(false) }
-        var bluetoothDeviceList: ArrayList<BluetoothDevice>? by remember {
-            mutableStateOf(
-                ArrayList()
-            )
-        }
+        var bluetoothDeviceList: ArrayList<BluetoothDevice>? by remember { mutableStateOf(ArrayList()) }
 
-        bluetoothViewModel?.listUpdate?.observe(owner!!) {
-            it.getContentIfNotHandled()?.let { scanResult ->
-                if (observerDataSize != scanResult.size) {
-                    bluetoothDeviceList = null
+        testCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
+            block = {
+                when(it) {
+                    is DeviceList.BluetoothList -> {
+                        if (observerDataSize != it.devices.size) {
+                            bluetoothDeviceList = null
+                        }
+                        observerDataSize = it.devices.size
+                        bluetoothDeviceList = it.devices
+                    }
+                    else -> {}
                 }
-                observerDataSize = scanResult.size
-                bluetoothDeviceList = scanResult
-                Log.w("bluetoothDeviceList",bluetoothDeviceList.toString())
             }
-        }
-        bluetoothViewModel?.isFirstConnectComplete?.observe(owner!!) {
-            it?.getContentIfNotHandled()?.let { scanResult ->
-                Handler(Looper.getMainLooper()).postDelayed({
-                    isConnectingDevice = scanResult },600)
+        )
+        testCommunicationViewModel.deviceConnectSharedFlow?.CollectAsEffect(
+            block = {
+                when(it){
+                    is DeviceConnectSharedFlow.ConnectCompleteFlow -> { isConnectingDevice = it.flow }
+                    else -> {}
+                }
             }
-        }
+        )
 
-        if(isConnectingDevice) {
-            Text(text = ("success"))
-        } else {
-            Text(text = ("fail"))
-        }
+
+//        testCommunicationViewModel?.listUpdate?.observe(owner!!) {
+//            it.getContentIfNotHandled()?.let { scanResult ->
+//                if (observerDataSize != scanResult.size) {
+//                    bluetoothDeviceList = null
+//                }
+//                observerDataSize = scanResult.size
+//                bluetoothDeviceList = scanResult
+//                Log.w("bluetoothDeviceList",bluetoothDeviceList.toString())
+//            }
+//        }
+
+
+        if(isConnectingDevice) Text(text = ("success"))
+        else Text(text = ("fail"))
 
         LazyColumn(
             modifier = Modifier
@@ -180,7 +198,8 @@ class DeviceSettingView {
                         context = context,
                         onTap = { selectedIndex = index },
                         onTapCancle = { selectedIndex = -2 },
-                        bluetoothViewModel = bluetoothViewModel,
+                        testCommunicationViewModel = testCommunicationViewModel,
+//                        bluetoothViewModel = bluetoothViewModel,
                         isConnectingDevice = isConnectingDevice
                     )
                 }
@@ -193,9 +212,11 @@ class DeviceSettingView {
     fun bluetoothDevice(
         context: Context?,
         owner: LifecycleOwner?,
-        bluetoothViewModel: BluetoothViewModel = hiltViewModel(),
+        viewModel: TestCommunicationViewModel = hiltViewModel(),
+//        bluetoothViewModel: BluetoothViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
+        val testCommunicationViewModel = viewModel.setDeviceType(DeviceType.Bluetooth.name)!!
         var deviceType by remember { mutableStateOf("bluetooth") }
         var modifier = DeviceTypeSelection(deviceType)
         var isDeviceSearching by remember { mutableStateOf(false) }
@@ -216,13 +237,14 @@ class DeviceSettingView {
         var deviceContactSettingText = if (isAlwaysConnecting) "연결 항상 유지" else "결제 시에만 연결"
         BackHandler {
             navHostController.popBackStack(
-                route = NavigationView.Main.name,
+                route = MainView.Main.name,
                 inclusive = false
             )
         }
         DisposableEffect(Unit) {
             onDispose {
-                bluetoothViewModel.bluetoothDeviceUnBinding()
+//                bluetoothViewModel.bluetoothDeviceUnBinding()
+                testCommunicationViewModel.serviceUnbind()
             }
         }
         Scaffold(
@@ -265,7 +287,7 @@ class DeviceSettingView {
                             .weight(1f)
                             .padding(bottom = 10.dp)
                             .clickable(onClick = {
-                                navHostController.navigate(NavigationView.DeviceSettingUSB.name)
+                                navHostController.navigate(MainView.DeviceSettingUSB.name)
                             }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -291,7 +313,8 @@ class DeviceSettingView {
                     bluetoothDeviceList(
                         isAlwaysConnecting,
                         context!!,
-                        bluetoothViewModel!!,
+//                        bluetoothViewModel!!,
+                        testCommunicationViewModel,
                         owner!!
                     )
 
@@ -311,9 +334,11 @@ class DeviceSettingView {
                                 )
                                 .clickable(onClick = {
                                     if (isDeviceSearching)
-                                        bluetoothViewModel.stopScanBluetoothDevice()
+                                        testCommunicationViewModel.scanCancel()
+//                                        bluetoothViewModel.stopScanBluetoothDevice()
                                     else
-                                        bluetoothViewModel.scanBluetoothDevice()
+                                        testCommunicationViewModel.scan()
+//                                        bluetoothViewModel.scanBluetoothDevice()
                                     isDeviceSearching = !isDeviceSearching
                                 }),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -351,13 +376,30 @@ class DeviceSettingView {
 
     @Composable
     fun usbDeviceList(
-        usbDeviceList: ArrayList<UsbDevice>?,
         context: Context,
-        usbDeviceViewModel: UsbViewModel,
-        isPermissionGranted: Boolean
+        testCommunicationViewModel: TestCommunicationViewModel
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
+        var isPermissionGranted by remember { mutableStateOf(false) }
         var selectedIndex by rememberSaveable { mutableStateOf(-2) }
+        var usbDeviceList: ArrayList<UsbDevice>? by remember { mutableStateOf(ArrayList()) }
+
+        testCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
+            block = {
+                when(it) {
+                    is DeviceList.USBList -> { usbDeviceList = it.devices }
+                    else -> {}
+                }
+            }
+        )
+        testCommunicationViewModel.deviceConnectSharedFlow.CollectAsEffect(
+            block = {
+                when(it) {
+                    is DeviceConnectSharedFlow.PermissionCheckCompleteFlow -> { isPermissionGranted = it.flow }
+                    else -> {}
+                }
+            },
+        )
 
         LazyColumn(
             modifier = Modifier
@@ -366,14 +408,14 @@ class DeviceSettingView {
                 .padding(top = 10.dp)
         ) {
             item {
-                usbDeviceList?.forEachIndexed { index, usbDeviceList ->
+                usbDeviceList?.forEachIndexed { index, usbDevice ->
                     singleSelectButtonUsbPage(
-                        item = usbDeviceList,
+                        item = usbDevice,
                         isSelected = selectedIndex == index,
                         context = context,
                         onTap = { selectedIndex = index },
-                        onTapCancle = { selectedIndex = -2 },
-                        usbViewModel = usbDeviceViewModel,
+                        onTapCancel = { selectedIndex = -2 },
+                        testCommunicationViewModel = testCommunicationViewModel,
                         isPermissionGranted = isPermissionGranted
                     )
                 }
@@ -386,22 +428,22 @@ class DeviceSettingView {
     fun usbDevice(
         context: Context,
         owner: LifecycleOwner,
-        usbViewModel: UsbViewModel = hiltViewModel(),
+        viewModel: TestCommunicationViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
-        val usbDeviceListState by usbViewModel?.listUpdate!!.observeAsState()
-        var isPermissionGranted by remember { mutableStateOf(false) }
+        val testCommunicationViewModel = viewModel.setDeviceType(DeviceType.Usb.name)!!
         var deviceType by remember { mutableStateOf("usb") }
         var modifier = DeviceTypeSelection(deviceType)
+//        testCommunicationViewModel.serviceBind()
         BackHandler {
             navHostController.popBackStack(
-                route = NavigationView.Main.name,
+                route = MainView.Main.name,
                 inclusive = false
             )
         }
         DisposableEffect(Unit){
             onDispose {
-                usbViewModel?.usbDeviceUnBindingService()
+                testCommunicationViewModel?.serviceUnbind()
             }
         }
         Scaffold(
@@ -434,7 +476,7 @@ class DeviceSettingView {
                             .weight(1f)
                             .padding(bottom = 10.dp)
                             .clickable(onClick = {
-                                navHostController.navigate(NavigationView.DeviceSettingBluetooth.name)
+                                navHostController.navigate(MainView.DeviceSettingBluetooth.name)
                             }),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -453,14 +495,6 @@ class DeviceSettingView {
                     }
                 }
 
-                LaunchedEffect(Unit) {
-                    usbViewModel?.permissionCheck?.observe(owner) {
-                        it.getContentIfNotHandled()?.let { data ->
-                            isPermissionGranted = data
-                        }
-                    }
-                }
-
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -475,7 +509,7 @@ class DeviceSettingView {
                         )
                     }
 
-                    usbDeviceList(usbDeviceListState, context, usbViewModel!!, isPermissionGranted)
+                    usbDeviceList(context, testCommunicationViewModel!!)
 
                     Row(
                         modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
@@ -494,7 +528,7 @@ class DeviceSettingView {
                                         )
                                     )
                                 )
-                                .clickable(onClick = { usbViewModel.usbDeviceScan() }),
+                                .clickable(onClick = { testCommunicationViewModel.scan() }),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -516,8 +550,8 @@ class DeviceSettingView {
         isSelected: Boolean,
         context: Context,
         onTap: () -> Unit,
-        onTapCancle: () -> Unit,
-        usbViewModel: UsbViewModel,
+        onTapCancel: () -> Unit,
+        testCommunicationViewModel: TestCommunicationViewModel,
         isPermissionGranted: Boolean
     ) {
         val backgroundColor = if (isSelected) R.color.grey7 else R.color.grey5
@@ -560,7 +594,6 @@ class DeviceSettingView {
                     }
                 }
                 if (isSelected) {
-                    usbViewModel.usbDeviceConnect(item)
                     if(isPermissionGranted) {
                         Column(
                             modifier = Modifier.weight(1f),
@@ -571,8 +604,8 @@ class DeviceSettingView {
                                     .width(120.dp)
                                     .height(70.dp),
                                 onClick = {
-                                    onTapCancle()
-                                    usbViewModel.usbDeviceDisconnect()
+                                    onTapCancel()
+                                    testCommunicationViewModel.disConnect()
                                 },
                                 shape = RoundedCornerShape(10),
                                 colors = ButtonDefaults.buttonColors(
@@ -589,6 +622,8 @@ class DeviceSettingView {
                                 )
                             }
                         }
+                    } else {
+                        testCommunicationViewModel.connect(Device.USB(item))
                     }
                 }
             }
@@ -603,7 +638,8 @@ class DeviceSettingView {
         context: Context,
         onTap: () -> Unit,
         onTapCancle: () -> Unit,
-        bluetoothViewModel: BluetoothViewModel,
+        testCommunicationViewModel: TestCommunicationViewModel,
+//        bluetoothViewModel: BluetoothViewModel,
         isConnectingDevice: Boolean
     ) {
         val backgroundColor = if (isSelected) R.color.grey7 else R.color.grey5
@@ -649,10 +685,10 @@ class DeviceSettingView {
                     }
                 }
                 if (isSelected && !isAlwaysConnecting) {
-                    bluetoothViewModel.bluetoothDeviceResister(item)
-                    if(isConnectingDevice) {
-                        bluetoothViewModel.bluetoothDeviceDisConnect()
-                    }
+                    testCommunicationViewModel.bluetoothDeviceResister(item)
+//                    if(isConnectingDevice) {
+//                        testCommunicationViewModel.disConnect()
+//                    }
                     Column(
                         modifier = Modifier.weight(1f),
                         horizontalAlignment = Alignment.End
@@ -663,7 +699,7 @@ class DeviceSettingView {
                                 .height(70.dp),
                             onClick = {
                                 onTapCancle()
-                                bluetoothViewModel.bluetoothDeviceUnResister()
+                                testCommunicationViewModel.bluetoothDeviceUnResister()
                             },
                             shape = RoundedCornerShape(10),
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.orange_pink))
@@ -690,7 +726,7 @@ class DeviceSettingView {
                                     .height(70.dp),
                                 onClick = {
                                     onTapCancle()
-                                    bluetoothViewModel.bluetoothDeviceDisConnect()
+                                    testCommunicationViewModel.disConnect()
                                 },
                                 shape = RoundedCornerShape(10),
                                 colors = ButtonDefaults.buttonColors(
@@ -708,7 +744,9 @@ class DeviceSettingView {
                             }
                         }
                     } else {
-                        bluetoothViewModel.bluetoothDeviceConnect(item)
+                        Log.w("notisConnectingDevice", "notisConnectingDevice")
+                        testCommunicationViewModel.connect(Device.Bluetooth(item))
+//                        bluetoothViewModel.bluetoothDeviceConnect(item)
                     }
                 }
             }

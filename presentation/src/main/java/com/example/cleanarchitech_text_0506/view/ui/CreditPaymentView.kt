@@ -2,7 +2,6 @@ package com.example.cleanarchitech_text_0506.view.ui
 
 import android.content.Context
 import android.content.DialogInterface
-import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
@@ -35,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -59,22 +60,37 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.createRoute
 import androidx.navigation.NavOptions
 import cn.pedant.SweetAlert.SweetAlertDialog
 import com.example.cleanarchitech_text_0506.R
+import com.example.cleanarchitech_text_0506.enum.DeviceType
+import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
-import com.example.cleanarchitech_text_0506.enum.NavigationView
+import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
+import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
-import com.example.cleanarchitech_text_0506.viewmodel.DeviceSerialCommunicateViewModel
-import com.example.domain.enumclass.DeviceType
-import com.example.domain.enumclass.SerialCommunicationMessage
-import com.mtouch.ksr02_03_04_v2.Domain.Model.EncMSRManager
+import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
+import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.cleanarchitech_text_0506.util.EncMSRManager
+import com.example.domain.dto.request.tms.RequestPaymentDTO
+import com.example.domain.sealed.ResponseTmsAPI
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
-class CreditPaymentView {
+
+enum class CreditPaymentViewClickEvent{
+    Empty,
+    ViewDialogInstallment,
+    ErrorDialog
+}
+
+class CreditPaymentView() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun topNavigationConnectDevice() {
@@ -93,10 +109,8 @@ class CreditPaymentView {
             .setTitle("Title")
             .setMessage("기기를 등록하거나 연결 후 결제 바랍니다")
             .setPositiveButton("OK") { dialog, which ->
-                // OK 버튼을 눌렀을 때 처리할 로직을 작성합니다.
             }
             .setNegativeButton("Cancel") { dialog, which ->
-                // Cancel 버튼을 눌렀을 때 처리할 로직을 작성합니다.
             }
             .create()
         alertDialog.show()
@@ -160,15 +174,15 @@ class CreditPaymentView {
     }
 
     @Composable
-    fun usbDevicePaymentDialog(navHostController: NavController, viewModel: DeviceSerialCommunicateViewModel) {
+    fun usbDevicePaymentDialog(navHostController: NavController, viewModel: TestCommunicationViewModel) {
         Dialog(
             onDismissRequest = {
                 viewModel.init()
                 navHostController.popBackStack()
             }
         ) {
-            var timer by remember { mutableStateOf(15) }
-            when (viewModel.dialogMessageProperty) {
+            var timer by remember { mutableIntStateOf(15) }
+            when (viewModel.getSerialCommunicationMessage()) {
                 SerialCommunicationMessage.IcCardInsertRequest.message -> {
                     LaunchedEffect(key1 = timer) {
                         if (timer > -1) {
@@ -181,7 +195,7 @@ class CreditPaymentView {
                         viewModel.init()
                         Handler(Looper.getMainLooper()).postDelayed({
                             navHostController.popBackStack(
-                                route = NavigationView.CreditPayment.name,
+                                route = MainView.CreditPayment.name,
                                 inclusive = false
                             )
                         },700)
@@ -191,12 +205,25 @@ class CreditPaymentView {
                     dialogFormat(R.drawable.pb2_2)
                 SerialCommunicationMessage.FallBackMessage.message ->
                     dialogFormat(R.drawable.pb2_3)
-                SerialCommunicationMessage.CompletePayment.message ->
-                    dialogFormat(Arrangement.Center, Alignment.CenterHorizontally, R.drawable.pb4, viewModel.dialogMessageProperty)
+                SerialCommunicationMessage.CompletePayment.message -> {
+                    dialogFormat(
+                        Arrangement.Center,
+                        Alignment.CenterHorizontally,
+                        R.drawable.pb4,
+                        viewModel.getSerialCommunicationMessage()!!
+                    )
+                    viewModel.init()
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        navHostController.popBackStack(
+                            route = MainView.CreditPayment.name,
+                            inclusive = false
+                        )
+                    }, 200)
+                }
                 SerialCommunicationUsbDialogData.SerialCommunicationFinish.name -> {
                     viewModel.init()
                     navHostController.popBackStack(
-                        route = NavigationView.CreditPayment.name,
+                        route = MainView.CreditPayment.name,
                         inclusive = false
                     )
                 }
@@ -204,20 +231,30 @@ class CreditPaymentView {
         }
     }
 
-    private fun NavController.navigate(route: String, bundle: Bundle = Bundle(), navOptions: NavOptions) {
-        val r = createRoute(route)
-        navigate(r.hashCode(), bundle, navOptions)
+    @Composable
+    fun <T> Flow<T>.CollectAsEffect(
+        context: CoroutineContext = EmptyCoroutineContext,
+        block: (T) -> Unit
+    ) {
+        LaunchedEffect(key1 = Unit) {
+            onEach(block).flowOn(context).launchIn(this)
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun creditPaymentView(
         navHostController: NavController,
-        context: Context?,
-        owner: LifecycleOwner?,
-        deviceSerialCommunicateVieModel: DeviceSerialCommunicateViewModel = hiltViewModel()
+        mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
+        viewModel: TestCommunicationViewModel = hiltViewModel()
     ) {
+        val context = LocalContext.current
         val screenWidth = LocalConfiguration.current.screenWidthDp
+        val testCommunicationViewModel = viewModel.setDeviceType()!!
+        var account by remember { mutableStateOf("") }
+        var installment by remember { mutableStateOf("일시불") }
+        var errorMessage by remember { mutableStateOf("") }
+        var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
         var sweetAlertDialog by remember {
             mutableStateOf(
                 SweetAlertDialog(
@@ -227,73 +264,97 @@ class CreditPaymentView {
             )
         }
 
-        var account by remember { mutableStateOf("") }
-        DisposableEffect(Unit) {
-//            deviceSerialCommunicateVieModel.errorOccur?.observe(owner!!) {
-//                it?.getContentIfNotHandled()?.let { data ->
-//                    if (data) errorDialog(context!!)
-//                }
-//            }
-            deviceSerialCommunicateVieModel.serialCommunicateMessage?.observe(owner!!) {
-                it?.getContentIfNotHandled()?.let { data ->
-                    when(deviceSerialCommunicateVieModel.getCurrentRegisteredDeviceType()) {
-                        DeviceType.BLUETOOTH -> {
-                            if(!sweetAlertDialog.isShowing) {
-                                sweetAlertDialog = SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE)
-                                sweetAlertDialog.progressHelper?.barColor = Color.Green.toArgb()
-                                sweetAlertDialog.setCancelable(true)
-                                sweetAlertDialog.setOnCancelListener(DialogInterface.OnCancelListener {
-                                    deviceSerialCommunicateVieModel.init()
-                                    sweetAlertDialog.dismiss()
-                                })
-                            }
-                            sweetAlertDialog.titleText = data
-                            sweetAlertDialog.show()
-                        }
-                        DeviceType.USB -> {
-                            deviceSerialCommunicateVieModel.dialogMessageProperty = data
-                            deviceSerialCommunicateVieModel.ownerProperty = owner
-                            val params = bundleOf(
-                                SerialCommunicationUsbDialogData.ViewModel.name to deviceSerialCommunicateVieModel
-                            )
-                            navHostController.navigate(
-                                NavigationView.CreditPaymentUsbDialog.name,
-                                params,
-                                NavOptions.Builder().setLaunchSingleTop(true).build()
-                            )
-                        }
-                    }
+        when (clickEvent) {
+            CreditPaymentViewClickEvent.ViewDialogInstallment -> {
+                val installmentList = ArrayList<String>()
+                for (i in 1 until Integer.parseInt(mainActivityViewModel.getUserInformation().apiMaxInstall) + 1) {
+                    installmentList.add(if(i == 1) "일시불" else "${i}개월")
                 }
+                dialog(
+                    title = "할부기간",
+                    list = installmentList,
+                    initValue = "일시불",
+                    onDismissRequest = { clickEvent = CreditPaymentViewClickEvent.Empty },
+                    onTextChange = { installment = it }
+                )
             }
-            deviceSerialCommunicateVieModel.notExistRegisteredDevice?.observe(owner!!) {
-                it?.getContentIfNotHandled()?.let { data ->
-                    sweetAlertDialog.titleText = data
-                }
+            CreditPaymentViewClickEvent.ErrorDialog -> {
+                errorDialog(
+                    message = errorMessage,
+                    onDismissRequest = { clickEvent = CreditPaymentViewClickEvent.Empty },
+                )
             }
-            deviceSerialCommunicateVieModel.isCompletePayment?.observe(owner!!) {
-                it?.getContentIfNotHandled()?.let {
-                    when(deviceSerialCommunicateVieModel.getCurrentRegisteredDeviceType()) {
-                        DeviceType.BLUETOOTH -> {
-                            sweetAlertDialog.dismiss()
-                        }
-                        DeviceType.USB -> {
-                            deviceSerialCommunicateVieModel.dialogMessageProperty = SerialCommunicationUsbDialogData.SerialCommunicationFinish.name
-                            deviceSerialCommunicateVieModel.ownerProperty = owner
-                            val params = bundleOf(
-                                SerialCommunicationUsbDialogData.ViewModel.name to deviceSerialCommunicateVieModel
-                            )
-                            navHostController.navigate(
-                                NavigationView.CreditPaymentUsbDialog.name,
-                                params,
-                                NavOptions.Builder().setLaunchSingleTop(true).build()
-                            )
-                        }
-                    }
-                }
-            }
+            else -> {}
+        }
 
+        if(testCommunicationViewModel != null) {
+            testCommunicationViewModel.deviceConnectSharedFlow.CollectAsEffect(
+                block = {
+                    when(it) {
+                        is DeviceConnectSharedFlow.SerialCommunicationMessageFlow -> {
+                            when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                                DeviceType.Bluetooth.name -> {
+                                    if (!sweetAlertDialog.isShowing) {
+                                        sweetAlertDialog =
+                                            SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE)
+                                        sweetAlertDialog.progressHelper?.barColor = Color.Green.toArgb()
+                                        sweetAlertDialog.setCancelable(true)
+                                        sweetAlertDialog.setOnCancelListener(DialogInterface.OnCancelListener {
+                                            testCommunicationViewModel.disConnect()
+                                            sweetAlertDialog.dismiss()
+                                        })
+                                    }
+                                    sweetAlertDialog.titleText = it.flow
+                                    sweetAlertDialog.show()
+                                }
+                                DeviceType.Usb.name -> {
+                                    testCommunicationViewModel.setSerialCommunicationMessage(it.flow)
+                                    val params = bundleOf(
+                                        SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel
+                                    )
+                                    navHostController.navigate(
+                                        MainView.CreditPaymentUsbDialog.name,
+                                        params,
+                                        NavOptions.Builder().setLaunchSingleTop(true).build()
+                                    )
+                                }
+                            }
+                        }
+                        is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
+                            when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                                DeviceType.Bluetooth.name -> sweetAlertDialog.dismiss()
+                                DeviceType.Usb.name -> {
+                                    val params = bundleOf(
+                                        SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel
+                                    )
+                                    navHostController.navigate(
+                                        MainView.CreditPaymentUsbDialog.name,
+                                        params,
+                                        NavOptions.Builder().setLaunchSingleTop(true).build()
+                                    )
+                                }
+                            }
+                        }
+                        else -> {}
+                    }
+                }
+            )
+
+            testCommunicationViewModel.responseTmsAPI.CollectAsEffect(block = {
+                when(it) {
+                    is ResponseTmsAPI.ErrorMessage -> {
+                        errorMessage = it.message
+                        clickEvent = CreditPaymentViewClickEvent.ErrorDialog
+                    }
+                    else -> {}
+                }
+
+            })
+        }
+
+        DisposableEffect(Unit) {
             onDispose {
-                deviceSerialCommunicateVieModel.unbindService()
+                testCommunicationViewModel.serviceUnbind()
             }
         }
 
@@ -307,12 +368,11 @@ class CreditPaymentView {
                     .fillMaxSize()
                     .padding(paddingValues)
                     .drawBehind {
-                        val strokeWidth = 2 * density
                         drawLine(
                             Color.LightGray,
                             Offset(0f, 0f),
                             Offset(size.width, 0f),
-                            strokeWidth
+                            2 * density
                         )
                     },
             ) {
@@ -347,7 +407,6 @@ class CreditPaymentView {
                                 text = "원"
                             )
                         }
-
                     }
 
                     Text(
@@ -359,6 +418,7 @@ class CreditPaymentView {
                             .padding(6.dp)
                             .fillMaxWidth()
                             .height(50.dp)
+                            .clickable { clickEvent = CreditPaymentViewClickEvent.ViewDialogInstallment }
                             .background(colorResource(id = R.color.white))
                             .border(
                                 width = 1.dp,
@@ -370,17 +430,18 @@ class CreditPaymentView {
                     ) {
                         Text(
                             modifier = Modifier.padding(end = 5.dp),
-                            text = "일시불"
+                            text = installment
                         )
                     }
                 }
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    LoginView().GradientButton(
+                    GradientButton(
                         text = "결제하기",
                         modifier = Modifier
                             .width((screenWidth * 0.95).dp)
@@ -388,9 +449,18 @@ class CreditPaymentView {
                             .height(60.dp),
                         fontSize = 20.sp,
                         onClick = {
-                            deviceSerialCommunicateVieModel!!.requestDeviceSerialCommunication(
-                                EncMSRManager().makeDongleInfo()
-                            )
+                            if(testCommunicationViewModel != null) {
+                                testCommunicationViewModel.sendData(
+                                    RequestPaymentDTO(
+                                        amount = account,
+                                        installment = installmentFormat(installment),
+                                        token = mainActivityViewModel.getUserInformation().key!!
+                                    ),
+                                    EncMSRManager().makeDongleInfo()
+                                )
+                            } else {
+                                errorDialog(context)
+                            }
                         }
                     )
                 }
@@ -416,16 +486,17 @@ class CreditPaymentView {
                                 .background(color = colorResource(id = R.color.grey4))
                                 .clickable(onClick = {
                                     if (item == "delete") {
-                                        if (account != null && account.length > 1) {
-                                            account = account.substring(0, account.length - 1)
+                                        account = if (account != null && account.length > 1) {
+                                            account.substring(0, account.length - 1)
                                         } else {
                                             "0"
                                         }
                                     } else {
                                         if (account == "0") {
-
+                                            account = item
+                                        } else {
+                                            account += item
                                         }
-                                        account += item
                                     }
                                 }),
                             verticalArrangement = Arrangement.Center,
@@ -447,6 +518,13 @@ class CreditPaymentView {
                     }
                 }
             }
+        }
+    }
+    private fun installmentFormat(installmentString: String): String {
+        return if(installmentString == "일시불") {
+            String.format("%02d", 0)
+        } else {
+            "0${installmentString.replace("0", "").replace("개월", "")}"
         }
     }
 }

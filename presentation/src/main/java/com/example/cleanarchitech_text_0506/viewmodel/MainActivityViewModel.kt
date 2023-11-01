@@ -1,71 +1,76 @@
 package com.example.cleanarchitech_text_0506.viewmodel
 
-import android.util.Log
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.apiService.LoginRelatedAPIService
-import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestData
-import com.mtouch.domain.useCaseInterface.LoginUseCaseImpl
-import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.KeyTmsResponseData
-import com.mtouch.ksr02_03_04_v2.Domain.Model.TmsApiResponse.SummaryTmsResponseData
+import com.example.domain.dto.request.tms.RequestGetUserInformationDto
+import com.example.domain.dto.response.tms.ResponseGetSummaryPaymentStatisticsDto
+import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
+import com.example.domain.repositoryInterface.LoginRelatedRepository
+import com.example.domain.repositoryInterface.UserInformationRepository
+import com.example.domain.repositoryInterface.UserInformationSharedPreference
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.schedulers.Schedulers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 
 import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val loginUseCaseInterface: LoginRelatedAPIService
+    private val loginRelatedRepository: LoginRelatedRepository,
+    private val userInformationSharedPreference: UserInformationSharedPreference,
+    private val userInformationRepository: UserInformationRepository
 ) : ViewModel(){
+    private val _userInformation = MutableStateFlow(ResponseGetUserInformationDto())
+    val userInformation: MutableStateFlow<ResponseGetUserInformationDto>
+        get() = _userInformation
 
-    private val _KeyTmsResponseData = MutableLiveData<KeyTmsResponseData>()
-    val data: MutableLiveData<KeyTmsResponseData> = _KeyTmsResponseData
+    private val _summaryPaymentStatistics = MutableStateFlow(ResponseGetSummaryPaymentStatisticsDto())
+    val summaryPaymentStatistics: MutableStateFlow<ResponseGetSummaryPaymentStatisticsDto>
+        get() = _summaryPaymentStatistics
 
-    private val _SummaryTmsResponseData = MutableLiveData<SummaryTmsResponseData>()
-    val data1: MutableLiveData<SummaryTmsResponseData> = _SummaryTmsResponseData
+    private val _responseErrorBody = MutableStateFlow(String())
+    val responseErrorBody: MutableStateFlow<String>
+        get() = _responseErrorBody
 
-    private val _ApiErrorMessage = MutableLiveData<String>()
-    val data2: MutableLiveData<String> = _ApiErrorMessage
-
-    fun login(keyTmsRequestData: KeyTmsRequestData) {
+    fun summary(token: String) {
         viewModelScope.launch {
-            loginUseCaseInterface.key(keyTmsRequestData).let {
-                if(it.isSuccessful) {
-                    _KeyTmsResponseData.value = it.body()
-                    loginUseCaseInterface.summary(it.body()?.data?.key).let { summary ->
-                        if(summary.isSuccessful) {
-                            _SummaryTmsResponseData.value = summary.body()
-                        } else {
-                            _SummaryTmsResponseData.value = summary.body()
-                        }
-                    }
-                } else {
-                    _KeyTmsResponseData.value = it.body()
-                }
-            }
+            loginRelatedRepository.summary(
+                onSuccess = { summaryPaymentStatistics.value = it },
+                onError = { responseErrorBody.value = it },
+                token = token
+            ).collect()
         }
     }
 
+    fun login(requestGetUserInformationDto: RequestGetUserInformationDto) {
+        viewModelScope.launch {
+            loginRelatedRepository.key(
+                onSuccess = { userInformation.value = it },
+                summary = { summary(userInformation?.value?.key.toString()) },
+                onError = { responseErrorBody.value = it },
+                body = requestGetUserInformationDto
+            ).collect()
+        }
+    }
 
+    fun getUserInformation(): ResponseGetUserInformationDto =
+        userInformationSharedPreference.getUserInformation()
 
+    fun getUserInformationRepository(): ArrayList<RequestGetUserInformationDto> {
+        var responseGetUserInformationList = ArrayList<RequestGetUserInformationDto>()
+        viewModelScope.launch {
+            for (information in userInformationRepository.getAllUserInformation()) {
+                responseGetUserInformationList.add(information)
+            }
+        }
+        return responseGetUserInformationList
+    }
 
-//    fun getDailyAndMonthlyPaymentDataAboutTerminalId(keyTmsResponseDataToken: String) {
-//        loginUseCaseInterface.getPaymentSummaryAboutTerminalId(keyTmsResponseDataToken)
-//            .subscribe(
-//                { successData ->
-//                    _SummaryTmsResponseData.value = successData
-//                },
-//                { error ->
-//                    _SummaryTmsResponseData.value = error.message as SummaryTmsResponseData
-//                }
-//            )
-//    }
-//
-//    fun checkAppDestroy() {
-//        loginUseCaseInterface.checkAppDestroy()
-//    }
+    fun deleteUserInformationRepository(tmnId: String) {
+        viewModelScope.launch {
+            userInformationRepository.deleteUserInformation(tmnId)
+        }
+    }
 }

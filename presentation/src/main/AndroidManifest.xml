@@ -56,6 +56,13 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/device_filter" />
         </activity> <!-- <activity -->
         <!-- android:name=".view.activity.ui.theme.MainActivity" -->
         <!-- android:exported="false" -->
@@ -84,7 +91,15 @@
         <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
         <!-- </intent-filter> -->
         <!-- </activity> -->
-        <activity android:name=".view.ui.ConnectDeviceActivity" />
+        <service android:name=".service.BluetoothDeviceConnectServiceImpl" />
+        <service
+            android:name=".service.UsbDeviceConnectServiceImpl"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.ACTION_USB_DEVICE_DETACHED" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

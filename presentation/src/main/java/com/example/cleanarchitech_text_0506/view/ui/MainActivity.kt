@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -41,10 +42,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,110 +58,221 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptions
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.example.cleanarchitech_text_0506.R
+import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.MainViewFunction
-import com.example.cleanarchitech_text_0506.enum.NavigationView
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
-import com.example.cleanarchitech_text_0506.viewmodel.DeviceSerialCommunicateViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
+import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
+import com.example.domain.dto.response.tms.ResponseGetPaymentListBody
 import com.google.accompanist.flowlayout.FlowRow
-import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestBody
-import com.mtouch.domain.model.tmsApiRequest.KeyTmsRequestData
+import com.kizitonwose.calendar.sample.compose.CalendarView
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import java.time.format.DateTimeFormatter
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-//    private val mainActivityViewModel: MainActivityViewModel by viewModels()
-//    private val usbViewModel: UsbViewModel by viewModels()
-//    private val bluetoothViewModel: BluetoothViewModel by viewModels()
-//    private val deviceSerialCommunicateViewModel: DeviceSerialCommunicateViewModel by viewModels()
-
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CleanArchitech_text_0506Theme {
+                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
-
                     NavHost(
                         navController = navController,
-                        startDestination = NavigationView.Main.name
+                        startDestination = MainView.Main.name,
                     ) {
-                        composable(NavigationView.Main.name) {
+                        composable(MainView.Main.name) {
+                            Log.w("Main.name", "Main.name")
                             mainView(navHostController = navController)
                         }
-                        dialog(NavigationView.Login.name) {
+                        dialog(MainView.Login.name) {
                             LoginView().loginDialog(navController)
                         }
-                        dialog(NavigationView.PgIdLogin.name) {
+                        dialog(MainView.PgIdLogin.name) {
                             LoginView().pgIdLoginDialog(navController)
                         }
-                        dialog(NavigationView.VanIdLogin.name) {
+                        dialog(MainView.VanIdLogin.name) {
                             LoginView().vanIdLoginDialog(navHostController = navController)
                         }
-                        dialog(NavigationView.RegisteredId.name) {
+                        dialog(MainView.RegisteredId.name) {
                             LoginView().registeredIdDialog(navHostController = navController)
                         }
-//                        composable(NavigationView.deviceSetting.name){
-//
-//                            DeviceSettingView().bluetoothDevice(
-//                                context = this@MainActivity,
-//                                owner = this@MainActivity,
-//                                bluetoothViewModel
-//                            )
-//                        }
-
-                        composable(NavigationView.DeviceSettingBluetooth.name) { backStackEntry ->
+                        composable(MainView.DeviceSettingBluetooth.name) { backStackEntry ->
+                            Log.w("DeviceSettingBluetooth", "DeviceSettingBluetooth")
                             DeviceSettingView().bluetoothDevice(
                                 context = this@MainActivity,
                                 owner = this@MainActivity,
                                 navHostController = navController
                             )
                         }
-
-                        composable(NavigationView.DeviceSettingUSB.name) {
+                        composable(MainView.DeviceSettingUSB.name) {
                             DeviceSettingView().usbDevice(
                                 context = this@MainActivity,
                                 owner = this@MainActivity,
                                 navHostController = navController
                             )
                         }
-
-
-                        composable(NavigationView.CreditPayment.name) { backStackEntry ->
-//                            test(bluetoothViewModel = bluetoothViewModel, context = this@MainActivity3, owner = this@MainActivity3
+                        composable(MainView.CreditPayment.name) { backStackEntry ->
                             CreditPaymentView().creditPaymentView(
                                 navHostController = navController,
-                                context = this@MainActivity,
-                                owner = this@MainActivity
                             )
                         }
-                        dialog(NavigationView.CreditPaymentUsbDialog.name) { backStackEntry ->
-                            var viewModel: DeviceSerialCommunicateViewModel = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                backStackEntry.arguments?.getSerializable(
-                                    SerialCommunicationUsbDialogData.ViewModel.name,
-                                    DeviceSerialCommunicateViewModel::class.java
-                                )!!
-                            } else {
-                                backStackEntry.arguments?.getSerializable(
-                                    SerialCommunicationUsbDialogData.ViewModel.name
-                                )!!
-                            } as DeviceSerialCommunicateViewModel
+                        dialog(MainView.CreditPaymentUsbDialog.name) { backStackEntry ->
+                            var viewModel: TestCommunicationViewModel =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    backStackEntry.arguments?.getSerializable(
+                                        SerialCommunicationUsbDialogData.ViewModel.name,
+                                        TestCommunicationViewModel::class.java
+                                    )!!
+                                } else {
+                                    backStackEntry.arguments?.getSerializable(
+                                        SerialCommunicationUsbDialogData.ViewModel.name
+                                    )!!
+                                } as TestCommunicationViewModel
                             CreditPaymentView().usbDevicePaymentDialog(
                                 navHostController = navController,
-//                                message = backStackEntry.arguments?.getString(SerialCommunicationUsbDialogData.Message.name)!!,
                                 viewModel = viewModel
+                            )
+                        }
+                        composable(MainView.DirectPayment.name) {
+                            DirectPaymentView(
+                                navHostController = navController
+                            )
+                        }
+                        composable(MainView.CompletePayment.name) { backStackEntry ->
+                            val completePaymentViewVO =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    backStackEntry.arguments?.getSerializable(
+                                        "responsePayAPI",
+                                        CompletePaymentViewVO::class.java
+                                    )!!
+                                } else {
+                                    backStackEntry.arguments?.getSerializable(
+                                        "responsePayAPI"
+                                    )!!
+                                } as CompletePaymentViewVO
+                            CompletePaymentView(
+                                navHostController = navController,
+                                completePaymentViewVO
+                            )
+                        }
+                        composable(MainView.PaymentHistory.name) { backStackEntry ->
+//                            val startDay: String
+//                            val endDay: String
+//                            val tab = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//                                backStackEntry.arguments?.getSerializable(
+//                                    "tab",
+//                                    PaymentHistoryViewTopTab::class.java
+//                                )!!
+//                            } else {
+//                                backStackEntry.arguments?.getSerializable(
+//                                    "tab"
+//                                )!!
+//                            } as PaymentHistoryViewTopTab
+//
+//                            when(tab) {
+//                                PaymentHistoryViewTopTab.Today -> {
+//                                    startDay = getDay(0)
+//                                    endDay = getDay(0)
+//                                }
+//                                PaymentHistoryViewTopTab.Week -> {
+//                                    startDay = getDay(1)
+//                                    endDay = getDay(0)
+//                                }
+//                                PaymentHistoryViewTopTab.Selection -> {
+//                                    startDay = getDay(7)
+//                                    endDay = getDay(0)
+//                                }
+//                                PaymentHistoryViewTopTab.Yesterday -> {
+//                                    startDay = backStackEntry.arguments?.getString("startDate")?: ""
+//                                    endDay = backStackEntry.arguments?.getString("endDate")?: ""
+//                                }
+                                PaymentHistoryView(
+                                    navHostController = navController,
+                                    paymentHistoryViewType = PaymentHistoryViewType.MainView(
+                                        SearchPeriod(backStackEntry.arguments?.getString("startDate")?: "", backStackEntry.arguments?.getString("endDate")?: "")
+                                    )
+                                )
+                        }
+//                            paymentHistoryViewToday(
+//                                paymentHistoryViewTopTab = tab,
+//                                navHostController = navController,
+//                                startDay = startDay,
+//                                endDay = endDay
+//                            )
+
+//                        composable(PaymentHistoryViewTopTab.Yesterday.name) {
+//                            paymentHistoryViewYesterday(
+//                                navHostController = navController
+//                            )
+//                        }
+//                        composable(PaymentHistoryViewTopTab.Week.name) {
+//                            paymentHistoryViewWeek(
+//                                NavHostController = navController
+//                            )
+//                        }
+//                        composable(PaymentHistoryViewTopTab.Selection.name) { backStackEntry ->
+//                            paymentHistoryViewSelection(
+//                                NavHostController = navController,
+//                                startDay = backStackEntry.arguments?.getString("startDate")?: "",
+//                                endDay = backStackEntry.arguments?.getString("endDate")?: "",
+//                            )
+//                        }
+                        composable(MainView.PaymentHistoryDetail.name) { backStackEntry ->
+                            val responseGetPaymentListBody =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    backStackEntry.arguments?.getSerializable(
+                                        "responseGetPaymentListBody",
+                                        ResponseGetPaymentListBody::class.java
+                                    )!!
+                                } else {
+                                    backStackEntry.arguments?.getSerializable(
+                                        "responseGetPaymentListBody"
+                                    )!!
+                                } as ResponseGetPaymentListBody
+                            paymentHistoryDetailMainView(
+                                navHostController = navController,
+                                responseGetPaymentListBody = responseGetPaymentListBody
+                            )
+                        }
+                        composable(MainView.Calendar.name) {
+                            CalendarView(
+                                close = { navController.popBackStack() },
+                                dateSelected = { startDate, endDate ->
+                                    navController?.navigate(
+                                        MainView.PaymentHistory.name,
+                                        bundleOf(
+                                            "startDate" to startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                                            "endDate" to endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                                        ),
+                                        NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(MainView.Calendar.name, true).build()
+                                    )
+                                },
                             )
                         }
                     }
@@ -179,15 +287,15 @@ class MainActivity : ComponentActivity() {
         navHostController: NavHostController,
         mainViewModel: MainActivityViewModel = hiltViewModel()
     ) {
-        LaunchedEffect(Unit){
-            mainViewModel.login(KeyTmsRequestData(KeyTmsRequestBody(
-                tmnId = "test0003",
-                serial = "12345",
-                mchtId = "ktest"
-            )))
-        }
-        val test = mainViewModel.data.observeAsState()
-        test.value?.data?.key?.let { Log.w("mainViewModel", it) }
+//        LaunchedEffect(Unit) {
+//            mainViewModel.login(
+//                RequestGetUserInformationDto(
+//                    mchtId = "ktest",
+//                    tmnId = "test0005",
+//                    serial = "12345"
+//                )
+//            )
+//        }
         val screenWidth = LocalConfiguration.current.screenWidthDp
         Scaffold(
             bottomBar = {
@@ -203,7 +311,7 @@ class MainActivity : ComponentActivity() {
                     .padding(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                loginStatus(screenWidth)
+                loginStatus(mainViewModel?.getUserInformation()?.tmnId.toString())
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -216,7 +324,6 @@ class MainActivity : ComponentActivity() {
                     }
 
                     item {
-                        val itemSize = (LocalConfiguration.current.screenWidthDp.dp / 2)
                         val gridItems = MainViewFunction.values()
                         FlowRow(
                             modifier = Modifier.padding(top = 10.dp)
@@ -293,24 +400,52 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun gridItemSetting(type: String): MainGridItem? {
-        when (type) {
-            MainViewFunction.CreditCardPayment.name ->
-                return MainGridItem(R.drawable.card_icon_main, "신용결제", NavigationView.CreditPayment.name)
-            MainViewFunction.ManualPayment.name ->
-                return MainGridItem(R.drawable.card_icon_main, "수기결제", NavigationView.Main.name)
-            MainViewFunction.DeviceManagement.name ->
-                return MainGridItem(R.drawable.card_icon_main, "장치관리", NavigationView.DeviceSettingBluetooth.name)
-            MainViewFunction.CashReceipt.name ->
-                return MainGridItem(R.drawable.card_icon_main, "현금영수증", NavigationView.Main.name)
-            MainViewFunction.TransactionHistory.name ->
-                return MainGridItem(R.drawable.card_icon_main, "거래내역", NavigationView.Main.name)
-            MainViewFunction.AggregateSummary.name ->
-                return MainGridItem(R.drawable.card_icon_main, "집계내역", NavigationView.Main.name)
-            MainViewFunction.NoticeAnnouncement.name ->
-                return MainGridItem(R.drawable.card_icon_main, "공지사항", NavigationView.Main.name)
+    private fun gridItemSetting(type: MainViewFunction): MainGridItem {
+        return when (type) {
+            MainViewFunction.CreditCardPayment ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "신용결제",
+                    MainView.CreditPayment
+                )
+            MainViewFunction.ManualPayment ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "수기결제",
+                    MainView.DirectPayment
+                )
+            MainViewFunction.DeviceManagement ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "장치관리",
+                    MainView.DeviceSettingBluetooth
+                )
+            MainViewFunction.CashReceipt ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "현금영수증",
+                    MainView.Main
+                )
+            MainViewFunction.TransactionHistory -> {
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "거래내역",
+                    MainView.PaymentHistory
+                )
+            }
+            MainViewFunction.AggregateSummary ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "집계내역",
+                    MainView.Main
+                )
+            MainViewFunction.NoticeAnnouncement ->
+                return MainGridItem(
+                    R.drawable.card_icon_main,
+                    "공지사항",
+                    MainView.Main
+                )
         }
-        return null
     }
 
     @Composable
@@ -320,7 +455,7 @@ class MainActivity : ComponentActivity() {
         navHostController: NavHostController
     ) {
         mainActivityFunctionList.forEachIndexed { index, mainActivityFunctionList ->
-            val mainGridItem = gridItemSetting(mainActivityFunctionList.name)
+            val mainGridItem = gridItemSetting(mainActivityFunctionList)
             if (index % 2 == 0) {
                 Column(
                     modifier = Modifier
@@ -331,7 +466,15 @@ class MainActivity : ComponentActivity() {
                         )
                         .width((screenWidth * 0.45).dp)
                         .height(40.dp)
-                        .clickable(onClick = { navHostController.navigate(mainGridItem!!.navigator) }),
+                        .clickable(onClick = {
+                            navHostController.navigate(
+                                mainGridItem.mainView.name,
+                                NavOptions
+                                    .Builder()
+                                    .setLaunchSingleTop(true)
+                                    .build()
+                            )
+                        }),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -354,7 +497,15 @@ class MainActivity : ComponentActivity() {
                         )
                         .width((screenWidth * 0.45).dp)
                         .height(40.dp)
-                        .clickable(onClick = { navHostController.navigate(mainGridItem!!.navigator) }),
+                        .clickable(onClick = {
+                            navHostController.navigate(
+                                mainGridItem.mainView.name,
+                                NavOptions
+                                    .Builder()
+                                    .setLaunchSingleTop(true)
+                                    .build()
+                            )
+                        }),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -370,7 +521,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -410,8 +560,8 @@ class MainActivity : ComponentActivity() {
                         fontSize = 12.sp,
                     )
                 },
-                selected = currentRoute == NavigationView.Login.name,
-                onClick = { navHostController.navigate(NavigationView.Login.name) }
+                selected = currentRoute == MainView.Login.name,
+                onClick = { navHostController.navigate(MainView.Login.name) }
             )
 
             BottomNavigationItem(
@@ -430,7 +580,7 @@ class MainActivity : ComponentActivity() {
                 icon = {
                     Icon(
                         painterResource(id = R.drawable.customer_service_center_icon),
-                        contentDescription = NavigationView.Main.name,
+                        contentDescription = "D",
                         modifier = Modifier
                             .size(22.5.dp)
                             .padding(bottom = 2.dp)
@@ -442,12 +592,11 @@ class MainActivity : ComponentActivity() {
                         fontSize = 12.sp,
                     )
                 },
-                selected = currentRoute == NavigationView.Main.name,
+                selected = currentRoute == MainView.Main.name,
                 onClick = { }
             )
         }
     }
-
 
     @Composable
     fun dailySalesAmount(screenWidth: Int) {
@@ -459,9 +608,13 @@ class MainActivity : ComponentActivity() {
         salesAmount(screenWidth, "월간 매출 내역", "월간 취소 내역")
     }
 
-
     @Composable
-    fun salesAmount(screenWidth: Int, payment: String, refund: String) {
+    fun salesAmount(
+        screenWidth: Int,
+        payment: String,
+        refund: String,
+        mainActivityViewModel: MainActivityViewModel = hiltViewModel()
+    ) {
         Column(
             modifier = Modifier
                 .width((screenWidth * 0.9).dp)
@@ -527,48 +680,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun loginStatus(screenWidth: Int) {
-        Row(
-            modifier = Modifier
-                .width((screenWidth * 0.9).dp)
-                .height(30.dp)
-                .padding(bottom = 5.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            colorResource(id = R.color.orange_pink),
-                            colorResource(id = R.color.watermelon)
-                        )
-                    )
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            var text by remember { mutableStateOf("로그인 아이디") }
-            Text(
-                textAlign = TextAlign.Left,
-                text = text,
-                fontSize = 15.sp,
-                color = colorResource(id = R.color.white),
-                fontFamily = FontFamily(Font(R.font.ns_acr)),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 20.dp)
-            )
-            Text(
-                textAlign = TextAlign.Right,
-                text = "TMN041165",
-                fontSize = 15.sp,
-                color = colorResource(id = R.color.white),
-                fontFamily = FontFamily(Font(R.font.ns_acr)),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 20.dp)
-            )
-        }
-    }
-
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview7() {
@@ -581,9 +692,70 @@ class MainActivity : ComponentActivity() {
 
 }
 
+fun NavController.navigate(route: String, bundle: Bundle = Bundle(), navOptions: NavOptions?) {
+    navigate(NavDestination.createRoute(route).hashCode(), bundle, navOptions)
+}
+
+@Composable
+fun <T> Flow<T>.CollectAsEffect(
+    context: CoroutineContext = EmptyCoroutineContext,
+    block: (T) -> Unit
+) {
+    LaunchedEffect(key1 = Unit) {
+        onEach(block).flowOn(context).launchIn(this)
+    }
+}
+
+@Composable
+fun loginStatus(
+    terminalId: String?
+) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    Column(
+        modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .width((screenWidth * 0.9).dp)
+                .height(30.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            colorResource(id = R.color.orange_pink),
+                            colorResource(id = R.color.watermelon)
+                        )
+                    )
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                textAlign = TextAlign.Left,
+                text = "로그인 아이디",
+                fontSize = 15.sp,
+                color = colorResource(id = R.color.white),
+                fontFamily = FontFamily(Font(R.font.ns_acr)),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 20.dp)
+            )
+            Text(
+                textAlign = TextAlign.Right,
+                text = terminalId ?: "로그아웃 상태 입니다",
+                fontSize = 15.sp,
+                color = colorResource(id = R.color.white),
+                fontFamily = FontFamily(Font(R.font.ns_acr)),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 20.dp)
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun mainViewPreview() {
     val navController = rememberNavController()
-    MainActivity().mainView(navHostController = navController)
+//    MainActivity().mainView(navHostController = navController)
 }

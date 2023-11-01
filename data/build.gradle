@@ -42,6 +42,7 @@ dependencies {
 //    kapt "com.google.dagger:dagger-android-processor:$dagger2_version"
 //    kapt "com.google.dagger:dagger-compiler:$dagger2_version"
 
+    implementation "com.github.skydoves:sandwich:1.2.4"
     implementation 'com.squareup.retrofit2:adapter-rxjava3:2.9.0'
     implementation 'com.google.code.gson:gson:2.8.8'
 
@@ -56,4 +57,13 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.5.0'
     implementation 'io.reactivex.rxjava3:rxjava:3.1.5'
     implementation 'io.reactivex.rxjava3:rxandroid:3.0.0'
+
+    api 'androidx.room:room-ktx:2.2.6'
+    implementation files('libs\\com.ksnet.library_v1.1.4.jar')
+    kapt 'androidx.room:room-compiler:2.2.6'
+    annotationProcessor 'androidx.room:room-compiler:2.2.6'
+
+    implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+    kapt("org.mapstruct:mapstruct-processor:1.5.3.Final")
+
 }
