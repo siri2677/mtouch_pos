@@ -2,12 +2,13 @@ package com.example.domain.dto.request.tms
 
 data class RequestInsertPaymentDataDTO(
     var amount: Int,
-    var van: String,
-    var vanId: String,
-    var vanTrxId: String,
+    var trxId: String? = null,
+    var van: String? = null,
+    var vanId: String? = null,
+    var vanTrxId: String? = null,
     var walletSettle: String = "N",
-    var type: String,
-    var installment: String,
+    var type: String? = null,
+    var installment: String? = null,
     var number: String? = null,
     var authCd: String? = null,
     var trackId: String? = null,

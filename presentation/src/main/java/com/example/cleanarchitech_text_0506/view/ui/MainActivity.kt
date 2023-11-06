@@ -73,11 +73,13 @@ import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.MainViewFunction
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
+import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
 import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
 import com.example.domain.dto.response.tms.ResponseGetPaymentListBody
+import com.example.domain.dto.response.tms.ResponseInsertPaymentDataDTO
 import com.google.accompanist.flowlayout.FlowRow
 import com.kizitonwose.calendar.sample.compose.CalendarView
 import dagger.hilt.android.AndroidEntryPoint
@@ -143,20 +145,35 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         dialog(MainView.CreditPaymentUsbDialog.name) { backStackEntry ->
-                            var viewModel: TestCommunicationViewModel =
+                            val testCommunicationViewModel =
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     backStackEntry.arguments?.getSerializable(
                                         SerialCommunicationUsbDialogData.ViewModel.name,
-                                        TestCommunicationViewModel::class.java
+                                        DeviceConnectSharedFlow::class.java
                                     )!!
                                 } else {
                                     backStackEntry.arguments?.getSerializable(
                                         SerialCommunicationUsbDialogData.ViewModel.name
                                     )!!
                                 } as TestCommunicationViewModel
+
+                            val deviceConnectSharedFlow =
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    backStackEntry.arguments?.getSerializable(
+                                        SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name,
+                                        DeviceConnectSharedFlow::class.java
+                                    )!!
+                                } else {
+                                    backStackEntry.arguments?.getSerializable(
+                                        SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name
+                                    )!!
+                                } as DeviceConnectSharedFlow
+
                             CreditPaymentView().usbDevicePaymentDialog(
                                 navHostController = navController,
-                                viewModel = viewModel
+                                testCommunicationViewModel = testCommunicationViewModel,
+                                deviceConnectSharedFlow = deviceConnectSharedFlow
+
                             )
                         }
                         composable(MainView.DirectPayment.name) {

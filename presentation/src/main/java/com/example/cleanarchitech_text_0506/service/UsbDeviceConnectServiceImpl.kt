@@ -239,7 +239,7 @@ class UsbDeviceConnectServiceImpl: Service(), DeviceConnectService, SerialInputO
 
     override fun onNewData(data: ByteArray) {
         CoroutineScope(Dispatchers.IO).launch {
-            responseSerialCommunicationFormat.receiveData(data,ksnetSocketCommunicationDTO, deviceConnectSharedFlow)
+            responseSerialCommunicationFormat.receiveData(data, ksnetSocketCommunicationDTO, deviceConnectSharedFlow)
         }
     }
 
@@ -290,10 +290,12 @@ class UsbDeviceConnectServiceImpl: Service(), DeviceConnectService, SerialInputO
             job.cancel()
         } catch (e: Exception){
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            deviceConnectSharedFlow.emit(
-                DeviceConnectSharedFlow.ConnectCompleteFlow(false)
-            )
+        if(::deviceConnectSharedFlow.isInitialized) {
+            CoroutineScope(Dispatchers.IO).launch {
+                deviceConnectSharedFlow.emit(
+                    DeviceConnectSharedFlow.ConnectCompleteFlow(false)
+                )
+            }
         }
     }
 }

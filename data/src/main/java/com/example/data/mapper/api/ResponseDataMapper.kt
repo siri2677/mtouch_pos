@@ -6,6 +6,7 @@ import com.example.data.entity.api.response.tms.CheckTmsResponseBody
 import com.example.data.entity.api.response.tms.KeyTmsResponseBody
 import com.example.data.entity.api.response.tms.ListTmsResponseBody
 import com.example.data.entity.api.response.tms.MchtNameTmsResponseBody
+import com.example.data.entity.api.response.tms.ResponseCancelPaymentBody
 import com.example.data.entity.api.response.tms.ResponseInsertPaymentDataBody
 import com.example.data.entity.api.response.tms.ResponseCancelPaymentEntity
 import com.example.data.entity.api.response.tms.ResponseInsertPaymentDataEntity
@@ -30,8 +31,8 @@ import org.mapstruct.Mapper
 interface ResponseDataMapper {
     fun keyToGetUserInformationModel(keyTmsResponseBody: KeyTmsResponseBody) : ResponseGetUserInformationDto
     fun paymentEntityToDto(responsePaymentBody: ResponsePaymentBody) : ResponsePaymentDTO
-    fun cancelPaymentEntityToDto(responseCancelPaymentEntity: ResponseCancelPaymentEntity) : ResponseCancelPaymentDTO
-    fun insertPaymentDataEntityToDto(responseInsertPaymentDataEntity: ResponseInsertPaymentDataEntity) : ResponseInsertPaymentDataDTO
+    fun cancelPaymentEntityToDto(responseCancelPaymentBody: ResponseCancelPaymentBody) : ResponseCancelPaymentDTO
+    fun insertPaymentDataEntityToDto(responseInsertPaymentDataBody: ResponseInsertPaymentDataBody) : ResponseInsertPaymentDataDTO
     fun mchtNameToGetMerchantNameModel(mchtNameTmsResponseBody: MchtNameTmsResponseBody) : ResponseGetMerchantNameDto
     fun listToGetPaymentListModel(listTmsResponseBody: ListTmsResponseBody) : ResponseGetPaymentListDto
     fun statisticsToGetPaymentStatisticsModel(statisticsTmsResponseBody: StatisticsTmsResponseBody): ResponseGetPaymentStatisticsDto

@@ -16,7 +16,6 @@ import com.example.domain.dto.response.tms.ResponsePaymentDTO
 import com.example.domain.repositoryInterface.OfflinePaymentRepository
 import com.example.domain.util.socketClient.KsnetUtils
 import com.ksnet.interfaces.Approval
-import com.skydoves.sandwich.message
 import com.skydoves.sandwich.onError
 import com.skydoves.sandwich.onException
 import com.skydoves.sandwich.suspendOnError
@@ -76,7 +75,7 @@ class OfflinePaymentRepositoryImpl: OfflinePaymentRepository {
                 ).suspendOnSuccess {
                     onSuccess(
                         Mappers.getMapper(ResponseDataMapper::class.java)
-                            .cancelPaymentEntityToDto(data!!)
+                            .cancelPaymentEntityToDto(data.data!!)
                     )
                 }.onError() {
                     onError(errorBody.toString())
@@ -113,8 +112,9 @@ class OfflinePaymentRepositoryImpl: OfflinePaymentRepository {
             onError(byteToString(responseTelegram, 62, 16) + "\n" + byteToString(responseTelegram, 78, 16))
         }
         if(byteToString(responseTelegram, 40, 1) == "O") {
-            body.authCd = byteToString(responseTelegram, 94, 12)
-            body.number = byteToString(responseTelegram, 143, 16)
+            body.authCd = byteToString(responseTelegram, 94, 12).trim()
+            body.issuerCode = byteToString(responseTelegram, 141, 2)
+            body.acquirerCode = byteToString(responseTelegram, 159, 2)
             body.regDate = byteToString(responseTelegram, 49, 12)
 
             CoroutineScope(Dispatchers.IO).launch {
@@ -127,10 +127,11 @@ class OfflinePaymentRepositoryImpl: OfflinePaymentRepository {
                                 .insertPaymentDataDtoToEntity(body)
                         )
                     ).suspendOnSuccess {
-                        onSuccess(
-                            Mappers.getMapper(ResponseDataMapper::class.java)
-                                .insertPaymentDataEntityToDto(data!!)
-                        )
+                        val responseInsertPaymentDataDTO = Mappers.getMapper(ResponseDataMapper::class.java)
+                            .insertPaymentDataEntityToDto(data.data!!)
+                        responseInsertPaymentDataDTO.authCode = byteToString(responseTelegram, 94, 12).trim()
+                        responseInsertPaymentDataDTO.regDay = byteToString(responseTelegram, 49, 6)
+                        onSuccess(responseInsertPaymentDataDTO)
                     }.onError() {
                         onError(errorBody.toString())
                     }.onException {

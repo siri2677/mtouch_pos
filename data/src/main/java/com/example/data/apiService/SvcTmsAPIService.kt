@@ -47,7 +47,7 @@ interface SvcTmsAPIService {
 
     @Headers("Content-Type: application/json")
     @POST("/v0/trx/crule")
-    fun crule(
+    suspend fun crule(
         @Header("Authorization") token: String?,
         @Body body: RequestCancelPaymentEntity
     ): ApiResponse<ResponseCancelPaymentEntity>

@@ -1,14 +1,18 @@
 package com.example.cleanarchitech_text_0506.sealed
 
-import android.util.Log
+import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
+import com.example.data.entity.api.response.tms.ResponseInsertPaymentDataEntity
+import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
+import com.example.domain.dto.response.tms.ResponseInsertPaymentDataDTO
+import java.io.Serializable
 
-sealed interface DeviceConnectSharedFlow {
+sealed interface DeviceConnectSharedFlow: Serializable {
     data class DeviceListFlow(val flow: DeviceList): DeviceConnectSharedFlow
-    data class PaymentCompleteFlow(val flow: Boolean): DeviceConnectSharedFlow
+    data class PaymentCompleteFlow(val responseInsertPaymentDataDTO: ResponseInsertPaymentDataDTO): DeviceConnectSharedFlow
     data class ConnectCompleteFlow(val flow: Boolean): DeviceConnectSharedFlow
     data class PermissionCheckCompleteFlow(val flow: Boolean): DeviceConnectSharedFlow
-    data class RequestSocketCommunication(val byteArray: ByteArray): DeviceConnectSharedFlow
-    class SerialCommunicationMessageFlow(var flow: String): DeviceConnectSharedFlow {
+    data class RequestSocketCommunication(val ksnetSocketCommunicationDTO: KsnetSocketCommunicationDTO): DeviceConnectSharedFlow
+    class SerialCommunicationMessageFlow(var message: String): DeviceConnectSharedFlow {
         private lateinit var data: String
         fun getData(): String = try {
             data

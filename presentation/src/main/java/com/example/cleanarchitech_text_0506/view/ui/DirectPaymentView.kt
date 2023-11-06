@@ -62,6 +62,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.PaymentType
+import com.example.cleanarchitech_text_0506.enum.TransactionType
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DirectPaymentViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
@@ -121,7 +122,9 @@ fun DirectPaymentMainView(
             when (it) {
                 is ResponsePayAPI.DirectPaymentContent -> {
                     val completePaymentViewVo = CompletePaymentViewVO(
+                        TransactionType.Direct,
                         PaymentType.Approve,
+                        it.responseDirectPaymentDto.pay?.card?.installment.toString(),
                         it.responseDirectPaymentDto.pay?.trackId!!,
                         it.responseDirectPaymentDto.pay?.card?.bin!!,
                         it.responseDirectPaymentDto.pay?.amount.toString(),

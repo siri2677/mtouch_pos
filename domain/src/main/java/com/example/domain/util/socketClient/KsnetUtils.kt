@@ -82,19 +82,6 @@ class KsnetUtils {
         "30|fillter|fillter"
     )
 
-    fun generateString(length: Int): String {
-        val rnd = Random()
-        val buf = StringBuffer()
-        for (i in 0 until length) {
-            if (rnd.nextBoolean()) {
-                buf.append((rnd.nextInt(26) as Int + 97).toChar())
-            } else {
-                buf.append(rnd.nextInt(10))
-            }
-        }
-        return buf.toString()
-    }
-
     fun reqDataPrint(buf: ByteArray?) {
         var start = 0
         var size = 0
@@ -136,52 +123,6 @@ class KsnetUtils {
             }
         }
         return map
-    }
-
-    fun byteToSubByte(buf: ByteArray, start: Int, length: Int): ByteArray {
-        val _buf = ByteArray(length)
-        if (start + length > buf.size) {
-            return _buf
-        }
-        System.arraycopy(buf, start, _buf, 0, length)
-        return _buf
-        //   return  Arrays.copyOfRange(buf, start, end);
-    }
-
-    fun make2ByteLengh(i: Int): ByteArray? {
-        val bArr = ByteArray(2)
-        bArr[1] = i.toByte()
-        bArr[0] = (i ushr 8).toByte()
-        return bArr
-    }
-
-    fun byteToString(buf: ByteArray, start: Int, size: Int): String {
-        try {
-            return String(buf!!, start, size)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return ""
-    }
-
-    fun byte2Int(src: Byte): Int {
-        return src.toInt() and 0xFF
-    }
-
-    fun byteToInt(b: Byte): Int {
-        return b.toInt() and 0xFF
-    }
-
-    fun toHex(buf: ByteArray?, idx: Int): String? {
-        val HEX = "0123456789ABCDEF"
-        if (buf == null) {
-            return ""
-        }
-        val result = StringBuffer(buf.size * 2)
-        for (i in 0 until idx) {
-            result.append(HEX[buf[i].toInt() shr 4 and 15]).append(HEX[(buf[i] and 15).toInt()])
-        }
-        return result.toString()
     }
 
 

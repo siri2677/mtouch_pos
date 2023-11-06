@@ -1,5 +1,7 @@
 package com.example.domain.dto.request.tms
 
+import com.example.domain.dto.PaymentDTO
+
 data class RequestPaymentDTO (
     var amount: String? = null,
     var installment: String? = null,
@@ -10,5 +12,5 @@ data class RequestPaymentDTO (
     var payerName: String? = null,
     var payerEmail: String? = null,
     var token: String
-)
+): PaymentDTO
 

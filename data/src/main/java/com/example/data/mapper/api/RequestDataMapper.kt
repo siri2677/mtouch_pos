@@ -8,7 +8,7 @@ import com.example.data.entity.api.request.tms.KeyTmsRequestBody
 import com.example.data.entity.api.request.tms.ListTmsRequestBody
 import com.example.data.entity.api.request.tms.MchtNameTmsRequestBody
 import com.example.data.entity.api.request.tms.RequestCancelPaymentBody
-import com.example.data.entity.api.request.tms.ResponseInsertPaymentDataBody
+import com.example.data.entity.api.request.tms.RequestInsertPaymentDataBody
 import com.example.data.entity.api.request.tms.RequestPaymentBody
 import com.example.data.entity.api.request.tms.StatisticsTmsRequestBody
 import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
@@ -28,7 +28,7 @@ interface RequestDataMapper {
     fun keyToGetUserInformationModel(requestGetUserInformationDto: RequestGetUserInformationDto): KeyTmsRequestBody
     fun paymentDtoToEntity(requestPaymentDto: RequestPaymentDTO): RequestPaymentBody
     fun paymentCancelDtoToEntity(requestCancelPaymentDto: RequestCancelPaymentDTO): RequestCancelPaymentBody
-    fun insertPaymentDataDtoToEntity(requestInsertPaymentDataDto: RequestInsertPaymentDataDTO): ResponseInsertPaymentDataBody
+    fun insertPaymentDataDtoToEntity(requestInsertPaymentDataDto: RequestInsertPaymentDataDTO): RequestInsertPaymentDataBody
     fun mchtNameToGetMerchantNameModel(requestMerchantNameDto: ResponseGetMerchantNameDto): MchtNameTmsRequestBody
     fun listToGetPaymentListModel(requestGetPaymentListDto: RequestGetPaymentListDto): ListTmsRequestBody
     fun statisticsToGetPaymentStatisticsModel(requestGetPaymentStatisticsDto: ResponseGetPaymentStatisticsDto): StatisticsTmsRequestBody

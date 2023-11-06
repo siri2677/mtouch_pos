@@ -17,8 +17,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DirectPaymentViewModel @Inject constructor(
-    private val userInformationSharedPreference: UserInformationSharedPreference,
-    private val userInformationRepository: UserInformationRepository,
     private val directPaymentRepository: DirectPaymentRepository
 ): ViewModel(){
 
@@ -26,7 +24,6 @@ class DirectPaymentViewModel @Inject constructor(
     val responseDirectPayment = _responseDirectPayment.asSharedFlow()
 
     fun requestDirectPayment(requestDirectPaymentDto: RequestDirectPaymentDto) {
-        Log.w("requestDirectPayment", "requestDirectPayment")
         viewModelScope.launch {
             directPaymentRepository.approve(
                 onSuccess = {

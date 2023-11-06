@@ -15,8 +15,11 @@ import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.sealed.DeviceList
 import com.example.cleanarchitech_text_0506.util.EncMSRManager
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
+import com.example.domain.dto.PaymentDTO
+import com.example.domain.dto.request.tms.RequestCancelPaymentDTO
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.dto.request.tms.RequestPaymentDTO
+import com.example.domain.dto.response.tms.ResponseInsertPaymentDataDTO
 import com.example.domain.repositoryInterface.DeviceSettingSharedPreference
 import com.example.domain.repositoryInterface.OfflinePaymentRepository
 import com.example.domain.sealed.ResponseTmsAPI
@@ -25,9 +28,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.io.Serializable
+import java.util.Random
 import javax.inject.Inject
 
 
@@ -46,11 +51,10 @@ class TestCommunicationViewModel @Inject constructor(
     private lateinit var serialCommunicationMessage: String
     lateinit var job: Job
 
-    var deviceConnectSharedFlow = MutableSharedFlow<DeviceConnectSharedFlow>()
-//        get() = deviceServiceController.deviceConnectSharedFlow
+    val deviceConnectSharedFlow = MutableSharedFlow<DeviceConnectSharedFlow>()
     var deviceConnectScanFlow = MutableSharedFlow<DeviceList>()
         get() = deviceScan.listUpdate
-    var responseTmsAPI = MutableSharedFlow<ResponseTmsAPI>()
+    val responseTmsAPI = MutableSharedFlow<ResponseTmsAPI>()
 
 
     fun getSerialCommunicationMessage() = serialCommunicationMessage
@@ -118,16 +122,15 @@ class TestCommunicationViewModel @Inject constructor(
     fun scanCancel() { deviceScan.cancel() }
 
     fun serviceUnbind() { deviceServiceController.unBindingService() }
-    fun sendData(
+    fun requestOfflinePayment(
         requestPaymentDTO: RequestPaymentDTO,
-        byteArray: ByteArray
+        byteArray: ByteArray = EncMSRManager().makeDongleInfo()
     ) {
         offlinePaymentRepository.approve(
             onSuccess = {
                 val totalAmt = requestPaymentDTO.amount!!
                 val vat = totalAmt.toInt() / 11
                 val supply = totalAmt.toInt() - vat
-
                 val requestInsertPaymentDataDTO = RequestInsertPaymentDataDTO(
                     amount = requestPaymentDTO.amount!!.toInt(),
                     van = it.van!!,
@@ -144,32 +147,31 @@ class TestCommunicationViewModel @Inject constructor(
                     payerName = requestPaymentDTO.payerName,
                     payerEmail = requestPaymentDTO.payerEmail
                 )
-
                 val ksnetSocketCommunicationDTO = KsnetSocketCommunicationDTO(
                     transType = "IC".toByteArray(),
                     telegramType = "0200".toByteArray(),
-                    workType = "01".toByteArray(),
-                    posEntry = "S".toByteArray(),
+                    telegramNo = generateString(12).toByteArray(),
                     dptID = it.secondKey!!.toByteArray(),
-                    payType = "00".toByteArray(),
-                    totalAmount = getStrMoneytoTgAmount(totalAmt),
-                    amount = getStrMoneytoTgAmount(supply.toString()),
-                    serviceAmount = getStrMoneytoTgAmount("0"),
-                    taxAmount = getStrMoneytoTgAmount(vat.toString()),
-                    freeAmount = getStrMoneytoTgAmount("0"),
+                    payType = requestPaymentDTO.installment!!.toByteArray(),
+                    trackId = it.trackId!!.toByteArray(),
+                    totalAmount = stringAccountToByteArray(totalAmt),
+                    amount = stringAccountToByteArray(supply.toString()),
+                    serviceAmount = stringAccountToByteArray("0"),
+                    taxAmount = stringAccountToByteArray(vat.toString()),
+                    freeAmount = stringAccountToByteArray("0"),
                     signTrans = if(totalAmt.toInt() > 50000) "S".toByteArray() else "N".toByteArray(),
-                    installment = requestPaymentDTO.installment!!
                 )
 
                 deviceServiceController.bindingService(
                     process = { it ->
-                        afterSerialCommunicationProcess(it, ksnetSocketCommunicationDTO, requestInsertPaymentDataDTO)
+                        val deviceConnectService = it.setEssentialData(ksnetSocketCommunicationDTO, deviceConnectSharedFlow)
+                        afterSerialCommunicationProcess(deviceConnectService, requestInsertPaymentDataDTO)
                         when (deviceSettingSharedPreference.isKeepBluetoothConnection()) {
                             true -> {
-                                it?.setEssentialData(ksnetSocketCommunicationDTO, deviceConnectSharedFlow)?.sendData(byteArray)
+                                deviceConnectService.sendData(byteArray)
                             }
                             false -> {
-                                it?.setEssentialData(ksnetSocketCommunicationDTO, deviceConnectSharedFlow)?.connectDevice(
+                                deviceConnectService.connectDevice(
                                     deviceSettingSharedPreference.getCurrentRegisteredDeviceInformation(),
                                     byteArray
                                 )
@@ -177,16 +179,79 @@ class TestCommunicationViewModel @Inject constructor(
                         }
                     }
                 )
-
             },
             onError = { viewModelScope.launch { responseTmsAPI.emit(ResponseTmsAPI.ErrorMessage(it)) }},
             body = requestPaymentDTO
         )
     }
 
-    fun afterSerialCommunicationProcess(
+    fun requestOfflinePaymentCancel(
+        _requestInsertPaymentDataDTO: RequestInsertPaymentDataDTO,
+        byteArray: ByteArray = EncMSRManager().makeDongleInfo()
+    ) {
+        offlinePaymentRepository.refund(
+            onSuccess = {
+                val totalAmt = _requestInsertPaymentDataDTO.amount!!
+                val vat = totalAmt / 11
+                val supply = totalAmt - vat
+                val requestInsertPaymentDataDTO = RequestInsertPaymentDataDTO(
+                    amount = _requestInsertPaymentDataDTO.amount!!.toInt(),
+                    van = it.van!!,
+                    vanTrxId = it.trackId!!,
+                    trackId = it.trackId!!,
+                    type = "승인취소",
+                    vanId = it.vanId!!,
+                    installment = _requestInsertPaymentDataDTO.installment!!,
+                    trxId = _requestInsertPaymentDataDTO.trxId,
+                    token = _requestInsertPaymentDataDTO.token
+                )
+                val ksnetSocketCommunicationDTO = KsnetSocketCommunicationDTO(
+                    transType = "IC".toByteArray(),
+                    telegramType = "0420".toByteArray(),
+                    telegramNo = generateString(12).toByteArray(),
+                    dptID = it.secondKey!!.toByteArray(),
+                    payType = _requestInsertPaymentDataDTO.installment!!.toByteArray(),
+                    trackId = it.trackId!!.toByteArray(),
+                    totalAmount = stringAccountToByteArray(totalAmt.toString()),
+                    amount = stringAccountToByteArray(supply.toString()),
+                    serviceAmount = stringAccountToByteArray("0"),
+                    taxAmount = stringAccountToByteArray(vat.toString()),
+                    freeAmount = stringAccountToByteArray("0"),
+                    authNum = _requestInsertPaymentDataDTO.authCd!!.toByteArray(),
+                    authDate = _requestInsertPaymentDataDTO.regDate!!.toByteArray(),
+                    signTrans = if(totalAmt > 50000) "S".toByteArray() else "N".toByteArray(),
+                )
+
+                deviceServiceController.bindingService(
+                    process = { it ->
+                        val deviceConnectService = it.setEssentialData(ksnetSocketCommunicationDTO, deviceConnectSharedFlow)
+                        afterSerialCommunicationProcess(deviceConnectService, requestInsertPaymentDataDTO)
+                        when (deviceSettingSharedPreference.isKeepBluetoothConnection()) {
+                            true -> {
+                                deviceConnectService.sendData(byteArray)
+                            }
+                            false -> {
+                                deviceConnectService.connectDevice(
+                                    deviceSettingSharedPreference.getCurrentRegisteredDeviceInformation(),
+                                    byteArray
+                                )
+                            }
+                        }
+                    }
+                )
+            },
+            onError = { viewModelScope.launch { responseTmsAPI.emit(ResponseTmsAPI.ErrorMessage(it)) }},
+            body = RequestCancelPaymentDTO(
+                amount = _requestInsertPaymentDataDTO.amount.toString(),
+                installment = _requestInsertPaymentDataDTO.installment!!,
+                trxId = _requestInsertPaymentDataDTO.trxId,
+                token = _requestInsertPaymentDataDTO.token
+            )
+        )
+    }
+
+    private fun afterSerialCommunicationProcess(
         deviceConnectService: DeviceConnectService,
-        ksnetSocketCommunicationDTO: KsnetSocketCommunicationDTO,
         requestInsertPaymentDataDTO: RequestInsertPaymentDataDTO
     ) {
         try{
@@ -196,32 +261,53 @@ class TestCommunicationViewModel @Inject constructor(
                 deviceConnectSharedFlow.collect{
                     when(it) {
                         is DeviceConnectSharedFlow.SerialCommunicationMessageFlow -> {
-                            when (it.flow) {
+                            when (it.message) {
                                 SerialCommunicationMessage.IcCardInsertRequest.message -> {
-                                    deviceConnectService.setEssentialData(
-                                        ksnetSocketCommunicationDTO, deviceConnectSharedFlow
-                                    )?.sendData(
+                                    deviceConnectService.sendData(
                                         EncMSRManager().makeCardNumSendReq(
-                                            getStrMoneytoTgAmount(String(ksnetSocketCommunicationDTO.totalAmount!!, Charsets.UTF_8)),
+                                            String.format("%09d", requestInsertPaymentDataDTO.amount!!).toByteArray(),
                                             "10".toByteArray()
                                         )
                                     )
                                 }
                                 SerialCommunicationMessage.FallBackMessage.message -> {
-                                    deviceConnectService.setEssentialData(
-                                        ksnetSocketCommunicationDTO, deviceConnectSharedFlow
-                                    )?.sendData(
+                                    deviceConnectService.sendData(
                                         EncMSRManager().makeFallBackCardReq(it.getData(), "99")
                                     )
                                 }
                             }
                         }
                         is DeviceConnectSharedFlow.RequestSocketCommunication -> {
+                            requestInsertPaymentDataDTO.number = it.ksnetSocketCommunicationDTO.cardBin
                             offlinePaymentRepository.push(
-                                onSuccess = { viewModelScope.launch{ responseTmsAPI.emit(ResponseTmsAPI.InsertPaymentData(it)) }},
-                                onError = { viewModelScope.launch { responseTmsAPI.emit(ResponseTmsAPI.ErrorMessage(it)) }},
+                                onSuccess = {
+                                    viewModelScope.launch{
+                                        deviceConnectSharedFlow.emit(DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.CompletePayment.message))
+                                        delay(300)
+                                        deviceConnectSharedFlow.emit(
+                                            DeviceConnectSharedFlow.PaymentCompleteFlow(
+                                                ResponseInsertPaymentDataDTO(
+                                                    result = it.result,
+                                                    trxId = it.trxId,
+                                                    installment = requestInsertPaymentDataDTO.installment,
+                                                    trackId =  requestInsertPaymentDataDTO.trackId!!,
+                                                    cardNumber =  requestInsertPaymentDataDTO.number!!,
+                                                    amount =  requestInsertPaymentDataDTO.amount.toString(),
+                                                    regDay =  it.regDay,
+                                                    authCode =  it.authCode,
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                onError = {
+                                    viewModelScope.launch {
+//                                        deviceConnectSharedFlow.emit(DeviceConnectSharedFlow.PaymentCompleteFlow(true))
+                                        responseTmsAPI.emit(ResponseTmsAPI.ErrorMessage(it))
+                                    }
+                                },
                                 body = requestInsertPaymentDataDTO,
-                                requestTelegram = it.byteArray
+                                requestTelegram = EncMSRManager().makeRequestTelegram(it.ksnetSocketCommunicationDTO)
                             )
                         }
                         else -> {}
@@ -234,9 +320,18 @@ class TestCommunicationViewModel @Inject constructor(
 
     fun getCurrentRegisteredDeviceType() = deviceSettingSharedPreference.getCurrentRegisteredDeviceType()
     fun init() { deviceServiceController.bindingService(process = { it?.init() }) }
-
-    fun getStrMoneytoTgAmount(account: String): ByteArray {
-        return String.format("%012d", account.toLong()).toByteArray()
+    private fun stringAccountToByteArray(account: String) = String.format("%012d", account.toLong()).toByteArray()
+    private fun generateString(length: Int): String {
+        val rnd = Random()
+        val buf = StringBuffer()
+        for (i in 0 until length) {
+            if (rnd.nextBoolean()) {
+                buf.append((rnd.nextInt(26) as Int + 97).toChar())
+            } else {
+                buf.append(rnd.nextInt(10))
+            }
+        }
+        return buf.toString()
     }
 
 

@@ -1,17 +1,13 @@
 package com.example.cleanarchitech_text_0506.view.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -20,30 +16,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.cleanarchitech_text_0506.R
@@ -51,10 +40,9 @@ import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DirectPaymentViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
-import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
+import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.dto.response.tms.ResponseGetPaymentListBody
-import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
 
 @Composable
 fun paymentHistoryDetailMainView(
@@ -62,12 +50,14 @@ fun paymentHistoryDetailMainView(
     responseGetPaymentListBody: ResponseGetPaymentListBody,
     mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
     directPaymentViewModel: DirectPaymentViewModel = hiltViewModel(),
+    testCommunicationViewModel: TestCommunicationViewModel = hiltViewModel()
 ) {
     paymentHistoryDetailView(
         navHostController,
         responseGetPaymentListBody,
         mainActivityViewModel,
-        directPaymentViewModel
+        directPaymentViewModel,
+        testCommunicationViewModel.setDeviceType()
     )
 }
 
@@ -77,35 +67,35 @@ fun paymentHistoryDetailView(
     navHostController: NavHostController = rememberNavController(),
     responseGetPaymentListBody: ResponseGetPaymentListBody,
     mainActivityViewModel: MainActivityViewModel?,
-    directPaymentViewModel: DirectPaymentViewModel?
+    directPaymentViewModel: DirectPaymentViewModel?,
+    testCommunicationViewModel: TestCommunicationViewModel?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
+    var errorMessage by remember { mutableStateOf("") }
+    var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
 
-//    directPaymentViewModel?.responseDirectPayment?.CollectAsEffect(
-//        block = {
-//            when (it) {
-//                is ResponsePayAPI.DirectCancelPaymentContent -> {
-//                    val completePaymentViewVo = CompletePaymentViewVO(
-//                        PaymentType.Refund,
-//                        it.responseDirectCancelPaymentDto.refund?.trackId!!,
-//                        responseGetPaymentListBody.number,
-//                        it.responseDirectCancelPaymentDto.refund?.amount.toString(),
-//                        it.responseDirectCancelPaymentDto.result.create,
-//                        it.responseDirectCancelPaymentDto.refund?.authCd!!,
-//                        it.responseDirectCancelPaymentDto.refund?.trxId!!
-//                    )
-//                    navHostController?.navigate(
-//                        NavigationView.CompletePayment.name,
-//                        bundleOf("responsePayAPI" to completePaymentViewVo),
-//                        NavOptions.Builder().setLaunchSingleTop(true).build()
-//                    )
-//                    Toast.makeText(context, "결제 취소가 완료 되었습니다", Toast.LENGTH_LONG).show()
-//                }
-//                else -> {}
-//            }
-//        }
-//    )
+    when (clickEvent) {
+        CreditPaymentViewClickEvent.ErrorDialog -> {
+            errorDialog(
+                message = errorMessage,
+                onDismissRequest = { clickEvent = CreditPaymentViewClickEvent.Empty },
+            )
+        }
+        else -> {}
+    }
+
+    if(testCommunicationViewModel != null) {
+        serialCommunicationResult(
+            testCommunicationViewModel = testCommunicationViewModel,
+            navHostController = navHostController,
+            dialogMessage = {
+                errorMessage = it
+                clickEvent = CreditPaymentViewClickEvent.ErrorDialog
+            },
+            paymentType = PaymentType.Refund
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -181,18 +171,20 @@ fun paymentHistoryDetailView(
                     modifier = Modifier
                         .padding(start = 10.dp, end = 20.dp, top = 30.dp, bottom = 20.dp)
                 ) {
-                    if (responseGetPaymentListBody.trxResult == "취소") {
+                    if (responseGetPaymentListBody.trxResult == "승인") {
                         bottomRowButton(
                             modifier = Modifier
                                 .weight(1f)
                                 .background(colorResource(id = R.color.red))
                                 .clickable {
-                                    directPaymentViewModel?.requestDirectCancelPayment(
-                                        RequestDirectCancelPaymentDto(
-                                            payKey = mainActivityViewModel?.getUserInformation()?.payKey!!,
-                                            amount = responseGetPaymentListBody.amount,
-                                            rootTrxId = responseGetPaymentListBody.trxId,
-                                            rootTrxDay = responseGetPaymentListBody.regDay
+                                    testCommunicationViewModel?.requestOfflinePaymentCancel(
+                                        RequestInsertPaymentDataDTO(
+                                            amount = Integer.parseInt(responseGetPaymentListBody.amount),
+                                            installment = responseGetPaymentListBody.installment,
+                                            authCd = responseGetPaymentListBody.authCd,
+                                            regDate = responseGetPaymentListBody.regDay.substring(2, 8),
+                                            token = mainActivityViewModel?.getUserInformation()?.key!!,
+                                            trxId = responseGetPaymentListBody.trxId
                                         )
                                     )
                                 },
@@ -248,7 +240,8 @@ fun PaymentHistoryDetailPreView() {
                 rfdId = "T231019667960"
             ),
             mainActivityViewModel = null,
-            directPaymentViewModel = null
+            directPaymentViewModel = null,
+            testCommunicationViewModel = null
         )
     }
 }

@@ -36,8 +36,10 @@ class BluetoothServiceController(private val context: Context): DeviceServiceCon
     }
 
     override fun disConnect() {
-        val intent = Intent(context, bluetoothDeviceConnectServiceImpl::class.java)
-        context.stopService(intent)
+        if(::bluetoothDeviceConnectServiceImpl.isInitialized) {
+            val intent = Intent(context, bluetoothDeviceConnectServiceImpl::class.java)
+            context.stopService(intent)
+        }
     }
 
     override fun bindingService(afterBindProcess: (DeviceConnectService) -> Unit) {

@@ -53,7 +53,6 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
     private val CHANNEL_ID = "MyServiceChannel"
     private lateinit var bluetoothGatt: BluetoothGatt
 //    @Inject lateinit var responseDeviceSerialCommunication: ResponseDeviceSerialCommunication
-    lateinit var job: Job
 
     lateinit var ksnetSocketCommunicationDTO: KsnetSocketCommunicationDTO
     lateinit var byteArray: ByteArray
@@ -165,30 +164,32 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
 
     override fun sendData(byteArray: ByteArray?){
 //        flowCollect()
-        val bluetoothGattCharacteristic = findWriteCharacteristic(bluetoothGatt!!)
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                bluetoothGatt!!.writeCharacteristic(bluetoothGattCharacteristic!!, byteArray!!, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
-            } else {
-                val spn = SpannableStringBuilder()
-                spn.append("receive ${byteArray?.size} bytes\n")
-                spn.append(
-                    byteArray?.size?.let {
-                        KsnetUtils().toHex(
-                            byteArray,
-                            it
-                        )
-                    }
-                ).append("\n")
-                Log.w("requestData", spn.toString())
+        if(::bluetoothGatt.isInitialized) {
+            val bluetoothGattCharacteristic = findWriteCharacteristic(bluetoothGatt!!)
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bluetoothGatt!!.writeCharacteristic(bluetoothGattCharacteristic!!, byteArray!!, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                } else {
+                    val spn = SpannableStringBuilder()
+                    spn.append("receive ${byteArray?.size} bytes\n")
+                    spn.append(
+                        byteArray?.size?.let {
+                            ResponseSerialCommunicationFormat().toHex(
+                                byteArray,
+                                it
+                            )
+                        }
+                    ).append("\n")
+                    Log.w("requestData", spn.toString())
 
 //                Log.w("sendData", byteArray.toString())
-                bluetoothGattCharacteristic?.value = byteArray
-                bluetoothGatt!!.writeCharacteristic(bluetoothGattCharacteristic!!)
+                    bluetoothGattCharacteristic?.value = byteArray
+                    bluetoothGatt!!.writeCharacteristic(bluetoothGattCharacteristic!!)
+                }
             }
         }
     }
@@ -348,14 +349,14 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
         super.onDestroy()
         try {
             disConnect()
-            job.cancel()
         } catch (e: Exception){
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            deviceConnectSharedFlow.emit(
-                DeviceConnectSharedFlow.ConnectCompleteFlow(false)
-            )
-//            isFirstConnectComplete.emit(false)
+        if(::deviceConnectSharedFlow.isInitialized) {
+            CoroutineScope(Dispatchers.IO).launch {
+                deviceConnectSharedFlow.emit(
+                    DeviceConnectSharedFlow.ConnectCompleteFlow(false)
+                )
+            }
         }
     }
 

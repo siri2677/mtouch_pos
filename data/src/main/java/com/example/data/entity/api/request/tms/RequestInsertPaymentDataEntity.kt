@@ -1,11 +1,12 @@
 package com.example.data.entity.api.request.tms
 
 data class RequestInsertPaymentDataEntity (
-    var data: ResponseInsertPaymentDataBody
+    var data: RequestInsertPaymentDataBody
 )
 
-data class ResponseInsertPaymentDataBody(
+data class RequestInsertPaymentDataBody(
     var amount: Int? = null,
+    var trxId: String? = null,
     var van: String? = null,
     var vanTrxId: String? = null,
     var walletSettle: String? = null,

@@ -24,18 +24,19 @@ class UsbServiceController(val context: Context): DeviceServiceController {
     override var deviceConnectSharedFlow = MutableSharedFlow<DeviceConnectSharedFlow>()
     private lateinit var usbDeviceConnectServiceImpl: UsbDeviceConnectServiceImpl
     private lateinit var afterBindProcess: (DeviceConnectService) -> Unit
-    private lateinit var job: Job
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun connect(usbDevice: String) {
-        val intent = Intent(context, UsbDeviceConnectServiceImpl::class.java)
+        val intent = Intent(context, usbDeviceConnectServiceImpl::class.java)
         intent.putExtra(DeviceType.Usb.name, usbDevice)
         context.startForegroundService(intent)
     }
 
     override fun disConnect() {
-        val intent = Intent(context, UsbDeviceConnectServiceImpl::class.java)
-        context.stopService(intent)
+        if(::usbDeviceConnectServiceImpl.isInitialized) {
+            val intent = Intent(context, usbDeviceConnectServiceImpl::class.java)
+            context.stopService(intent)
+        }
     }
 
     override fun bindingService(afterBindProcess: (DeviceConnectService) -> Unit) {
@@ -50,7 +51,6 @@ class UsbServiceController(val context: Context): DeviceServiceController {
 
     override fun unBindingService() {
         try {
-            job.cancel()
             context.unbindService(myServiceConnection)
         } catch (e: Exception) {
             Log.w("exception1", e.toString())
@@ -62,12 +62,6 @@ class UsbServiceController(val context: Context): DeviceServiceController {
             val binder = binder as UsbDeviceConnectServiceImpl.MyBinder
             usbDeviceConnectServiceImpl = binder.getService()
             afterBindProcess(binder.getService())
-            job = CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.LAZY) {
-                binder.getService().deviceConnectSharedFlow.collect{
-                    deviceConnectSharedFlow.emit(it)
-                }
-            }
-            if(!job.isActive){ job.start() }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {}

@@ -3,28 +3,28 @@ package com.example.cleanarchitech_text_0506.vo
 data class KsnetSocketCommunicationDTO(
     var transType: ByteArray,
     var telegramType: ByteArray,
-    var workType: ByteArray,
+    var workType: ByteArray = "01".toByteArray(),
     var telegramNo: ByteArray = "".toByteArray(),
-    var posEntry: ByteArray,
+    var posEntry: ByteArray = "S".toByteArray(),
     var authNum: ByteArray = "".toByteArray(),
     var authDate: ByteArray= "".toByteArray(),
-    var trackId: ByteArray = "".toByteArray(),
+    var trackId: ByteArray,
     var dptID: ByteArray,
     var swModelNum: ByteArray = "######MTOUCH1101".toByteArray(),
     var readerModelNum: ByteArray = "".toByteArray(),
     var payType: ByteArray,
     var totalAmount: ByteArray,
     var amount: ByteArray,
-    var installment: String,
     var serviceAmount: ByteArray,
     var taxAmount: ByteArray,
     var freeAmount: ByteArray,
     var filler: ByteArray = "".toByteArray(),
     var signTrans: ByteArray,
-    var signData: ByteArray? = null,
+    var signData: ByteArray = "".toByteArray(),
     var encryptInfo: ByteArray = "".toByteArray(),
     var emvData: ByteArray = "".toByteArray(),
-    var trackII: ByteArray = " ".toByteArray()
+    var trackII: ByteArray = " ".toByteArray(),
+    var cardBin: String? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
