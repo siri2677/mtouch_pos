@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +55,7 @@ import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
 import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.sealed.ResponsePayAPI
+import okhttp3.internal.wait
 
 @Composable
 fun CompletePaymentView(
@@ -83,9 +85,13 @@ fun CompletePaymentMainView(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
-    var errorMessage by remember { mutableStateOf("") }
-    var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
-
+    val completeMessage = when(completePaymentViewVO.paymentType) {
+        PaymentType.Approve -> "결제가 완료 되었습니다"
+        PaymentType.Refund -> "결제 취소가 완료 되었습니다"
+    }
+    LaunchedEffect(key1 = Unit){
+        Toast.makeText(context, completeMessage, Toast.LENGTH_LONG).show()
+    }
     directPaymentViewModel?.responseDirectPayment?.CollectAsEffect(
         block = {
             when (it) {
@@ -145,23 +151,15 @@ fun CompletePaymentMainView(
         }
     }
 
-    when (clickEvent) {
-        CreditPaymentViewClickEvent.ErrorDialog -> {
-            errorDialog(
-                message = errorMessage,
-                onDismissRequest = { clickEvent = CreditPaymentViewClickEvent.Empty },
-            )
-        }
-        else -> {}
-    }
-
     if(testCommunicationViewModel != null) {
         serialCommunicationResult(
             testCommunicationViewModel = testCommunicationViewModel,
             navHostController = navHostController,
             dialogMessage = {
-                errorMessage = it
-                clickEvent = CreditPaymentViewClickEvent.ErrorDialog
+                errorDialog(
+                    message = it,
+                    onDismissRequest = { },
+                )
             },
             paymentType = PaymentType.Refund
         )
@@ -241,7 +239,7 @@ fun CompletePaymentMainView(
                                 .weight(1f)
                                 .background(colorResource(id = R.color.red))
                                 .clickable {
-                                    when(completePaymentViewVO.transactionType) {
+                                    when (completePaymentViewVO.transactionType) {
                                         TransactionType.Direct -> {
                                             directPaymentViewModel?.requestDirectCancelPayment(
                                                 RequestDirectCancelPaymentDto(
@@ -252,6 +250,7 @@ fun CompletePaymentMainView(
                                                 )
                                             )
                                         }
+
                                         TransactionType.Offline -> {
                                             testCommunicationViewModel?.requestOfflinePaymentCancel(
                                                 RequestInsertPaymentDataDTO(

@@ -133,8 +133,7 @@ fun DirectPaymentMainView(
                         it.responseDirectPaymentDto.pay?.trxId!!
                     )
                     navHostController?.navigate(
-                        NavDestination.createRoute(MainView.CompletePayment.name)
-                            .hashCode(),
+                        MainView.CompletePayment.name,
                         bundleOf("responsePayAPI" to completePaymentViewVo),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
