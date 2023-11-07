@@ -71,27 +71,16 @@ fun paymentHistoryDetailView(
     testCommunicationViewModel: TestCommunicationViewModel?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val context = LocalContext.current
-    var errorMessage by remember { mutableStateOf("") }
-    var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
-
-    when (clickEvent) {
-        CreditPaymentViewClickEvent.ErrorDialog -> {
-            errorDialog(
-                message = errorMessage,
-                onDismissRequest = { clickEvent = CreditPaymentViewClickEvent.Empty },
-            )
-        }
-        else -> {}
-    }
 
     if(testCommunicationViewModel != null) {
         serialCommunicationResult(
             testCommunicationViewModel = testCommunicationViewModel,
             navHostController = navHostController,
             dialogMessage = {
-                errorMessage = it
-                clickEvent = CreditPaymentViewClickEvent.ErrorDialog
+                errorDialog(
+                    message = it,
+                    onDismissRequest = { },
+                )
             },
             paymentType = PaymentType.Refund
         )
