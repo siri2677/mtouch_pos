@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,7 +62,6 @@ import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import cn.pedant.SweetAlert.SweetAlertDialog
 import com.example.cleanarchitech_text_0506.R
@@ -72,14 +70,11 @@ import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
-import com.example.cleanarchitech_text_0506.enum.TransactionType
 import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
-import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
-import com.example.domain.dto.request.tms.RequestPaymentDTO
 import com.example.domain.sealed.ResponseTmsAPI
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -147,19 +142,19 @@ class CreditPaymentView() {
     @Composable
     fun usbDevicePaymentDialog(
         navHostController: NavController,
-        testCommunicationViewModel: TestCommunicationViewModel,
+        deviceCommunicationViewModel: DeviceCommunicationViewModel,
         deviceConnectSharedFlow: DeviceConnectSharedFlow
     ) {
         Dialog(
             onDismissRequest = {
-                testCommunicationViewModel.init()
+                deviceCommunicationViewModel.init()
                 navHostController.popBackStack()
             }
         ) {
             var timer by remember { mutableIntStateOf(15) }
             when(deviceConnectSharedFlow) {
                 is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
-                    testCommunicationViewModel.init()
+                    deviceCommunicationViewModel.init()
                     navHostController.popBackStack(
                         route = MainView.CreditPayment.name,
                         inclusive = false
@@ -174,7 +169,7 @@ class CreditPaymentView() {
                                     timer -= 1
                                 }
                                 if(timer == -1) {
-                                    testCommunicationViewModel.init()
+                                    deviceCommunicationViewModel.init()
                                     Handler(Looper.getMainLooper()).postDelayed({
                                         navHostController.popBackStack(
                                             route = MainView.CreditPayment.name,
@@ -237,15 +232,15 @@ class CreditPaymentView() {
     fun creditPaymentView(
         navHostController: NavController,
         mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
-        viewModel: TestCommunicationViewModel = hiltViewModel()
+        viewModel: DeviceCommunicationViewModel = hiltViewModel()
     ) {
         val context = LocalContext.current
         val screenWidth = LocalConfiguration.current.screenWidthDp
-        val testCommunicationViewModel = viewModel.setDeviceType()!!
+        val deviceCommunicationViewModel = viewModel.setDeviceType()!!
         var installment by remember { mutableStateOf("일시불") }
         var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
         serialCommunicationResult(
-            testCommunicationViewModel = testCommunicationViewModel,
+            deviceCommunicationViewModel = deviceCommunicationViewModel,
             navHostController = navHostController,
             dialogMessage = { errorDialog(message = it) },
         )
@@ -269,7 +264,7 @@ class CreditPaymentView() {
 
         DisposableEffect(Unit) {
             onDispose {
-                testCommunicationViewModel.serviceUnbind()
+                deviceCommunicationViewModel.serviceUnbind()
             }
         }
 
@@ -367,8 +362,8 @@ class CreditPaymentView() {
                             .height(60.dp),
                         fontSize = 20.sp,
                         onClick = {
-                            if(testCommunicationViewModel != null) {
-                                testCommunicationViewModel.requestOfflinePayment(
+                            if(deviceCommunicationViewModel != null) {
+                                deviceCommunicationViewModel.requestOfflinePayment(
                                     RequestInsertPaymentDataDTO(
                                         amount = Integer.parseInt(account),
                                         installment = installmentFormat(installment),
@@ -449,7 +444,7 @@ class CreditPaymentView() {
 
 @Composable
 fun serialCommunicationResult(
-    testCommunicationViewModel: TestCommunicationViewModel,
+    deviceCommunicationViewModel: DeviceCommunicationViewModel,
     navHostController: NavController,
     dialogMessage: @Composable (String) -> Unit = {},
 ) {
@@ -462,24 +457,24 @@ fun serialCommunicationResult(
             )
         )
     }
-    if(testCommunicationViewModel != null) {
-        val deviceConnectSharedFlow = testCommunicationViewModel.deviceConnectSharedFlow.collectAsStateWithLifecycle(
+    if(deviceCommunicationViewModel != null) {
+        val deviceConnectSharedFlow = deviceCommunicationViewModel.deviceConnectSharedFlow.collectAsStateWithLifecycle(
             initialValue = ""
         ).value
-        val responseTmsAPI = testCommunicationViewModel.responseTmsAPI.collectAsStateWithLifecycle(
+        val responseTmsAPI = deviceCommunicationViewModel.responseTmsAPI.collectAsStateWithLifecycle(
             initialValue = ""
         ).value
 
         when(deviceConnectSharedFlow) {
             is DeviceConnectSharedFlow.SerialCommunicationMessageFlow -> {
-                when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                when (deviceCommunicationViewModel.getCurrentRegisteredDeviceType()) {
                     DeviceType.Bluetooth.name -> {
                         if (!sweetAlertDialog.isShowing) {
                             sweetAlertDialog = SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE)
                             sweetAlertDialog.progressHelper?.barColor = Color.Green.toArgb()
                             sweetAlertDialog.setCancelable(true)
                             sweetAlertDialog.setOnCancelListener(DialogInterface.OnCancelListener {
-                                testCommunicationViewModel.disConnect()
+                                deviceCommunicationViewModel.disConnect()
                                 sweetAlertDialog.dismiss()
                             })
                         }
@@ -488,7 +483,7 @@ fun serialCommunicationResult(
                     }
                     DeviceType.Usb.name -> {
                         val params = bundleOf(
-                            SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel,
+                            SerialCommunicationUsbDialogData.ViewModel.name to deviceCommunicationViewModel,
                             SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name to deviceConnectSharedFlow
                         )
                         navHostController.navigate(
@@ -500,13 +495,13 @@ fun serialCommunicationResult(
                 }
             }
             is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
-                when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                when (deviceCommunicationViewModel.getCurrentRegisteredDeviceType()) {
                     DeviceType.Bluetooth.name -> {
                         sweetAlertDialog.dismiss()
                     }
                     DeviceType.Usb.name -> {
                         val params = bundleOf(
-                            SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel,
+                            SerialCommunicationUsbDialogData.ViewModel.name to deviceCommunicationViewModel,
                             SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name to deviceConnectSharedFlow
                         )
                         navHostController.navigate(

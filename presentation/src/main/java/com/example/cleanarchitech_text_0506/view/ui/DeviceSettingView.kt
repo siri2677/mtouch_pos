@@ -31,7 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,13 +62,7 @@ import com.example.cleanarchitech_text_0506.sealed.DeviceList
 import com.example.cleanarchitech_text_0506.enum.DeviceType
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
 
 class DeviceSettingView {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -135,8 +128,7 @@ class DeviceSettingView {
     fun bluetoothDeviceList(
         isAlwaysConnecting: Boolean,
         context: Context,
-        testCommunicationViewModel: TestCommunicationViewModel,
-        owner: LifecycleOwner?
+        deviceCommunicationViewModel: DeviceCommunicationViewModel,
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
         var selectedIndex by rememberSaveable { mutableStateOf(-2) }
@@ -144,11 +136,10 @@ class DeviceSettingView {
         var isConnectingDevice by remember { mutableStateOf(false) }
         var bluetoothDeviceList: ArrayList<BluetoothDevice>? by remember { mutableStateOf(ArrayList()) }
 
-        testCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
+        deviceCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
             block = {
                 when(it) {
                     is DeviceList.BluetoothList -> {
-                        Log.w("bluetoothDevice", "Device")
                         if (observerDataSize != it.devices.size) {
                             bluetoothDeviceList = null
                         }
@@ -159,7 +150,7 @@ class DeviceSettingView {
                 }
             }
         )
-        testCommunicationViewModel.deviceConnectSharedFlow?.CollectAsEffect(
+        deviceCommunicationViewModel.deviceConnectSharedFlow?.CollectAsEffect(
             block = {
                 when(it){
                     is DeviceConnectSharedFlow.ConnectCompleteFlow -> { isConnectingDevice = it.flow }
@@ -167,19 +158,6 @@ class DeviceSettingView {
                 }
             }
         )
-
-
-//        testCommunicationViewModel?.listUpdate?.observe(owner!!) {
-//            it.getContentIfNotHandled()?.let { scanResult ->
-//                if (observerDataSize != scanResult.size) {
-//                    bluetoothDeviceList = null
-//                }
-//                observerDataSize = scanResult.size
-//                bluetoothDeviceList = scanResult
-//                Log.w("bluetoothDeviceList",bluetoothDeviceList.toString())
-//            }
-//        }
-
 
         if(isConnectingDevice) Text(text = ("success"))
         else Text(text = ("fail"))
@@ -199,7 +177,7 @@ class DeviceSettingView {
                         context = context,
                         onTap = { selectedIndex = index },
                         onTapCancle = { selectedIndex = -2 },
-                        testCommunicationViewModel = testCommunicationViewModel,
+                        deviceCommunicationViewModel = deviceCommunicationViewModel,
 //                        bluetoothViewModel = bluetoothViewModel,
                         isConnectingDevice = isConnectingDevice
                     )
@@ -213,11 +191,11 @@ class DeviceSettingView {
     fun bluetoothDevice(
         context: Context?,
         owner: LifecycleOwner?,
-        viewModel: TestCommunicationViewModel = hiltViewModel(),
+        viewModel: DeviceCommunicationViewModel = hiltViewModel(),
 //        bluetoothViewModel: BluetoothViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
-        val testCommunicationViewModel = viewModel.setDeviceType(DeviceType.Bluetooth.name)!!
+        val deviceCommunicationViewModel = viewModel.setDeviceType(DeviceType.Bluetooth.name)!!
         var deviceType by remember { mutableStateOf("bluetooth") }
         var modifier = DeviceTypeSelection(deviceType)
         var isDeviceSearching by remember { mutableStateOf(false) }
@@ -244,8 +222,7 @@ class DeviceSettingView {
         }
         DisposableEffect(Unit) {
             onDispose {
-//                bluetoothViewModel.bluetoothDeviceUnBinding()
-                testCommunicationViewModel.serviceUnbind()
+                deviceCommunicationViewModel.serviceUnbind()
             }
         }
         Scaffold(
@@ -314,9 +291,7 @@ class DeviceSettingView {
                     bluetoothDeviceList(
                         isAlwaysConnecting,
                         context!!,
-//                        bluetoothViewModel!!,
-                        testCommunicationViewModel,
-                        owner!!
+                        deviceCommunicationViewModel,
                     )
 
                     Row(
@@ -335,11 +310,9 @@ class DeviceSettingView {
                                 )
                                 .clickable(onClick = {
                                     if (isDeviceSearching)
-                                        testCommunicationViewModel.scanCancel()
-//                                        bluetoothViewModel.stopScanBluetoothDevice()
+                                        deviceCommunicationViewModel.scanCancel()
                                     else
-                                        testCommunicationViewModel.scan()
-//                                        bluetoothViewModel.scanBluetoothDevice()
+                                        deviceCommunicationViewModel.scan()
                                     isDeviceSearching = !isDeviceSearching
                                 }),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -378,14 +351,14 @@ class DeviceSettingView {
     @Composable
     fun usbDeviceList(
         context: Context,
-        testCommunicationViewModel: TestCommunicationViewModel
+        deviceCommunicationViewModel: DeviceCommunicationViewModel
     ) {
         val screenWidth = LocalConfiguration.current.screenWidthDp
         var isPermissionGranted by remember { mutableStateOf(false) }
         var selectedIndex by rememberSaveable { mutableStateOf(-2) }
         var usbDeviceList: ArrayList<UsbDevice>? by remember { mutableStateOf(ArrayList()) }
 
-        testCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
+        deviceCommunicationViewModel.deviceConnectScanFlow.CollectAsEffect(
             block = {
                 when(it) {
                     is DeviceList.USBList -> { usbDeviceList = it.devices }
@@ -393,7 +366,7 @@ class DeviceSettingView {
                 }
             }
         )
-        testCommunicationViewModel.deviceConnectSharedFlow.CollectAsEffect(
+        deviceCommunicationViewModel.deviceConnectSharedFlow.CollectAsEffect(
             block = {
                 when(it) {
                     is DeviceConnectSharedFlow.PermissionCheckCompleteFlow -> { isPermissionGranted = it.flow }
@@ -416,7 +389,7 @@ class DeviceSettingView {
                         context = context,
                         onTap = { selectedIndex = index },
                         onTapCancel = { selectedIndex = -2 },
-                        testCommunicationViewModel = testCommunicationViewModel,
+                        deviceCommunicationViewModel = deviceCommunicationViewModel,
                         isPermissionGranted = isPermissionGranted
                     )
                 }
@@ -428,11 +401,10 @@ class DeviceSettingView {
     @Composable
     fun usbDevice(
         context: Context,
-        owner: LifecycleOwner,
-        viewModel: TestCommunicationViewModel = hiltViewModel(),
+        viewModel: DeviceCommunicationViewModel = hiltViewModel(),
         navHostController: NavController
     ) {
-        val testCommunicationViewModel = viewModel.setDeviceType(DeviceType.Usb.name)!!
+        val deviceCommunicationViewModel = viewModel.setDeviceType(DeviceType.Usb.name)!!
         var deviceType by remember { mutableStateOf("usb") }
         var modifier = DeviceTypeSelection(deviceType)
 //        testCommunicationViewModel.serviceBind()
@@ -444,7 +416,7 @@ class DeviceSettingView {
         }
         DisposableEffect(Unit){
             onDispose {
-                testCommunicationViewModel?.serviceUnbind()
+                deviceCommunicationViewModel?.serviceUnbind()
             }
         }
         Scaffold(
@@ -510,7 +482,7 @@ class DeviceSettingView {
                         )
                     }
 
-                    usbDeviceList(context, testCommunicationViewModel!!)
+                    usbDeviceList(context, deviceCommunicationViewModel!!)
 
                     Row(
                         modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
@@ -529,7 +501,7 @@ class DeviceSettingView {
                                         )
                                     )
                                 )
-                                .clickable(onClick = { testCommunicationViewModel.scan() }),
+                                .clickable(onClick = { deviceCommunicationViewModel.scan() }),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -552,7 +524,7 @@ class DeviceSettingView {
         context: Context,
         onTap: () -> Unit,
         onTapCancel: () -> Unit,
-        testCommunicationViewModel: TestCommunicationViewModel,
+        deviceCommunicationViewModel: DeviceCommunicationViewModel,
         isPermissionGranted: Boolean
     ) {
         val backgroundColor = if (isSelected) R.color.grey7 else R.color.grey5
@@ -606,7 +578,7 @@ class DeviceSettingView {
                                     .height(70.dp),
                                 onClick = {
                                     onTapCancel()
-                                    testCommunicationViewModel.disConnect()
+                                    deviceCommunicationViewModel.disConnect()
                                 },
                                 shape = RoundedCornerShape(10),
                                 colors = ButtonDefaults.buttonColors(
@@ -624,7 +596,7 @@ class DeviceSettingView {
                             }
                         }
                     } else {
-                        testCommunicationViewModel.connect(Device.USB(item))
+                        deviceCommunicationViewModel.connect(Device.USB(item))
                     }
                 }
             }
@@ -639,7 +611,7 @@ class DeviceSettingView {
         context: Context,
         onTap: () -> Unit,
         onTapCancle: () -> Unit,
-        testCommunicationViewModel: TestCommunicationViewModel,
+        deviceCommunicationViewModel: DeviceCommunicationViewModel,
 //        bluetoothViewModel: BluetoothViewModel,
         isConnectingDevice: Boolean
     ) {
@@ -686,7 +658,7 @@ class DeviceSettingView {
                     }
                 }
                 if (isSelected && !isAlwaysConnecting) {
-                    testCommunicationViewModel.bluetoothDeviceResister(item)
+                    deviceCommunicationViewModel.bluetoothDeviceResister(item)
 //                    if(isConnectingDevice) {
 //                        testCommunicationViewModel.disConnect()
 //                    }
@@ -700,7 +672,7 @@ class DeviceSettingView {
                                 .height(70.dp),
                             onClick = {
                                 onTapCancle()
-                                testCommunicationViewModel.bluetoothDeviceUnResister()
+                                deviceCommunicationViewModel.bluetoothDeviceUnResister()
                             },
                             shape = RoundedCornerShape(10),
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.orange_pink))
@@ -727,7 +699,7 @@ class DeviceSettingView {
                                     .height(70.dp),
                                 onClick = {
                                     onTapCancle()
-                                    testCommunicationViewModel.disConnect()
+                                    deviceCommunicationViewModel.disConnect()
                                 },
                                 shape = RoundedCornerShape(10),
                                 colors = ButtonDefaults.buttonColors(
@@ -746,7 +718,7 @@ class DeviceSettingView {
                         }
                     } else {
                         Log.w("notisConnectingDevice", "notisConnectingDevice")
-                        testCommunicationViewModel.connect(Device.Bluetooth(item))
+                        deviceCommunicationViewModel.connect(Device.Bluetooth(item))
 //                        bluetoothViewModel.bluetoothDeviceConnect(item)
                     }
                 }

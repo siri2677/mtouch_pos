@@ -6,12 +6,12 @@ import com.example.domain.dto.response.pay.ResponseDirectCancelPaymentDto
 import com.example.domain.dto.response.pay.ResponseDirectPaymentDto
 
 interface DirectPaymentRepository {
-    suspend fun approve(
+    fun approve(
         onSuccess: (ResponseDirectPaymentDto) -> Unit,
         onError: (String) -> Unit,
         body: RequestDirectPaymentDto
     )
-    suspend fun refund(
+    fun refund(
         onSuccess: (ResponseDirectCancelPaymentDto) -> Unit,
         onError: (String) -> Unit,
         body: RequestDirectCancelPaymentDto

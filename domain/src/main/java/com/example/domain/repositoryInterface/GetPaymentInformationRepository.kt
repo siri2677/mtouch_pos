@@ -7,7 +7,7 @@ import com.example.domain.dto.response.tms.ResponseGetPaymentListDto
 import com.example.domain.dto.response.tms.ResponseGetPaymentStatisticsDto
 
 interface GetPaymentInformationRepository {
-    suspend fun statistics(
+    fun statistics(
         onSuccess: (ResponseGetPaymentStatisticsDto) -> Unit,
         onError: (String) -> Unit,
         token: String?,

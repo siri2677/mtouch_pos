@@ -16,6 +16,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.text.SpannableStringBuilder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -210,10 +211,19 @@ class UsbDeviceConnectServiceImpl: Service(), DeviceConnectService, SerialInputO
     }
 
     override fun sendData(byteArray: ByteArray?) {
-//        flowCollect()
-        try {
+        if(::usbSerialPort.isInitialized) {
+            val spn = SpannableStringBuilder()
+            spn.append("receive ${byteArray?.size} bytes\n")
+            spn.append(
+                byteArray?.size?.let {
+                    ResponseSerialCommunicationFormat().toHex(
+                        byteArray,
+                        it
+                    )
+                }
+            ).append("\n")
+            Log.w("requestData", spn.toString())
             usbSerialPort.write(byteArray, 0)
-        } catch (e: Exception) {
         }
     }
 

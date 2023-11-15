@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 import org.mapstruct.factory.Mappers
 
 class GetPaymentInformationRepositoryImpl: GetPaymentInformationRepository {
-    override suspend fun statistics(
+    override fun statistics(
         onSuccess: (ResponseGetPaymentStatisticsDto) -> Unit,
         onError: (String) -> Unit,
         token: String?,

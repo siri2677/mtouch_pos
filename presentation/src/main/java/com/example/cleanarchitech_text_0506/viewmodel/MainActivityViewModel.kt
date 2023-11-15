@@ -5,20 +5,18 @@ import androidx.lifecycle.viewModelScope
 import com.example.domain.dto.request.tms.RequestGetUserInformationDto
 import com.example.domain.dto.response.tms.ResponseGetSummaryPaymentStatisticsDto
 import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
-import com.example.domain.repositoryInterface.LoginRelatedRepository
+import com.example.domain.repositoryInterface.LoginRepository
 import com.example.domain.repositoryInterface.UserInformationRepository
 import com.example.domain.repositoryInterface.UserInformationSharedPreference
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val loginRelatedRepository: LoginRelatedRepository,
+    private val loginRepository: LoginRepository,
     private val userInformationSharedPreference: UserInformationSharedPreference,
     private val userInformationRepository: UserInformationRepository
 ) : ViewModel(){
@@ -36,7 +34,7 @@ class MainActivityViewModel @Inject constructor(
 
     fun summary(token: String) {
         viewModelScope.launch {
-            loginRelatedRepository.summary(
+            loginRepository.summary(
                 onSuccess = { summaryPaymentStatistics.value = it },
                 onError = { responseErrorBody.value = it },
                 token = token
@@ -45,7 +43,7 @@ class MainActivityViewModel @Inject constructor(
     }
 
     fun login(requestGetUserInformationDto: RequestGetUserInformationDto) {
-        loginRelatedRepository.key(
+        loginRepository.key(
             onSuccess = { userInformation.value = it },
             summary = { summary(userInformation?.value?.key.toString()) },
             onError = { responseErrorBody.value = it },

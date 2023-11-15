@@ -35,15 +35,15 @@ f0ris-sweetalert = "1.6.2"
 mik3y-usb = "3.5.1"
 
 
-
-
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradle" }
 android-library = { id = "com.android.library", version.ref = "androidGradle" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -83,6 +83,7 @@ test-espresso = { module = "androidx.test.espresso:espresso-core", version.ref =
 rxAndroidBLE = { module = "io.nrbtech.rxandroidble:rxandroidble", version.ref = "rxAndroidBLE" }
 f0ris-sweetalert = { module = "com.github.f0ris.sweetalert:library", version.ref = "f0ris-sweetalert" }
 mik3y-usb = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "mik3y-usb" }
+
 
 [bundles]
 retrofit = [

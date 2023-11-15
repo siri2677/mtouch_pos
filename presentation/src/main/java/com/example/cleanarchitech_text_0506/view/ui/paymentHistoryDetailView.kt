@@ -35,7 +35,7 @@ import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DirectPaymentViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.dto.response.tms.ResponseGetPaymentListBody
 
@@ -45,14 +45,14 @@ fun paymentHistoryDetailMainView(
     responseGetPaymentListBody: ResponseGetPaymentListBody,
     mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
     directPaymentViewModel: DirectPaymentViewModel = hiltViewModel(),
-    testCommunicationViewModel: TestCommunicationViewModel = hiltViewModel()
+    deviceCommunicationViewModel: DeviceCommunicationViewModel = hiltViewModel()
 ) {
     paymentHistoryDetailView(
         navHostController,
         responseGetPaymentListBody,
         mainActivityViewModel,
         directPaymentViewModel,
-        testCommunicationViewModel.setDeviceType()
+        deviceCommunicationViewModel.setDeviceType()
     )
 }
 
@@ -63,13 +63,13 @@ fun paymentHistoryDetailView(
     responseGetPaymentListBody: ResponseGetPaymentListBody,
     mainActivityViewModel: MainActivityViewModel?,
     directPaymentViewModel: DirectPaymentViewModel?,
-    testCommunicationViewModel: TestCommunicationViewModel?
+    deviceCommunicationViewModel: DeviceCommunicationViewModel?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
 
-    if(testCommunicationViewModel != null) {
+    if(deviceCommunicationViewModel != null) {
         serialCommunicationResult(
-            testCommunicationViewModel = testCommunicationViewModel,
+            deviceCommunicationViewModel = deviceCommunicationViewModel,
             navHostController = navHostController,
             dialogMessage = { errorDialog(message = it) },
         )
@@ -155,7 +155,7 @@ fun paymentHistoryDetailView(
                                 .weight(1f)
                                 .background(colorResource(id = R.color.red))
                                 .clickable {
-                                    testCommunicationViewModel?.requestOfflinePaymentCancel(
+                                    deviceCommunicationViewModel?.requestOfflinePaymentCancel(
                                         RequestInsertPaymentDataDTO(
                                             amount = Integer.parseInt(responseGetPaymentListBody.amount),
                                             installment = responseGetPaymentListBody.installment,
@@ -220,7 +220,7 @@ fun PaymentHistoryDetailPreView() {
             ),
             mainActivityViewModel = null,
             directPaymentViewModel = null,
-            testCommunicationViewModel = null
+            deviceCommunicationViewModel = null
         )
     }
 }

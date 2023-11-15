@@ -43,11 +43,10 @@ import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.enum.TransactionType
-import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DirectPaymentViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
 import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
 import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
@@ -59,14 +58,14 @@ fun CompletePaymentView(
     completePaymentViewVO: CompletePaymentViewVO?,
     mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
     directPaymentViewModel: DirectPaymentViewModel = hiltViewModel(),
-    testCommunicationViewModel: TestCommunicationViewModel = hiltViewModel()
+    deviceCommunicationViewModel: DeviceCommunicationViewModel = hiltViewModel()
 ) {
     CompletePaymentMainView(
         navHostController,
         completePaymentViewVO!!,
         mainActivityViewModel,
         directPaymentViewModel,
-        testCommunicationViewModel.setDeviceType()!!
+        deviceCommunicationViewModel.setDeviceType()!!
     )
 }
 
@@ -77,14 +76,14 @@ fun CompletePaymentMainView(
     completePaymentViewVO: CompletePaymentViewVO,
     mainActivityViewModel: MainActivityViewModel?,
     directPaymentViewModel: DirectPaymentViewModel?,
-    testCommunicationViewModel: TestCommunicationViewModel?
+    deviceCommunicationViewModel: DeviceCommunicationViewModel?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
     val responseDirectPayment = directPaymentViewModel?.responseDirectPayment?.collectAsStateWithLifecycle(
         initialValue = ""
     )?.value
-    val deviceConnectSharedFlow = testCommunicationViewModel?.deviceConnectSharedFlow?.collectAsStateWithLifecycle(
+    val deviceConnectSharedFlow = deviceCommunicationViewModel?.deviceConnectSharedFlow?.collectAsStateWithLifecycle(
         initialValue = ""
     )?.value
 
@@ -119,7 +118,7 @@ fun CompletePaymentMainView(
     }
 
     serialCommunicationResult(
-        testCommunicationViewModel = testCommunicationViewModel!!,
+        deviceCommunicationViewModel = deviceCommunicationViewModel!!,
         navHostController = navHostController,
         dialogMessage = { errorDialog(message = it) },
     )
@@ -210,7 +209,7 @@ fun CompletePaymentMainView(
                                             )
                                         }
                                         TransactionType.Offline -> {
-                                            testCommunicationViewModel?.requestOfflinePaymentCancel(
+                                            deviceCommunicationViewModel?.requestOfflinePaymentCancel(
                                                 RequestInsertPaymentDataDTO(
                                                     amount = Integer.parseInt(completePaymentViewVO.amount),
                                                     installment = completePaymentViewVO.installment,
@@ -327,7 +326,7 @@ fun CompletePaymentMainPreView() {
             ),
             mainActivityViewModel = null,
             directPaymentViewModel = null,
-            testCommunicationViewModel = null
+            deviceCommunicationViewModel = null
         )
     }
 }

@@ -4,13 +4,13 @@ import android.content.Context
 import com.example.data.dataBase.AppDatabase
 import com.example.data.repository.api.DirectPaymentRepositoryImpl
 import com.example.data.repository.api.GetPaymentInformationRepositoryImpl
-import com.example.data.repository.api.LoginRelatedRepositoryImpl
+import com.example.data.repository.api.LoginRepositoryImpl
 import com.example.data.repository.api.OfflinePaymentRepositoryImpl
 import com.example.data.repository.db.UserInformationRepositoryImpl
 import com.example.data.sharedpreference.UserInformationSharedPreferenceImpl
 import com.example.domain.repositoryInterface.DirectPaymentRepository
 import com.example.domain.repositoryInterface.GetPaymentInformationRepository
-import com.example.domain.repositoryInterface.LoginRelatedRepository
+import com.example.domain.repositoryInterface.LoginRepository
 import com.example.domain.repositoryInterface.OfflinePaymentRepository
 import com.example.domain.repositoryInterface.UserInformationRepository
 import com.example.domain.repositoryInterface.UserInformationSharedPreference
@@ -29,7 +29,7 @@ object RetrofitApiModule {
     @ViewModelScoped
     fun provideLoginRelatedRepository(
         @ApplicationContext context: Context
-    ): LoginRelatedRepository = LoginRelatedRepositoryImpl(context)
+    ): LoginRepository = LoginRepositoryImpl(context)
 
     @Provides
     @ViewModelScoped

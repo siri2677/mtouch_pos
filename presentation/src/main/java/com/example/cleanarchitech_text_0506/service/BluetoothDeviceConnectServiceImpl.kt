@@ -101,49 +101,6 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
         startForeground(NOTIFICATION_ID, notification)
     }
 
-//    private fun flowCollect() {
-//        job = CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.LAZY) {
-//            responseSerialCommunicationFormat.afterProcess.collect {
-//                when (it.type) {
-//                    ProcessAfterSerialCommunicate.RequestCardInsert.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.IcCardInsertRequest.message)
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.RequestCardNumber.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.PaymentProgressing.message)
-//                        )
-//                        sendData(
-//                            EncMSRManager().makeCardNumSendReq(
-//                                requestInsertPaymentDataDTO.amount.toString().toByteArray(),
-//                                "10".toByteArray()
-//                            )
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.RequestFallback.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.FallBackMessage.message)
-//                        )
-//                        sendData(
-//                            EncMSRManager().makeFallBackCardReq(it.data!!, "99")
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.NoticeCompletePayment.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.CompletePayment.message)
-//                        )
-//                        delay(300)
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.PaymentCompleteFlow(true)
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//        if(!job.isActive){ job.start() }
-//    }
-
     @SuppressWarnings("MissingPermission")
     override fun connectDevice(bluetoothDevice: String, byteArray: ByteArray) {
         this.byteArray = byteArray
@@ -154,7 +111,6 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
     }
 
     override fun sendData(byteArray: ByteArray?){
-//        flowCollect()
         if(::bluetoothGatt.isInitialized) {
             val bluetoothGattCharacteristic = findWriteCharacteristic(bluetoothGatt!!)
             if (ActivityCompat.checkSelfPermission(

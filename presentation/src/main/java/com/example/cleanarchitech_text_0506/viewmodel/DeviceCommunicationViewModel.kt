@@ -38,7 +38,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class TestCommunicationViewModel @Inject constructor(
+class DeviceCommunicationViewModel @Inject constructor(
     private val deviceSettingSharedPreference: DeviceSettingSharedPreference,
     @Bluetooth private val bluetoothServiceController: DeviceServiceController,
     @Usb private val usbServiceController: DeviceServiceController,
@@ -57,7 +57,7 @@ class TestCommunicationViewModel @Inject constructor(
         get() = deviceScan.listUpdate
     val responseTmsAPI = MutableSharedFlow<ResponseTmsAPI>()
 
-    fun setDeviceType(deviceType: String = getCurrentRegisteredDeviceType()): TestCommunicationViewModel? {
+    fun setDeviceType(deviceType: String = getCurrentRegisteredDeviceType()): DeviceCommunicationViewModel? {
         return when(deviceType) {
             DeviceType.Bluetooth.name -> {
                 deviceServiceController = bluetoothServiceController
