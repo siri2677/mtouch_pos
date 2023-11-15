@@ -4,7 +4,6 @@ import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
 import com.example.domain.dto.request.pay.RequestDirectPaymentDto
 import com.example.domain.dto.response.pay.ResponseDirectCancelPaymentDto
 import com.example.domain.dto.response.pay.ResponseDirectPaymentDto
-import kotlinx.coroutines.flow.Flow
 
 interface DirectPaymentRepository {
     suspend fun approve(

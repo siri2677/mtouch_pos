@@ -16,16 +16,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,13 +71,7 @@ fun paymentHistoryDetailView(
         serialCommunicationResult(
             testCommunicationViewModel = testCommunicationViewModel,
             navHostController = navHostController,
-            dialogMessage = {
-                errorDialog(
-                    message = it,
-                    onDismissRequest = { },
-                )
-            },
-            paymentType = PaymentType.Refund
+            dialogMessage = { errorDialog(message = it) },
         )
     }
 
@@ -161,7 +150,7 @@ fun paymentHistoryDetailView(
                         .padding(start = 10.dp, end = 20.dp, top = 30.dp, bottom = 20.dp)
                 ) {
                     if (responseGetPaymentListBody.trxResult == "승인") {
-                        bottomRowButton(
+                        BottomRowButton(
                             modifier = Modifier
                                 .weight(1f)
                                 .background(colorResource(id = R.color.red))
@@ -170,9 +159,10 @@ fun paymentHistoryDetailView(
                                         RequestInsertPaymentDataDTO(
                                             amount = Integer.parseInt(responseGetPaymentListBody.amount),
                                             installment = responseGetPaymentListBody.installment,
+                                            token = mainActivityViewModel?.getUserInformation()?.key!!,
+                                            type = PaymentType.Refund.value,
                                             authCd = responseGetPaymentListBody.authCd,
                                             regDate = responseGetPaymentListBody.regDay.substring(2, 8),
-                                            token = mainActivityViewModel?.getUserInformation()?.key!!,
                                             trxId = responseGetPaymentListBody.trxId
                                         )
                                     )
@@ -180,13 +170,13 @@ fun paymentHistoryDetailView(
                             value = "취소"
                         )
                     }
-                    bottomRowButton(
+                    BottomRowButton(
                         modifier = Modifier
                             .weight(1f)
                             .background(colorResource(id = R.color.teal_700)),
                         value = "PRINT"
                     )
-                    bottomRowButton(
+                    BottomRowButton(
                         modifier = Modifier
                             .weight(1f)
                             .background(colorResource(id = R.color.blackbb)),

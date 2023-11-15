@@ -148,6 +148,7 @@ class DeviceSettingView {
             block = {
                 when(it) {
                     is DeviceList.BluetoothList -> {
+                        Log.w("bluetoothDevice", "Device")
                         if (observerDataSize != it.devices.size) {
                             bluetoothDeviceList = null
                         }

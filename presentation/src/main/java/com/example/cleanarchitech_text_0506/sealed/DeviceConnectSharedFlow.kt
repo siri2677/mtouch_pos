@@ -1,5 +1,6 @@
 package com.example.cleanarchitech_text_0506.sealed
 
+import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
 import com.example.data.entity.api.response.tms.ResponseInsertPaymentDataEntity
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
@@ -8,7 +9,7 @@ import java.io.Serializable
 
 sealed interface DeviceConnectSharedFlow: Serializable {
     data class DeviceListFlow(val flow: DeviceList): DeviceConnectSharedFlow
-    data class PaymentCompleteFlow(val responseInsertPaymentDataDTO: ResponseInsertPaymentDataDTO): DeviceConnectSharedFlow
+    data class PaymentCompleteFlow(val completePaymentViewVO: CompletePaymentViewVO): DeviceConnectSharedFlow
     data class ConnectCompleteFlow(val flow: Boolean): DeviceConnectSharedFlow
     data class PermissionCheckCompleteFlow(val flow: Boolean): DeviceConnectSharedFlow
     data class RequestSocketCommunication(val ksnetSocketCommunicationDTO: KsnetSocketCommunicationDTO): DeviceConnectSharedFlow

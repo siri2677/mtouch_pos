@@ -78,6 +78,7 @@ import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_05
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
 import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
+import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.dto.request.tms.RequestPaymentDTO
 import com.example.domain.sealed.ResponseTmsAPI
 import kotlinx.coroutines.delay
@@ -125,7 +126,7 @@ class CreditPaymentView() {
         vertical: Arrangement.Vertical = Arrangement.Center,
         horizon: Alignment.Horizontal = Alignment.CenterHorizontally,
         backGround: Int,
-        text: Unit = Unit
+        text: @Composable () -> Unit = {}
     ) {
         Column(
             modifier = Modifier
@@ -139,7 +140,7 @@ class CreditPaymentView() {
             verticalArrangement = vertical,
             horizontalAlignment = horizon
         ) {
-            text
+            text()
         }
     }
 
@@ -185,11 +186,13 @@ class CreditPaymentView() {
                             dialogFormat(
                                 vertical = Arrangement.Bottom,
                                 backGround = R.drawable.pb2_4,
-                                text = Text(
-                                    modifier = Modifier.padding(bottom = 15.dp),
-                                    color = colorResource(R.color.white),
-                                    text = if(timer == -1) "결제 대기 시간이 초과 되었습니다" else  "결제 대기 시간: $timer"
-                                )
+                                text = {
+                                    Text(
+                                        modifier = Modifier.padding(bottom = 15.dp),
+                                        color = colorResource(R.color.white),
+                                        text = if(timer == -1) "결제 대기 시간이 초과 되었습니다" else  "결제 대기 시간: $timer"
+                                    )
+                                }
                             )
                         }
                         SerialCommunicationMessage.PaymentProgressing.message ->
@@ -203,11 +206,13 @@ class CreditPaymentView() {
                         SerialCommunicationMessage.CompletePayment.message -> {
                             dialogFormat(
                                 backGround = R.drawable.pb4,
-                                text = Text(
-                                    modifier = Modifier.padding(top = 40.dp),
-                                    color = colorResource(R.color.white),
-                                    text = testCommunicationViewModel.getSerialCommunicationMessage()!!
-                                )
+                                text = {
+                                    Text(
+                                        modifier = Modifier.padding(top = 40.dp),
+                                        color = colorResource(R.color.white),
+                                        text = deviceConnectSharedFlow.message
+                                    )
+                                }
                             )
                         }
                     }
@@ -239,17 +244,10 @@ class CreditPaymentView() {
         val testCommunicationViewModel = viewModel.setDeviceType()!!
         var installment by remember { mutableStateOf("일시불") }
         var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
-
         serialCommunicationResult(
             testCommunicationViewModel = testCommunicationViewModel,
             navHostController = navHostController,
-            dialogMessage = {
-                errorDialog(
-                    message = it,
-                    onDismissRequest = { },
-                )
-            },
-            paymentType = PaymentType.Approve
+            dialogMessage = { errorDialog(message = it) },
         )
 
         when (clickEvent) {
@@ -371,10 +369,11 @@ class CreditPaymentView() {
                         onClick = {
                             if(testCommunicationViewModel != null) {
                                 testCommunicationViewModel.requestOfflinePayment(
-                                    RequestPaymentDTO(
-                                        amount = account,
+                                    RequestInsertPaymentDataDTO(
+                                        amount = Integer.parseInt(account),
                                         installment = installmentFormat(installment),
-                                        token = mainActivityViewModel.getUserInformation().key!!
+                                        token = mainActivityViewModel.getUserInformation().key!!,
+                                        type = PaymentType.Approve.value
                                     )
                                 )
                             } else {
@@ -453,7 +452,6 @@ fun serialCommunicationResult(
     testCommunicationViewModel: TestCommunicationViewModel,
     navHostController: NavController,
     dialogMessage: @Composable (String) -> Unit = {},
-    paymentType: PaymentType
 ) {
     val context = LocalContext.current
     var sweetAlertDialog by remember {
@@ -520,20 +518,9 @@ fun serialCommunicationResult(
                 }
 
                 Handler(Looper.getMainLooper()).postDelayed({
-                    val completePaymentViewVo = CompletePaymentViewVO(
-                        transactionType = TransactionType.Offline,
-                        paymentType = paymentType,
-                        installment = deviceConnectSharedFlow.responseInsertPaymentDataDTO.installment!!,
-                        trackId = deviceConnectSharedFlow.responseInsertPaymentDataDTO.trackId!!,
-                        cardNumber = deviceConnectSharedFlow.responseInsertPaymentDataDTO.cardNumber!!,
-                        amount = deviceConnectSharedFlow.responseInsertPaymentDataDTO.amount!!,
-                        regDay = deviceConnectSharedFlow.responseInsertPaymentDataDTO.regDay!!,
-                        authCode = deviceConnectSharedFlow.responseInsertPaymentDataDTO.authCode!!,
-                        trxId = deviceConnectSharedFlow.responseInsertPaymentDataDTO.trxId!!
-                    )
                     navHostController?.navigate(
                         MainView.CompletePayment.name,
-                        bundleOf("responsePayAPI" to completePaymentViewVo),
+                        bundleOf("responsePayAPI" to deviceConnectSharedFlow.completePaymentViewVO),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 }, 400)
@@ -557,11 +544,13 @@ fun GreetingPreview() {
     CleanArchitech_text_0506Theme {
         CreditPaymentView().dialogFormat(
             backGround = R.drawable.pb4,
-            text = Text(
-                modifier = Modifier.padding(top = 40.dp),
-                color = colorResource(R.color.white),
-                text = "결제가 정상적으로 \n 완료 되었습니다."
-            )
+            text = {
+                Text(
+                    modifier = Modifier.padding(top = 40.dp),
+                    color = colorResource(R.color.white),
+                    text = "결제가 정상적으로 \n 완료 되었습니다."
+                )
+            }
         )
     }
 }
