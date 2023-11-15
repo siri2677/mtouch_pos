@@ -40,19 +40,17 @@ class MainActivityViewModel @Inject constructor(
                 onSuccess = { summaryPaymentStatistics.value = it },
                 onError = { responseErrorBody.value = it },
                 token = token
-            ).collect()
+            )
         }
     }
 
     fun login(requestGetUserInformationDto: RequestGetUserInformationDto) {
-        viewModelScope.launch {
-            loginRelatedRepository.key(
-                onSuccess = { userInformation.value = it },
-                summary = { summary(userInformation?.value?.key.toString()) },
-                onError = { responseErrorBody.value = it },
-                body = requestGetUserInformationDto
-            ).collect()
-        }
+        loginRelatedRepository.key(
+            onSuccess = { userInformation.value = it },
+            summary = { summary(userInformation?.value?.key.toString()) },
+            onError = { responseErrorBody.value = it },
+            body = requestGetUserInformationDto
+        )
     }
 
     fun getUserInformation(): ResponseGetUserInformationDto =

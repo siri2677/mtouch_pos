@@ -1,4 +1,4 @@
-package com.example.domain.util.socketClient
+package com.example.data.util
 
 import java.util.Random
 import kotlin.experimental.and

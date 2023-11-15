@@ -25,7 +25,10 @@ import com.example.domain.dto.response.tms.ResponseGetSummaryPaymentStatisticsDt
 import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
 import com.example.domain.dto.response.tms.ResponseInsertPaymentDataDTO
 import com.example.domain.dto.response.tms.ResponsePaymentDTO
+import org.mapstruct.BeanMapping
 import org.mapstruct.Mapper
+import org.mapstruct.Mapping
+import org.mapstruct.NullValuePropertyMappingStrategy
 
 @Mapper
 interface ResponseDataMapper {

@@ -7,6 +7,7 @@ import com.example.data.entity.api.request.tms.RequestPaymentEntity
 import com.example.data.mapper.api.RequestDataMapper
 import com.example.data.mapper.api.ResponseDataMapper
 import com.example.data.retrofitInterface.ApiServiceRepositoryImpl
+import com.example.data.util.KsnetUtils
 import com.example.domain.dto.request.tms.RequestCancelPaymentDTO
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.dto.request.tms.RequestPaymentDTO
@@ -14,7 +15,6 @@ import com.example.domain.dto.response.tms.ResponseCancelPaymentDTO
 import com.example.domain.dto.response.tms.ResponseInsertPaymentDataDTO
 import com.example.domain.dto.response.tms.ResponsePaymentDTO
 import com.example.domain.repositoryInterface.OfflinePaymentRepository
-import com.example.domain.util.socketClient.KsnetUtils
 import com.ksnet.interfaces.Approval
 import com.skydoves.sandwich.onError
 import com.skydoves.sandwich.onException
@@ -78,7 +78,7 @@ class OfflinePaymentRepositoryImpl: OfflinePaymentRepository {
                             .cancelPaymentEntityToDto(data.data!!)
                     )
                 }.onError() {
-                    onError(errorBody.toString())
+                    onError(String(response.errorBody()!!.bytes(), StandardCharsets.UTF_8))
                 }.onException {
                     onError(message!!)
                 }
@@ -133,7 +133,7 @@ class OfflinePaymentRepositoryImpl: OfflinePaymentRepository {
                         responseInsertPaymentDataDTO.regDay = byteToString(responseTelegram, 49, 6)
                         onSuccess(responseInsertPaymentDataDTO)
                     }.onError() {
-                        onError(errorBody.toString())
+                        onError(String(response.errorBody()!!.bytes(), StandardCharsets.UTF_8))
                     }.onException {
                         onError(message!!)
                     }

@@ -1,7 +1,6 @@
 package com.example.cleanarchitech_text_0506.util
 
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
-import com.example.domain.util.socketClient.KsnetUtils
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date

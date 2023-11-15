@@ -1,6 +1,5 @@
 package com.example.domain.repositoryInterface
 
-import io.reactivex.rxjava3.core.Single
 interface PaymentProgressingRepository {
 //    fun rule(
 //        token: String?,

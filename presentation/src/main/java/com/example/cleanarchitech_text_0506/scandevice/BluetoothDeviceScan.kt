@@ -32,7 +32,7 @@ class BluetoothDeviceScan(val context: Context): DeviceScan {
     override val listUpdate = MutableSharedFlow<DeviceList>()
 
     override fun scan() {
-        if (bleAdapter == null || !bleAdapter?.isEnabled!!) {
+        if (bleAdapter == null || !bleAdapter.isEnabled) {
         } else {
             val filters: MutableList<ScanFilter> = ArrayList()
             val scanFilter: ScanFilter = ScanFilter.Builder()
@@ -47,8 +47,6 @@ class BluetoothDeviceScan(val context: Context): DeviceScan {
             if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
                 bleAdapter?.bluetoothLeScanner?.startScan(filters, settings, BLEScanCallback)
             }
-
-//            isScanning.postValue(Event(true))
         }
     }
 
@@ -84,8 +82,7 @@ class BluetoothDeviceScan(val context: Context): DeviceScan {
             if (storedScanResult.address == currentScanResultDeviceAddress) return
         }
         storedScanResults?.add(result.device)
-        Log.w("bluetoothDevice", storedScanResults.toString())
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO).launch{
             listUpdate.emit(DeviceList.BluetoothList(storedScanResults!!))
         }
 //        scanBluetoothScanResult.postValue(Event(bluetoothScanResult))

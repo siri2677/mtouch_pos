@@ -5,17 +5,18 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url "https://jitpack.io" }
-        maven { url "https://androidx.dev/storage/compose-compiler/repository/" }
+        maven { url = uri("https://jitpack.io") }
+        maven { url = uri("https://androidx.dev/storage/compose-compiler/repository/") }
     }
 }
-rootProject.name = "cleanArchitech_text_0506"
-include ':presentation'
-include ':data'
-include ':domain'
 
+rootProject.name = "cleanArchitech_text_0506"
+include(":presentation")
+include(":data")
+include(":domain")

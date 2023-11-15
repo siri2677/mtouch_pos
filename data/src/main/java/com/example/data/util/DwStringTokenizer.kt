@@ -1,12 +1,6 @@
-package com.example.domain.util.socketClient
+package com.example.data.util
 
-class DwStringTokenizer{
-    var data: String
-    var deli: String
-    constructor(data: String, deli: String) {
-        this.data = data
-        this.deli = deli
-    }
+class DwStringTokenizer(var data: String, val deli: String){
     fun nextToken(): String {
         lateinit var buf: String
         if (data == null || deli == null) return ""

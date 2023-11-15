@@ -545,7 +545,7 @@ fun dialog(
 @Composable
 fun errorDialog(
     message: String,
-    onDismissRequest: () -> Unit,
+    onDismissRequest: () -> Unit = {},
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     var dialogVisibility by remember { mutableStateOf(true) }
