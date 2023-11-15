@@ -9,7 +9,6 @@ data class CompletePaymentViewVO(
     val paymentType: PaymentType,
     val amount: String?,
     val installment: String,
-
     val prodQty: String?,
     val prodName: String?,
     val prodPrice: String?,

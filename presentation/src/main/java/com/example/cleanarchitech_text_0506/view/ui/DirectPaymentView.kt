@@ -122,21 +122,22 @@ fun DirectPaymentMainView(
             when (it) {
                 is ResponsePayAPI.DirectPaymentContent -> {
                     val completePaymentViewVo = CompletePaymentViewVO(
-                        TransactionType.Direct,
-                        PaymentType.Approve,
-                        it.responseDirectPaymentDto.pay?.card?.installment.toString(),
-                        it.responseDirectPaymentDto.pay?.trackId!!,
-                        it.responseDirectPaymentDto.pay?.card?.bin!!,
-                        it.responseDirectPaymentDto.pay?.amount.toString(),
-                        it.responseDirectPaymentDto.result.create,
-                        it.responseDirectPaymentDto.pay?.authCd!!,
-                        it.responseDirectPaymentDto.pay?.trxId!!,
-                        payerEmail = null,
-                        trackId = null,
-                        cardNumber = null,
-                        regDay = null,
-                        authCode = null,
-                        trxId = null
+                        transactionType = TransactionType.Direct,
+                        paymentType = PaymentType.Approve,
+                        amount = it.responseDirectPaymentDto.pay?.amount.toString(),
+                        installment = it.responseDirectPaymentDto.pay?.card?.installment.toString(),
+                        prodQty = null,
+                        prodName = null,
+                        prodPrice = null,
+                        payerTel = null,
+                        payerName = null,
+                        payerEmail =  null,
+                        trackId =  it.responseDirectPaymentDto.pay?.trackId!!,
+                        cardNumber =  it.responseDirectPaymentDto.pay?.card?.bin!!,
+                        regDay =  it.responseDirectPaymentDto.result.create,
+                        authCode =  it.responseDirectPaymentDto.pay?.authCd!!,
+                        trxId = it.responseDirectPaymentDto.pay?.trxId!!
+
                     )
                     navHostController?.navigate(
                         MainView.CompletePayment.name,
