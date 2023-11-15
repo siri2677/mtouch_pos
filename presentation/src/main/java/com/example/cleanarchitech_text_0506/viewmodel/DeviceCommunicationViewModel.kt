@@ -229,7 +229,7 @@ class DeviceCommunicationViewModel @Inject constructor(
             body = RequestCancelPaymentDTO(
                 amount = requestInsertPaymentDataDTO.amount.toString(),
                 installment = requestInsertPaymentDataDTO.installment,
-                trxId = requestInsertPaymentDataDTO.trxId,
+                trxId = requestInsertPaymentDataDTO.trxId!!,
                 token = requestInsertPaymentDataDTO.token
             )
         )
@@ -280,12 +280,18 @@ class DeviceCommunicationViewModel @Inject constructor(
                                                             PaymentType.Approve
                                                         },
                                                     installment = requestInsertPaymentDataDTO.installment,
-                                                    trackId = requestInsertPaymentDataDTO.trackId,
-                                                    cardNumber = requestInsertPaymentDataDTO.number,
+                                                    trackId = requestInsertPaymentDataDTO.trackId!!,
+                                                    cardNumber = requestInsertPaymentDataDTO.number!!,
                                                     amount = requestInsertPaymentDataDTO.amount.toString(),
                                                     regDay = it.regDay!!,
                                                     authCode = it.authCode!!,
                                                     trxId = it.trxId,
+                                                    prodQty = null,
+                                                    prodName = null,
+                                                    prodPrice = null,
+                                                    payerTel = null,
+                                                    payerName = null,
+                                                    payerEmail = null
                                                 )
                                             )
                                         )

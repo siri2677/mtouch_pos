@@ -7,19 +7,18 @@ import java.io.Serializable
 data class CompletePaymentViewVO(
     val transactionType: TransactionType,
     val paymentType: PaymentType,
-    val amount: String = "",
+    val amount: String?,
     val installment: String,
 
-    val prodQty: String = "",
-    val prodName: String = "",
-    val prodPrice: String = "",
-    val payerTel: String = "",
-    val payerName: String = "",
-    val payerEmail: String = "",
-
-    var trackId: String = "",
-    var cardNumber: String = "",
-    var regDay: String = "",
-    var authCode: String = "",
-    var trxId: String = ""
+    val prodQty: String?,
+    val prodName: String?,
+    val prodPrice: String?,
+    val payerTel: String?,
+    val payerName: String?,
+    val payerEmail: String?,
+    var trackId: String?,
+    var cardNumber: String?,
+    var regDay: String?,
+    var authCode: String?,
+    var trxId: String?
 ): Serializable

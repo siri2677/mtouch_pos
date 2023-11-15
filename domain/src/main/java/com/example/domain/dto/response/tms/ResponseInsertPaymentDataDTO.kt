@@ -5,7 +5,7 @@ import java.io.Serializable
 data class ResponseInsertPaymentDataDTO(
     val result: String,
     val trxId: String,
-    var regDay: String? = null,
-    var authCode: String? = null,
+    var regDay: String?,
+    var authCode: String?,
 ): Serializable
 

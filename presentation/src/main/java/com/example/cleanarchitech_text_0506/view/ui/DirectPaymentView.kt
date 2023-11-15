@@ -130,7 +130,13 @@ fun DirectPaymentMainView(
                         it.responseDirectPaymentDto.pay?.amount.toString(),
                         it.responseDirectPaymentDto.result.create,
                         it.responseDirectPaymentDto.pay?.authCd!!,
-                        it.responseDirectPaymentDto.pay?.trxId!!
+                        it.responseDirectPaymentDto.pay?.trxId!!,
+                        payerEmail = null,
+                        trackId = null,
+                        cardNumber = null,
+                        regDay = null,
+                        authCode = null,
+                        trxId = null
                     )
                     navHostController?.navigate(
                         MainView.CompletePayment.name,
@@ -315,19 +321,40 @@ fun DirectPaymentMainView(
                             card = RequestDirectPaymentCard(
                                 number = cardNumber,
                                 expiry = expirationYear.substring(2) + expirationMonth,
-                                installment = if (installment == "일시불") "00" else installment
+                                installment = if (installment == "일시불") "00" else installment,
+                                cardId = null,
+                                cardType = null,
+                                cvv = null,
+                                issuer = null,
+                                last4 = null
                             ),
                             product = RequestDirectPaymentProduct(
                                 name = productName,
                                 qty = 1,
-                                price = amount
+                                price = amount,
+                                desc = null
                             ),
                             metadata =
                             if (directPaymentEssentialData.semiAuth == "Y") {
-                                RequestDirectPaymentMetadata("true", password, birthday)
+                                RequestDirectPaymentMetadata(
+                                    cardAuth = "true",
+                                    authPw = password,
+                                    authDob = birthday
+                                )
                             } else {
-                                RequestDirectPaymentMetadata("false")
-                            }
+                                RequestDirectPaymentMetadata(
+                                    cardAuth = "false",
+                                    authPw = null,
+                                    authDob = null
+                                )
+                            },
+                            authCd = null,
+                            fillerAmt = null,
+                            payerEmail = null,
+                            settle = null,
+                            trxId = null,
+                            udf1 = null,
+                            udf2 = null
                         )
                         val errorMessage: String? = validation(requestDirectPaymentDto)
                         if (errorMessage != null) {

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.isPopupLayout
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
@@ -52,6 +53,7 @@ import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
 import com.example.domain.dto.request.tms.RequestGetUserInformationDto
+import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
 
 data class MainGridItem(val imageRes: Int, val text: String, val mainView: MainView)
 class LoginView() {
@@ -67,8 +69,35 @@ class LoginView() {
         var terminalId by remember { mutableStateOf("") }
         var serialNumber by remember { mutableStateOf("") }
 
-        val keyTmsResponseBodyCollectAsState by mainActivityViewModel?.userInformation!!.collectAsState()
-        if(keyTmsResponseBodyCollectAsState.tmnId != null) {
+        val keyTmsResponseBodyCollectAsState by mainActivityViewModel?.userInformation!!.collectAsStateWithLifecycle(
+            initialValue = ResponseGetUserInformationDto(
+                tmnId = "",
+                bankName = "",
+                phoneNo = "",
+                result = "",
+                Authorization = "",
+                semiAuth = "",
+                identity = "",
+                accntHolder = "",
+                appDirect = "",
+                ceoName = "",
+                addr = "",
+                key = "",
+                agencyEmail = "",
+                distEmail = "",
+                vat = "",
+                agencyTel = "",
+                agencyName = "",
+                telNo = "",
+                apiMaxInstall = "",
+                distTel = "",
+                name = "",
+                distName = "",
+                payKey = "",
+                account = ""
+            )
+        )
+        if(keyTmsResponseBodyCollectAsState.tmnId != "") {
             Toast.makeText(context, "로그인이 완료되었습니다", Toast.LENGTH_SHORT).show()
             navHostController.navigate(
                 route = MainView.Main.name,
@@ -133,7 +162,10 @@ class LoginView() {
                                 RequestGetUserInformationDto(
                                     mchtId = merchantId,
                                     tmnId = terminalId,
-                                    serial = serialNumber
+                                    serial = serialNumber,
+                                    appId = null,
+                                    version = null,
+                                    telNo = null
                                 )
                             )
                         },
@@ -200,11 +232,48 @@ class LoginView() {
     ) {
         var selectedIndex by remember { mutableStateOf(-2) }
         val screenWidth = LocalConfiguration.current.screenWidthDp
-        var tapItem by remember { mutableStateOf(RequestGetUserInformationDto()) }
+        var tapItem by remember { mutableStateOf(
+                RequestGetUserInformationDto(
+                    tmnId = "",
+                    serial = "",
+                    mchtId = "",
+                    appId = null,
+                    version = null,
+                    telNo = null,
+                )
+            )
+        }
         var userInformationList by remember { mutableStateOf(mainViewModel.getUserInformationRepository()) }
 
-        val keyTmsResponseBodyCollectAsState by mainViewModel?.userInformation!!.collectAsState()
-        if(keyTmsResponseBodyCollectAsState.tmnId != null) {
+        val keyTmsResponseBodyCollectAsState by mainViewModel.userInformation.collectAsStateWithLifecycle(
+            initialValue = ResponseGetUserInformationDto(
+                tmnId = "",
+                bankName = "",
+                phoneNo = "",
+                result = "",
+                Authorization = "",
+                semiAuth = "",
+                identity = "",
+                accntHolder = "",
+                appDirect = "",
+                ceoName = "",
+                addr = "",
+                key = "",
+                agencyEmail = "",
+                distEmail = "",
+                vat = "",
+                agencyTel = "",
+                agencyName = "",
+                telNo = "",
+                apiMaxInstall = "",
+                distTel = "",
+                name = "",
+                distName = "",
+                payKey = "",
+                account = ""
+            )
+        )
+        if(keyTmsResponseBodyCollectAsState.tmnId != "") {
             Toast.makeText(LocalContext.current, "로그인이 완료되었습니다", Toast.LENGTH_SHORT).show()
             navHostController.navigate(
                 route = MainView.Main.name,
@@ -269,7 +338,10 @@ class LoginView() {
                                 RequestGetUserInformationDto(
                                     mchtId = tapItem.mchtId,
                                     tmnId = tapItem.tmnId,
-                                    serial = tapItem.serial
+                                    serial = tapItem.serial,
+                                    appId = null,
+                                    version = null,
+                                    telNo = null
                                 )
                             )
                         }

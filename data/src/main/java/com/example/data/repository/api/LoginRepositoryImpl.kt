@@ -32,7 +32,6 @@ class LoginRepositoryImpl @Inject constructor(
 ): LoginRepository {
     override fun key(
         onSuccess: (ResponseGetUserInformationDto) -> Unit,
-        summary: () -> Unit,
         onError: (String) -> Unit,
         body: RequestGetUserInformationDto
     ) {
@@ -45,7 +44,6 @@ class LoginRepositoryImpl @Inject constructor(
                     UserInformationSharedPreferenceImpl(context).setUserInformation(responseData)
                     UserInformationRepositoryImpl(AppDatabase.getInstance(context).userInformationDao()).insertUserInformation(body)
                     onSuccess(responseData)
-                    summary()
                 }.onError() {
                     onError(errorBody.toString())
                 }.onException {

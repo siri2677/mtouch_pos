@@ -163,7 +163,23 @@ fun paymentHistoryDetailView(
                                             type = PaymentType.Refund.value,
                                             authCd = responseGetPaymentListBody.authCd,
                                             regDate = responseGetPaymentListBody.regDay.substring(2, 8),
-                                            trxId = responseGetPaymentListBody.trxId
+                                            trxId = responseGetPaymentListBody.trxId,
+                                            prodQty = null,
+                                            prodName = null,
+                                            prodPrice = null,
+                                            payerTel = null,
+                                            payerName = null,
+                                            payerEmail = null,
+                                            dealerRate = null,
+                                            distRate = null,
+                                            number = null,
+                                            van = null,
+                                            vanId = null,
+                                            vanTrxId = null,
+                                            trackId = null,
+                                            issuerCode = null,
+                                            acquirerCode = null,
+                                            resultMsg = null
                                         )
                                     )
                                 },

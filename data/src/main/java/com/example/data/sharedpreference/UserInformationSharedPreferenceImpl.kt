@@ -14,8 +14,38 @@ class UserInformationSharedPreferenceImpl @Inject constructor(
             "UserInformation",
             Context.MODE_PRIVATE
         )
-        val userDataJson = sharedPreferences.getString("test", "")
-        return Gson().fromJson(userDataJson, ResponseGetUserInformationDto::class.java)
+        return Gson().fromJson(
+            sharedPreferences.getString(
+                "test",
+                ResponseGetUserInformationDto(
+                    tmnId = "",
+                    bankName = "",
+                    phoneNo = "",
+                    result = "",
+                    Authorization = "",
+                    semiAuth = "",
+                    identity = "",
+                    accntHolder = "",
+                    appDirect = "",
+                    ceoName = "",
+                    addr = "",
+                    key = "",
+                    agencyEmail = "",
+                    distEmail = "",
+                    vat = "",
+                    agencyTel = "",
+                    agencyName = "",
+                    telNo = "",
+                    apiMaxInstall = "",
+                    distTel = "",
+                    name = "",
+                    distName = "",
+                    payKey = "",
+                    account = "",
+                ).toString()
+            ),
+            ResponseGetUserInformationDto::class.java
+        )
     }
 
     override fun setUserInformation(responseGetUserInformationDto: ResponseGetUserInformationDto) {

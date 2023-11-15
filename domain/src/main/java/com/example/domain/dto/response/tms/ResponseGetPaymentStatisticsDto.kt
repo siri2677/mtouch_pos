@@ -1,14 +1,14 @@
 package com.example.domain.dto.response.tms
 
 data class ResponseGetPaymentStatisticsDto(
-    var amount: String? = null,
-    var startDay: String? = null,
-    var cnt: String? = null,
-    var payCnt: String? = null,
-    var rfdAmt: String? = null,
-    var payAmt: String? = null,
-    var rfdCnt: String? = null,
-    var result: String? = null,
-    var _idx: String? = null,
-    var endDay: String? = null
+    var amount: String,
+    var startDay: String,
+    var cnt: String,
+    var payCnt: String,
+    var rfdAmt: String,
+    var payAmt: String,
+    var rfdCnt: String,
+    var result: String,
+    var _idx: String,
+    var endDay: String
 )

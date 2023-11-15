@@ -107,6 +107,12 @@ fun CompletePaymentMainView(
                 regDay = responseDirectPayment.responseDirectCancelPaymentDto.result.create,
                 authCode = responseDirectPayment.responseDirectCancelPaymentDto.refund?.authCd!!,
                 trxId = responseDirectPayment.responseDirectCancelPaymentDto.refund?.trxId!!,
+                prodQty = null,
+                prodName = null,
+                prodPrice = null,
+                payerTel = null,
+                payerName = null,
+                payerEmail = null,
             )
             navHostController?.navigate(
                 MainView.CompletePayment.name,
@@ -158,32 +164,32 @@ fun CompletePaymentMainView(
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "전표번호",
-                        value = completePaymentViewVO.trackId
+                        value = completePaymentViewVO.trackId!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "카드번호",
-                        value = completePaymentViewVO.cardNumber
+                        value = completePaymentViewVO.cardNumber!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "금액",
-                        value = completePaymentViewVO.amount
+                        value = completePaymentViewVO.amount!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "승인일자",
-                        value = completePaymentViewVO.regDay
+                        value = completePaymentViewVO.regDay!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "승인번호",
-                        value = completePaymentViewVO.authCode
+                        value = completePaymentViewVO.authCode!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "거래번호",
-                        value = completePaymentViewVO.trxId
+                        value = completePaymentViewVO.trxId!!
                     )
                 }
 
@@ -202,9 +208,15 @@ fun CompletePaymentMainView(
                                             directPaymentViewModel?.requestDirectCancelPayment(
                                                 RequestDirectCancelPaymentDto(
                                                     payKey = mainActivityViewModel?.getUserInformation()?.payKey!!,
-                                                    amount = completePaymentViewVO.amount,
-                                                    rootTrxId = completePaymentViewVO.trxId,
-                                                    rootTrxDay = completePaymentViewVO.regDay
+                                                    amount = completePaymentViewVO.amount!!,
+                                                    rootTrxId = completePaymentViewVO.trxId!!,
+                                                    rootTrxDay = completePaymentViewVO.regDay!!,
+                                                    udf1 = null,
+                                                    udf2 = null,
+                                                    rootTrackId = null,
+                                                    trxId = null,
+                                                    authCd = null,
+                                                    settle = null,
                                                 )
                                             )
                                         }
@@ -218,6 +230,22 @@ fun CompletePaymentMainView(
                                                     trxId = completePaymentViewVO.trxId,
                                                     authCd = completePaymentViewVO.authCode,
                                                     regDate = completePaymentViewVO.regDay,
+                                                    prodQty = null,
+                                                    prodName = null,
+                                                    prodPrice = null,
+                                                    payerTel = null,
+                                                    payerName = null,
+                                                    payerEmail = null,
+                                                    dealerRate = null,
+                                                    distRate = null,
+                                                    number = null,
+                                                    van = null,
+                                                    vanId = null,
+                                                    vanTrxId = null,
+                                                    trackId = null,
+                                                    issuerCode = null,
+                                                    acquirerCode = null,
+                                                    resultMsg = null
                                                 )
                                             )
                                         }
@@ -322,7 +350,13 @@ fun CompletePaymentMainPreView() {
                 "1,806,004원",
                 "2020-03-16 14:02:02",
                 "30034798",
-                "T200316016511"
+                "T200316016511" ,
+                payerEmail = null,
+                trackId = null,
+                cardNumber = null,
+                regDay = null,
+                authCode = null,
+                trxId = null,
             ),
             mainActivityViewModel = null,
             directPaymentViewModel = null,

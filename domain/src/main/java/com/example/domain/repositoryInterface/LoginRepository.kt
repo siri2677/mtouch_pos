@@ -8,7 +8,6 @@ import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
 interface LoginRepository {
     fun key(
         onSuccess: (ResponseGetUserInformationDto) -> Unit,
-        summary: () -> Unit,
         onError: (String) -> Unit,
         body: RequestGetUserInformationDto
     )

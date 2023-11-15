@@ -326,7 +326,7 @@ class MainActivity : ComponentActivity() {
                     .padding(paddingValues),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                loginStatus(mainViewModel?.getUserInformation()?.tmnId.toString())
+                loginStatus(mainViewModel.getUserInformation().tmnId!!)
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize(),
@@ -723,7 +723,7 @@ fun <T> Flow<T>.CollectAsEffect(
 
 @Composable
 fun loginStatus(
-    terminalId: String?
+    terminalId: String
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Column(
@@ -756,7 +756,7 @@ fun loginStatus(
             )
             Text(
                 textAlign = TextAlign.Right,
-                text = terminalId ?: "로그아웃 상태 입니다",
+                text = if(terminalId == "") { "로그아웃 상태 입니다" } else { terminalId },
                 fontSize = 15.sp,
                 color = colorResource(id = R.color.white),
                 fontFamily = FontFamily(Font(R.font.ns_acr)),

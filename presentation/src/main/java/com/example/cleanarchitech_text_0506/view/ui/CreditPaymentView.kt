@@ -368,7 +368,26 @@ class CreditPaymentView() {
                                         amount = Integer.parseInt(account),
                                         installment = installmentFormat(installment),
                                         token = mainActivityViewModel.getUserInformation().key!!,
-                                        type = PaymentType.Approve.value
+                                        type = PaymentType.Approve.value,
+                                        prodQty = null,
+                                        prodName = null,
+                                        prodPrice = null,
+                                        payerTel = null,
+                                        payerName = null,
+                                        payerEmail = null,
+                                        dealerRate = null,
+                                        distRate = null,
+                                        number = null,
+                                        van = null,
+                                        vanId = null,
+                                        vanTrxId = null,
+                                        trackId = null,
+                                        authCd = null,
+                                        regDate = null,
+                                        issuerCode = null,
+                                        acquirerCode = null,
+                                        resultMsg = null,
+                                        trxId = null
                                     )
                                 )
                             } else {

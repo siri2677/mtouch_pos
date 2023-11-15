@@ -26,27 +26,24 @@ import java.util.UUID
 
 class BluetoothDeviceScan(val context: Context): DeviceScan {
     var storedScanResults: ArrayList<BluetoothDevice>? = ArrayList()
-    val bleManager: BluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    val bleAdapter: BluetoothAdapter = bleManager.adapter
-
+    private val bleManager: BluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val bleAdapter: BluetoothAdapter = bleManager.adapter
     override val listUpdate = MutableSharedFlow<DeviceList>()
 
     override fun scan() {
-        if (bleAdapter == null || !bleAdapter.isEnabled) {
-        } else {
-            val filters: MutableList<ScanFilter> = ArrayList()
-            val scanFilter: ScanFilter = ScanFilter.Builder()
-                .setServiceUuid(ParcelUuid(UUID.fromString(DomainLayerConstantObject.SERVICE_STRING)))
-                .build()
-            filters.add(scanFilter)
-
-            val settings = ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .build()
-
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
-                bleAdapter?.bluetoothLeScanner?.startScan(filters, settings, BLEScanCallback)
-            }
+        if (bleAdapter.isEnabled
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
+            bleAdapter?.bluetoothLeScanner?.startScan(
+                List<ScanFilter>(1) {
+                    ScanFilter.Builder()
+                        .setServiceUuid(ParcelUuid(UUID.fromString(DomainLayerConstantObject.SERVICE_STRING)))
+                        .build()
+                },
+                ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+                    .build(),
+                BLEScanCallback
+            )
         }
     }
 
@@ -77,9 +74,8 @@ class BluetoothDeviceScan(val context: Context): DeviceScan {
     }
 
     private fun addScanResult(result: ScanResult) {
-        val currentScanResultDeviceAddress = result.device.address
         for (storedScanResult in storedScanResults!!) {
-            if (storedScanResult.address == currentScanResultDeviceAddress) return
+            if (storedScanResult.address == result.device.address) return
         }
         storedScanResults?.add(result.device)
         CoroutineScope(Dispatchers.IO).launch{
