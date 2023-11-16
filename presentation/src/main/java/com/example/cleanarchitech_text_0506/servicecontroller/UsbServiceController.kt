@@ -40,9 +40,9 @@ class UsbServiceController(val context: Context): DeviceServiceController {
     }
 
     override fun bindingService(afterBindProcess: (DeviceConnectService) -> Unit) {
-        try{
+        if(::usbDeviceConnectServiceImpl.isInitialized) {
             afterBindProcess(usbDeviceConnectServiceImpl)
-        } catch (e: Exception) {
+        } else {
             this.afterBindProcess = afterBindProcess
             val intent = Intent(context, UsbDeviceConnectServiceImpl::class.java)
             context.bindService(intent, myServiceConnection, Context.BIND_AUTO_CREATE)

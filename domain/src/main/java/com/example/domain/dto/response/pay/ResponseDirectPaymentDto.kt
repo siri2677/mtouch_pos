@@ -2,7 +2,7 @@ package com.example.domain.dto.response.pay
 
 data class ResponseDirectPaymentDto(
     val result: ResponseDirectPaymentDtoResult,
-    val pay: ResponseDirectPaymentDtoPay? = null
+    val pay: ResponseDirectPaymentDtoPay?
 )
 
 data class ResponseDirectPaymentDtoResult(
@@ -13,7 +13,7 @@ data class ResponseDirectPaymentDtoResult(
 )
 
 data class ResponseDirectPaymentDtoPay(
-    val authCd: String? = null,
+    val authCd: String?,
     val card: ResponseDirectPaymentDtoCard,
     val product: ResponseDirectPaymentDtoProduct,
     val trxId: String,
@@ -21,7 +21,7 @@ data class ResponseDirectPaymentDtoPay(
     val tmnId: String,
     val trackId: String,
     val amount: Int,
-    val metadata: ResponseDirectPaymentMetaData? = null
+    val metadata: ResponseDirectPaymentMetaData?
 )
 
 data class ResponseDirectPaymentDtoCard(
@@ -31,19 +31,19 @@ data class ResponseDirectPaymentDtoCard(
     val issuer: String,
     val cardType: String,
     val acquirer: String,
-    val issuerCode: String? = null,
-    val acquirerCode: String? = null
+    val issuerCode: String?,
+    val acquirerCode: String?
 )
 
 data class ResponseDirectPaymentDtoProduct(
     val name: String,
     val qty: Int,
     val price: Int,
-    val desc: String? = null
+    val desc: String?
 )
 
 data class ResponseDirectPaymentMetaData(
     val cardAuth: String,
-    val authPw: String? = null,
-    val authDob: String? = null,
+    val authPw: String?,
+    val authDob: String?,
 )

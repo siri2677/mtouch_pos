@@ -2,57 +2,52 @@ package com.example.cleanarchitech_text_0506.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.domain.dto.request.tms.RequestGetUserInformationDto
 import com.example.domain.dto.response.tms.ResponseGetSummaryPaymentStatisticsDto
 import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
-import com.example.domain.repositoryInterface.LoginRelatedRepository
+import com.example.domain.repositoryInterface.LoginRepository
 import com.example.domain.repositoryInterface.UserInformationRepository
 import com.example.domain.repositoryInterface.UserInformationSharedPreference
+import com.example.domain.sealed.ResponsePayAPI
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val loginRelatedRepository: LoginRelatedRepository,
+    private val loginRepository: LoginRepository,
     private val userInformationSharedPreference: UserInformationSharedPreference,
     private val userInformationRepository: UserInformationRepository
 ) : ViewModel(){
-    private val _userInformation = MutableStateFlow(ResponseGetUserInformationDto())
-    val userInformation: MutableStateFlow<ResponseGetUserInformationDto>
-        get() = _userInformation
-
-    private val _summaryPaymentStatistics = MutableStateFlow(ResponseGetSummaryPaymentStatisticsDto())
-    val summaryPaymentStatistics: MutableStateFlow<ResponseGetSummaryPaymentStatisticsDto>
-        get() = _summaryPaymentStatistics
-
-    private val _responseErrorBody = MutableStateFlow(String())
-    val responseErrorBody: MutableStateFlow<String>
-        get() = _responseErrorBody
+    val userInformation = MutableSharedFlow<ResponseGetUserInformationDto>()
+    val summaryPaymentStatistics = MutableSharedFlow<ResponseGetSummaryPaymentStatisticsDto>()
+    val responseErrorBody = MutableSharedFlow<String>()
 
     fun summary(token: String) {
         viewModelScope.launch {
-            loginRelatedRepository.summary(
-                onSuccess = { summaryPaymentStatistics.value = it },
-                onError = { responseErrorBody.value = it },
+            loginRepository.summary(
+                onSuccess = { viewModelScope.launch{ summaryPaymentStatistics.emit(it) } },
+                onError = { viewModelScope.launch{ responseErrorBody.emit(it) } },
                 token = token
-            ).collect()
+            )
         }
     }
 
     fun login(requestGetUserInformationDto: RequestGetUserInformationDto) {
-        viewModelScope.launch {
-            loginRelatedRepository.key(
-                onSuccess = { userInformation.value = it },
-                summary = { summary(userInformation?.value?.key.toString()) },
-                onError = { responseErrorBody.value = it },
-                body = requestGetUserInformationDto
-            ).collect()
-        }
+        loginRepository.key(
+            onSuccess = {
+                viewModelScope.launch{
+                    userInformation.emit(it)
+                    summary(it.key!!)
+                }
+            },
+            onError = { viewModelScope.launch{ responseErrorBody.emit(it) }},
+            body = requestGetUserInformationDto
+        )
     }
 
     fun getUserInformation(): ResponseGetUserInformationDto =

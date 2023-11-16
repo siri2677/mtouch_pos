@@ -22,8 +22,6 @@ import kotlinx.coroutines.launch
 
 class BluetoothServiceController(private val context: Context): DeviceServiceController {
     override var deviceConnectSharedFlow = MutableSharedFlow<DeviceConnectSharedFlow>()
-//    private var bluetoothDeviceConnectServiceImpl: BluetoothDeviceConnectServiceImpl? = null
-
     private lateinit var bluetoothDeviceConnectServiceImpl: BluetoothDeviceConnectServiceImpl
     private lateinit var afterBindProcess: (DeviceConnectService) -> Unit
     private lateinit var job: Job
@@ -43,9 +41,9 @@ class BluetoothServiceController(private val context: Context): DeviceServiceCon
     }
 
     override fun bindingService(afterBindProcess: (DeviceConnectService) -> Unit) {
-        try{
+        if(::bluetoothDeviceConnectServiceImpl.isInitialized) {
             afterBindProcess(bluetoothDeviceConnectServiceImpl)
-        } catch (e: Exception) {
+        } else {
             this.afterBindProcess = afterBindProcess
             val intent = Intent(context, BluetoothDeviceConnectServiceImpl::class.java)
             context.bindService(intent, myServiceConnection, Context.BIND_AUTO_CREATE)
@@ -65,12 +63,6 @@ class BluetoothServiceController(private val context: Context): DeviceServiceCon
             val binder = binder as BluetoothDeviceConnectServiceImpl.MyBinder
             bluetoothDeviceConnectServiceImpl = binder.getService()
             afterBindProcess(bluetoothDeviceConnectServiceImpl)
-//            job = CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.LAZY) {
-//                bluetoothDeviceConnectServiceImpl!!.deviceConnectSharedFlow.collect(){
-//                    deviceConnectSharedFlow.emit(it)
-//                }
-//            }
-//            if(!job.isActive){ job.start() }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {}

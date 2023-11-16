@@ -3,7 +3,6 @@ package com.example.cleanarchitech_text_0506.ditest.hiltmodule
 import android.content.Context
 import com.example.data.sharedpreference.DeviceSettingSharedPreferenceImpl
 import com.example.domain.repositoryInterface.DeviceSettingSharedPreference
-import com.example.domain.usecaseinterface.ResponseDeviceSerialCommunication
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

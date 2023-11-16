@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.DialogInterface
 import android.os.Handler
 import android.os.Looper
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,7 +62,6 @@ import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
 import androidx.navigation.NavOptions
 import cn.pedant.SweetAlert.SweetAlertDialog
 import com.example.cleanarchitech_text_0506.R
@@ -72,13 +70,11 @@ import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationUsbDialogData
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
-import com.example.cleanarchitech_text_0506.enum.TransactionType
 import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
-import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
-import com.example.domain.dto.request.tms.RequestPaymentDTO
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
+import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.sealed.ResponseTmsAPI
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -125,7 +121,7 @@ class CreditPaymentView() {
         vertical: Arrangement.Vertical = Arrangement.Center,
         horizon: Alignment.Horizontal = Alignment.CenterHorizontally,
         backGround: Int,
-        text: Unit = Unit
+        text: @Composable () -> Unit = {}
     ) {
         Column(
             modifier = Modifier
@@ -139,26 +135,26 @@ class CreditPaymentView() {
             verticalArrangement = vertical,
             horizontalAlignment = horizon
         ) {
-            text
+            text()
         }
     }
 
     @Composable
     fun usbDevicePaymentDialog(
         navHostController: NavController,
-        testCommunicationViewModel: TestCommunicationViewModel,
+        deviceCommunicationViewModel: DeviceCommunicationViewModel,
         deviceConnectSharedFlow: DeviceConnectSharedFlow
     ) {
         Dialog(
             onDismissRequest = {
-                testCommunicationViewModel.init()
+                deviceCommunicationViewModel.init()
                 navHostController.popBackStack()
             }
         ) {
             var timer by remember { mutableIntStateOf(15) }
             when(deviceConnectSharedFlow) {
                 is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
-                    testCommunicationViewModel.init()
+                    deviceCommunicationViewModel.init()
                     navHostController.popBackStack(
                         route = MainView.CreditPayment.name,
                         inclusive = false
@@ -173,7 +169,7 @@ class CreditPaymentView() {
                                     timer -= 1
                                 }
                                 if(timer == -1) {
-                                    testCommunicationViewModel.init()
+                                    deviceCommunicationViewModel.init()
                                     Handler(Looper.getMainLooper()).postDelayed({
                                         navHostController.popBackStack(
                                             route = MainView.CreditPayment.name,
@@ -185,11 +181,13 @@ class CreditPaymentView() {
                             dialogFormat(
                                 vertical = Arrangement.Bottom,
                                 backGround = R.drawable.pb2_4,
-                                text = Text(
-                                    modifier = Modifier.padding(bottom = 15.dp),
-                                    color = colorResource(R.color.white),
-                                    text = if(timer == -1) "결제 대기 시간이 초과 되었습니다" else  "결제 대기 시간: $timer"
-                                )
+                                text = {
+                                    Text(
+                                        modifier = Modifier.padding(bottom = 15.dp),
+                                        color = colorResource(R.color.white),
+                                        text = if(timer == -1) "결제 대기 시간이 초과 되었습니다" else  "결제 대기 시간: $timer"
+                                    )
+                                }
                             )
                         }
                         SerialCommunicationMessage.PaymentProgressing.message ->
@@ -203,11 +201,13 @@ class CreditPaymentView() {
                         SerialCommunicationMessage.CompletePayment.message -> {
                             dialogFormat(
                                 backGround = R.drawable.pb4,
-                                text = Text(
-                                    modifier = Modifier.padding(top = 40.dp),
-                                    color = colorResource(R.color.white),
-                                    text = testCommunicationViewModel.getSerialCommunicationMessage()!!
-                                )
+                                text = {
+                                    Text(
+                                        modifier = Modifier.padding(top = 40.dp),
+                                        color = colorResource(R.color.white),
+                                        text = deviceConnectSharedFlow.message
+                                    )
+                                }
                             )
                         }
                     }
@@ -232,24 +232,17 @@ class CreditPaymentView() {
     fun creditPaymentView(
         navHostController: NavController,
         mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
-        viewModel: TestCommunicationViewModel = hiltViewModel()
+        viewModel: DeviceCommunicationViewModel = hiltViewModel()
     ) {
         val context = LocalContext.current
         val screenWidth = LocalConfiguration.current.screenWidthDp
-        val testCommunicationViewModel = viewModel.setDeviceType()!!
+        val deviceCommunicationViewModel = viewModel.setDeviceType()!!
         var installment by remember { mutableStateOf("일시불") }
         var clickEvent by remember { mutableStateOf(CreditPaymentViewClickEvent.Empty) }
-
         serialCommunicationResult(
-            testCommunicationViewModel = testCommunicationViewModel,
+            deviceCommunicationViewModel = deviceCommunicationViewModel,
             navHostController = navHostController,
-            dialogMessage = {
-                errorDialog(
-                    message = it,
-                    onDismissRequest = { },
-                )
-            },
-            paymentType = PaymentType.Approve
+            dialogMessage = { errorDialog(message = it) },
         )
 
         when (clickEvent) {
@@ -271,7 +264,7 @@ class CreditPaymentView() {
 
         DisposableEffect(Unit) {
             onDispose {
-                testCommunicationViewModel.serviceUnbind()
+                deviceCommunicationViewModel.serviceUnbind()
             }
         }
 
@@ -369,12 +362,32 @@ class CreditPaymentView() {
                             .height(60.dp),
                         fontSize = 20.sp,
                         onClick = {
-                            if(testCommunicationViewModel != null) {
-                                testCommunicationViewModel.requestOfflinePayment(
-                                    RequestPaymentDTO(
-                                        amount = account,
+                            if(deviceCommunicationViewModel != null) {
+                                deviceCommunicationViewModel.requestOfflinePayment(
+                                    RequestInsertPaymentDataDTO(
+                                        amount = Integer.parseInt(account),
                                         installment = installmentFormat(installment),
-                                        token = mainActivityViewModel.getUserInformation().key!!
+                                        token = mainActivityViewModel.getUserInformation().key!!,
+                                        type = PaymentType.Approve.value,
+                                        prodQty = null,
+                                        prodName = null,
+                                        prodPrice = null,
+                                        payerTel = null,
+                                        payerName = null,
+                                        payerEmail = null,
+                                        dealerRate = null,
+                                        distRate = null,
+                                        number = null,
+                                        van = null,
+                                        vanId = null,
+                                        vanTrxId = null,
+                                        trackId = null,
+                                        authCd = null,
+                                        regDate = null,
+                                        issuerCode = null,
+                                        acquirerCode = null,
+                                        resultMsg = null,
+                                        trxId = null
                                     )
                                 )
                             } else {
@@ -450,10 +463,9 @@ class CreditPaymentView() {
 
 @Composable
 fun serialCommunicationResult(
-    testCommunicationViewModel: TestCommunicationViewModel,
+    deviceCommunicationViewModel: DeviceCommunicationViewModel,
     navHostController: NavController,
     dialogMessage: @Composable (String) -> Unit = {},
-    paymentType: PaymentType
 ) {
     val context = LocalContext.current
     var sweetAlertDialog by remember {
@@ -464,24 +476,24 @@ fun serialCommunicationResult(
             )
         )
     }
-    if(testCommunicationViewModel != null) {
-        val deviceConnectSharedFlow = testCommunicationViewModel.deviceConnectSharedFlow.collectAsStateWithLifecycle(
+    if(deviceCommunicationViewModel != null) {
+        val deviceConnectSharedFlow = deviceCommunicationViewModel.deviceConnectSharedFlow.collectAsStateWithLifecycle(
             initialValue = ""
         ).value
-        val responseTmsAPI = testCommunicationViewModel.responseTmsAPI.collectAsStateWithLifecycle(
+        val responseTmsAPI = deviceCommunicationViewModel.responseTmsAPI.collectAsStateWithLifecycle(
             initialValue = ""
         ).value
 
         when(deviceConnectSharedFlow) {
             is DeviceConnectSharedFlow.SerialCommunicationMessageFlow -> {
-                when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                when (deviceCommunicationViewModel.getCurrentRegisteredDeviceType()) {
                     DeviceType.Bluetooth.name -> {
                         if (!sweetAlertDialog.isShowing) {
                             sweetAlertDialog = SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE)
                             sweetAlertDialog.progressHelper?.barColor = Color.Green.toArgb()
                             sweetAlertDialog.setCancelable(true)
                             sweetAlertDialog.setOnCancelListener(DialogInterface.OnCancelListener {
-                                testCommunicationViewModel.disConnect()
+                                deviceCommunicationViewModel.disConnect()
                                 sweetAlertDialog.dismiss()
                             })
                         }
@@ -490,7 +502,7 @@ fun serialCommunicationResult(
                     }
                     DeviceType.Usb.name -> {
                         val params = bundleOf(
-                            SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel,
+                            SerialCommunicationUsbDialogData.ViewModel.name to deviceCommunicationViewModel,
                             SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name to deviceConnectSharedFlow
                         )
                         navHostController.navigate(
@@ -502,13 +514,13 @@ fun serialCommunicationResult(
                 }
             }
             is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
-                when (testCommunicationViewModel.getCurrentRegisteredDeviceType()) {
+                when (deviceCommunicationViewModel.getCurrentRegisteredDeviceType()) {
                     DeviceType.Bluetooth.name -> {
                         sweetAlertDialog.dismiss()
                     }
                     DeviceType.Usb.name -> {
                         val params = bundleOf(
-                            SerialCommunicationUsbDialogData.ViewModel.name to testCommunicationViewModel,
+                            SerialCommunicationUsbDialogData.ViewModel.name to deviceCommunicationViewModel,
                             SerialCommunicationUsbDialogData.DeviceConnectSharedFlow.name to deviceConnectSharedFlow
                         )
                         navHostController.navigate(
@@ -520,20 +532,9 @@ fun serialCommunicationResult(
                 }
 
                 Handler(Looper.getMainLooper()).postDelayed({
-                    val completePaymentViewVo = CompletePaymentViewVO(
-                        transactionType = TransactionType.Offline,
-                        paymentType = paymentType,
-                        installment = deviceConnectSharedFlow.responseInsertPaymentDataDTO.installment!!,
-                        trackId = deviceConnectSharedFlow.responseInsertPaymentDataDTO.trackId!!,
-                        cardNumber = deviceConnectSharedFlow.responseInsertPaymentDataDTO.cardNumber!!,
-                        amount = deviceConnectSharedFlow.responseInsertPaymentDataDTO.amount!!,
-                        regDay = deviceConnectSharedFlow.responseInsertPaymentDataDTO.regDay!!,
-                        authCode = deviceConnectSharedFlow.responseInsertPaymentDataDTO.authCode!!,
-                        trxId = deviceConnectSharedFlow.responseInsertPaymentDataDTO.trxId!!
-                    )
                     navHostController?.navigate(
                         MainView.CompletePayment.name,
-                        bundleOf("responsePayAPI" to completePaymentViewVo),
+                        bundleOf("responsePayAPI" to deviceConnectSharedFlow.completePaymentViewVO),
                         NavOptions.Builder().setLaunchSingleTop(true).build()
                     )
                 }, 400)
@@ -557,11 +558,13 @@ fun GreetingPreview() {
     CleanArchitech_text_0506Theme {
         CreditPaymentView().dialogFormat(
             backGround = R.drawable.pb4,
-            text = Text(
-                modifier = Modifier.padding(top = 40.dp),
-                color = colorResource(R.color.white),
-                text = "결제가 정상적으로 \n 완료 되었습니다."
-            )
+            text = {
+                Text(
+                    modifier = Modifier.padding(top = 40.dp),
+                    color = colorResource(R.color.white),
+                    text = "결제가 정상적으로 \n 완료 되었습니다."
+                )
+            }
         )
     }
 }

@@ -3,22 +3,11 @@ package com.example.cleanarchitech_text_0506.util
 import android.util.Log
 import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
 import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
-import com.example.cleanarchitech_text_0506.sealed.ProcessAfterSerialCommunicate
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
-import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
-import com.example.domain.util.socketClient.KsnetUtils
 import com.example.domain.vo.FallbackCode
 import com.example.domain.vo.KsnetParsingByte
-
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
-import okio.Utf8
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.util.Random
 import kotlin.experimental.and
 import kotlin.experimental.xor
 

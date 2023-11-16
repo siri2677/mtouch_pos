@@ -3,12 +3,12 @@ package com.example.domain.dto.response.tms
 import java.io.Serializable
 
 data class ResponseGetPaymentListDto(
-    var result: String? = null,
+    var result: String?,
     var list: ArrayList<ResponseGetPaymentListBody>
 )
 
 data class ResponseGetPaymentListBody(
-    var rfdTime: String? = null,
+    var rfdTime: String?,
     var amount: String,
     var van: String,
     var vanTrxId: String,
@@ -27,7 +27,7 @@ data class ResponseGetPaymentListBody(
     var vanId: String,
     var _idx: String,
     var installment: String,
-    var rfdDay: String? = null,
+    var rfdDay: String?,
     var mchtId: String,
     var brand: String,
     var rfdId: String

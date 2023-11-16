@@ -167,8 +167,10 @@ fun PaymentHistoryView(
                                 LaunchedEffect(Unit) {
                                     paymentHistoryViewModel!!.getPaymentList(
                                         RequestGetPaymentListDto(
-                                            searchPeriod.startDay,
-                                            searchPeriod.endDay
+                                            startDay = searchPeriod.startDay,
+                                            endDay = searchPeriod.endDay,
+                                            lastRegTime = null,
+                                            lastRegDay = null
                                         )
                                     )
                                 }

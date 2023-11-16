@@ -24,28 +24,19 @@ import android.text.SpannableStringBuilder
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
 import com.example.cleanarchitech_text_0506.deviceinterface.DeviceConnectService
 import com.example.cleanarchitech_text_0506.enum.DeviceType
 import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
-import com.example.cleanarchitech_text_0506.vo.DomainLayerConstantObject
-import com.example.cleanarchitech_text_0506.util.EncMSRManager
 import com.example.cleanarchitech_text_0506.util.ResponseSerialCommunicationFormat
+import com.example.cleanarchitech_text_0506.vo.DomainLayerConstantObject
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
-import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
-import com.example.domain.dto.request.tms.RequestPaymentDTO
-import com.example.domain.usecaseinterface.ResponseDeviceSerialCommunication
-import com.example.domain.util.socketClient.KsnetUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
@@ -110,49 +101,6 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
         startForeground(NOTIFICATION_ID, notification)
     }
 
-//    private fun flowCollect() {
-//        job = CoroutineScope(Dispatchers.IO).launch(start = CoroutineStart.LAZY) {
-//            responseSerialCommunicationFormat.afterProcess.collect {
-//                when (it.type) {
-//                    ProcessAfterSerialCommunicate.RequestCardInsert.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.IcCardInsertRequest.message)
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.RequestCardNumber.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.PaymentProgressing.message)
-//                        )
-//                        sendData(
-//                            EncMSRManager().makeCardNumSendReq(
-//                                requestInsertPaymentDataDTO.amount.toString().toByteArray(),
-//                                "10".toByteArray()
-//                            )
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.RequestFallback.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.FallBackMessage.message)
-//                        )
-//                        sendData(
-//                            EncMSRManager().makeFallBackCardReq(it.data!!, "99")
-//                        )
-//                    }
-//                    ProcessAfterSerialCommunicate.NoticeCompletePayment.name -> {
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.SerialCommunicationMessageFlow(SerialCommunicationMessage.CompletePayment.message)
-//                        )
-//                        delay(300)
-//                        deviceConnectSharedFlow.emit(
-//                            DeviceConnectSharedFlow.PaymentCompleteFlow(true)
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//        if(!job.isActive){ job.start() }
-//    }
-
     @SuppressWarnings("MissingPermission")
     override fun connectDevice(bluetoothDevice: String, byteArray: ByteArray) {
         this.byteArray = byteArray
@@ -163,7 +111,6 @@ class BluetoothDeviceConnectServiceImpl: Service(), DeviceConnectService  {
     }
 
     override fun sendData(byteArray: ByteArray?){
-//        flowCollect()
         if(::bluetoothGatt.isInitialized) {
             val bluetoothGattCharacteristic = findWriteCharacteristic(bluetoothGatt!!)
             if (ActivityCompat.checkSelfPermission(

@@ -3,46 +3,46 @@ package com.example.domain.dto.request.pay
 import java.util.Date
 
 data class RequestDirectPaymentDto(
-    var payKey: String,
-    var trxType: String = "ONTR",
-    var trackId: String = "AXD_" + Date().time,
-    var amount: String,
-    var payerName: String,
-    var payerEmail: String? = null,
-    var payerTel: String,
-    var card: RequestDirectPaymentCard,
-    var product: RequestDirectPaymentProduct,
-    var fillerAmt: Long? = null,
-    var udf1: String? = null,
-    var udf2: String? = null,
-    var metadata: RequestDirectPaymentMetadata? = null,
-    var trxId: String? = null,
-    var authCd: String? = null,
-    var settle: String? = null,
+    val payKey: String,
+    val trxType: String = "ONTR",
+    val trackId: String = "AXD_" + Date().time,
+    val amount: String,
+    val payerName: String,
+    val payerEmail: String?,
+    val payerTel: String,
+    val card: RequestDirectPaymentCard,
+    val product: RequestDirectPaymentProduct,
+    val fillerAmt: Long?,
+    val udf1: String?,
+    val udf2: String?,
+    val metadata: RequestDirectPaymentMetadata,
+    val trxId: String?,
+    val authCd: String?,
+    val settle: String?,
 )
 
 data class RequestDirectPaymentProduct(
-    var name: String,
-    var qty: Int? = null,
-    var price: String? = null,
-    var desc: String? = null
+    val name: String,
+    val qty: Int?,
+    val price: String?,
+    val desc: String?
 )
 
 data class RequestDirectPaymentCard(
-    var number: String,
-    var expiry: String,
-    var installment: String,
-    var cvv: String? = null,
-    var cardId: String? = null,
-    var last4: String? = null,
-    var issuer: String? = null,
-    var cardType: String? = null,
+    val number: String,
+    val expiry: String,
+    val installment: String,
+    val cvv: String?,
+    val cardId: String?,
+    val last4: String?,
+    val issuer: String?,
+    val cardType: String?
 )
 
 data class RequestDirectPaymentMetadata(
-    var cardAuth: String,
-    var authPw: String? = null,
-    var authDob: String? = null
+    val cardAuth: String,
+    val authPw: String?,
+    val authDob: String?
 )
 
 

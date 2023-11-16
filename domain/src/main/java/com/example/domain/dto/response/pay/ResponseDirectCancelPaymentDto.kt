@@ -4,20 +4,20 @@ import java.util.Date
 
 data class ResponseDirectCancelPaymentDto(
     val result: ResponseDirectPaymentDtoResult,
-    val refund: ResponseDirectCancelPaymentDtoRefund? = null
+    val refund: ResponseDirectCancelPaymentDtoRefund?
 )
 
 data class ResponseDirectCancelPaymentDtoRefund(
     val trxType: String,
     val trackId: String,
     val amount: String,
-    val udf1: String? = null,
-    val udf2: String? = null,
+    val udf1: String?,
+    val udf2: String?,
     val rootTrxId: String,
-    val rootTrackId: String? = null,
+    val rootTrackId: String?,
     val rootTrxDay: String,
-    val trxId: String? = null,
-    val authCd: String? = null,
-    val settle: String? = null,
+    val trxId: String?,
+    val authCd: String?,
+    val settle: String?,
 )
 

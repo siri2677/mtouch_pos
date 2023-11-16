@@ -1,6 +1,5 @@
 package com.example.data.apiService
 
-import io.reactivex.rxjava3.core.Single
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
@@ -17,17 +16,17 @@ interface SmsRelatedRepository {
     @POST("/v0/sms/send")
     suspend fun smsSendMessage(
         @Body body: Request?
-    ): Single<ResponseBody>
+    )
     @Headers("Content-Type: application/json", "Accept: application/json", "Accept-Language: ko_KR")
     @POST("/sms/v3/multiple-destinations")
     fun sendSMS(
         @Header("Authorization") token: String?,
         @Body body: HashMap<*, *>?
-    ): Single<ResponseBody>
+    )
     @Multipart
     @POST("/sms/v3/file")
     fun uploadReceipt(
         @Header("Authorization") token: String?,
         @PartMap params: Map<String?, RequestBody?>?
-    ): Single<ResponseBody>
+    )
 }

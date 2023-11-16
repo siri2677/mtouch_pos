@@ -16,31 +16,25 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.text.SpannableStringBuilder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.example.cleanarchitech_text_0506.enum.SerialCommunicationMessage
 import com.example.cleanarchitech_text_0506.deviceinterface.DeviceConnectService
-import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.enum.DeviceType
-import com.example.cleanarchitech_text_0506.util.EncMSRManager
+import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.util.ResponseSerialCommunicationFormat
 import com.example.cleanarchitech_text_0506.vo.KsnetSocketCommunicationDTO
-import com.example.domain.dto.request.tms.RequestPaymentDTO
-import com.example.domain.usecaseinterface.ResponseDeviceSerialCommunication
 import com.hoho.android.usbserial.driver.UsbSerialDriver
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.hoho.android.usbserial.util.SerialInputOutputManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class UsbDeviceConnectServiceImpl: Service(), DeviceConnectService, SerialInputOutputManager.Listener {
@@ -217,10 +211,19 @@ class UsbDeviceConnectServiceImpl: Service(), DeviceConnectService, SerialInputO
     }
 
     override fun sendData(byteArray: ByteArray?) {
-//        flowCollect()
-        try {
+        if(::usbSerialPort.isInitialized) {
+            val spn = SpannableStringBuilder()
+            spn.append("receive ${byteArray?.size} bytes\n")
+            spn.append(
+                byteArray?.size?.let {
+                    ResponseSerialCommunicationFormat().toHex(
+                        byteArray,
+                        it
+                    )
+                }
+            ).append("\n")
+            Log.w("requestData", spn.toString())
             usbSerialPort.write(byteArray, 0)
-        } catch (e: Exception) {
         }
     }
 

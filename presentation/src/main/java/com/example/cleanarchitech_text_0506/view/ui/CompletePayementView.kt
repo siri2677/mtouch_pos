@@ -20,10 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
@@ -39,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
@@ -46,16 +43,14 @@ import com.example.cleanarchitech_text_0506.R
 import com.example.cleanarchitech_text_0506.enum.MainView
 import com.example.cleanarchitech_text_0506.enum.PaymentType
 import com.example.cleanarchitech_text_0506.enum.TransactionType
-import com.example.cleanarchitech_text_0506.sealed.DeviceConnectSharedFlow
 import com.example.cleanarchitech_text_0506.view.ui.theme.CleanArchitech_text_0506Theme
 import com.example.cleanarchitech_text_0506.viewmodel.DirectPaymentViewModel
 import com.example.cleanarchitech_text_0506.viewmodel.MainActivityViewModel
-import com.example.cleanarchitech_text_0506.viewmodel.TestCommunicationViewModel
+import com.example.cleanarchitech_text_0506.viewmodel.DeviceCommunicationViewModel
 import com.example.cleanarchitech_text_0506.vo.CompletePaymentViewVO
 import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
 import com.example.domain.dto.request.tms.RequestInsertPaymentDataDTO
 import com.example.domain.sealed.ResponsePayAPI
-import okhttp3.internal.wait
 
 @Composable
 fun CompletePaymentView(
@@ -63,14 +58,14 @@ fun CompletePaymentView(
     completePaymentViewVO: CompletePaymentViewVO?,
     mainActivityViewModel: MainActivityViewModel = hiltViewModel(),
     directPaymentViewModel: DirectPaymentViewModel = hiltViewModel(),
-    testCommunicationViewModel: TestCommunicationViewModel = hiltViewModel()
+    deviceCommunicationViewModel: DeviceCommunicationViewModel = hiltViewModel()
 ) {
     CompletePaymentMainView(
         navHostController,
         completePaymentViewVO!!,
         mainActivityViewModel,
         directPaymentViewModel,
-        testCommunicationViewModel.setDeviceType()
+        deviceCommunicationViewModel.setDeviceType()!!
     )
 }
 
@@ -81,98 +76,67 @@ fun CompletePaymentMainView(
     completePaymentViewVO: CompletePaymentViewVO,
     mainActivityViewModel: MainActivityViewModel?,
     directPaymentViewModel: DirectPaymentViewModel?,
-    testCommunicationViewModel: TestCommunicationViewModel?
+    deviceCommunicationViewModel: DeviceCommunicationViewModel?
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
-    val completeMessage = when(completePaymentViewVO.paymentType) {
-        PaymentType.Approve -> "결제가 완료 되었습니다"
-        PaymentType.Refund -> "결제 취소가 완료 되었습니다"
-    }
+    val responseDirectPayment = directPaymentViewModel?.responseDirectPayment?.collectAsStateWithLifecycle(
+        initialValue = ""
+    )?.value
+    val deviceConnectSharedFlow = deviceCommunicationViewModel?.deviceConnectSharedFlow?.collectAsStateWithLifecycle(
+        initialValue = ""
+    )?.value
+
     LaunchedEffect(key1 = Unit){
+        val completeMessage = when(completePaymentViewVO.paymentType) {
+            PaymentType.Approve -> "결제가 완료 되었습니다"
+            PaymentType.Refund -> "결제 취소가 완료 되었습니다"
+        }
         Toast.makeText(context, completeMessage, Toast.LENGTH_LONG).show()
     }
-    directPaymentViewModel?.responseDirectPayment?.CollectAsEffect(
-        block = {
-            when (it) {
-                is ResponsePayAPI.DirectCancelPaymentContent -> {
-                    val completePaymentViewVo = CompletePaymentViewVO(
-                        transactionType = TransactionType.Direct,
-                        paymentType = PaymentType.Refund,
-                        installment = completePaymentViewVO.installment,
-                        trackId = it.responseDirectCancelPaymentDto.refund?.trackId!!,
-                        cardNumber = completePaymentViewVO.cardNumber,
-                        amount = it.responseDirectCancelPaymentDto.refund?.amount.toString(),
-                        regDay = it.responseDirectCancelPaymentDto.result.create,
-                        authCode = it.responseDirectCancelPaymentDto.refund?.authCd!!,
-                        trxId = it.responseDirectCancelPaymentDto.refund?.trxId!!,
-                    )
-                    navHostController?.navigate(
-                        MainView.CompletePayment.name,
-                        bundleOf("responsePayAPI" to completePaymentViewVo),
-                        NavOptions.Builder().setLaunchSingleTop(true).build()
-                    )
-                    Toast.makeText(context, "결제 취소가 완료 되었습니다", Toast.LENGTH_LONG).show()
-                }
-                else -> {}
-            }
-        }
-    )
 
-    when {
-        testCommunicationViewModel != null -> {
-            testCommunicationViewModel.deviceConnectSharedFlow.CollectAsEffect(
-                block = {
-                    when(it) {
-                        is DeviceConnectSharedFlow.PaymentCompleteFlow -> {
-                            val completePaymentViewVo = CompletePaymentViewVO(
-                                transactionType = TransactionType.Offline,
-                                paymentType = PaymentType.Refund,
-                                installment = completePaymentViewVO.installment,
-                                trackId = completePaymentViewVO.trackId!!,
-                                cardNumber = completePaymentViewVO.cardNumber,
-                                amount = completePaymentViewVO.amount,
-                                regDay = completePaymentViewVO.regDay,
-                                authCode = completePaymentViewVO.authCode,
-                                trxId = it.responseInsertPaymentDataDTO.trxId!!,
-                            )
-                            navHostController?.navigate(
-                                MainView.CompletePayment.name,
-                                bundleOf("responsePayAPI" to completePaymentViewVo),
-                                NavOptions.Builder().setLaunchSingleTop(true).build()
-                            )
-                            Toast.makeText(context, "결제 취소가 완료 되었습니다", Toast.LENGTH_LONG).show()
-                        }
-                        else -> {}
-                    }
-                }
+    when(responseDirectPayment) {
+        is ResponsePayAPI.DirectCancelPaymentContent -> {
+            val completePaymentViewVo = CompletePaymentViewVO(
+                transactionType = TransactionType.Direct,
+                paymentType = PaymentType.Refund,
+                installment = completePaymentViewVO.installment,
+                trackId = responseDirectPayment.responseDirectCancelPaymentDto.refund?.trackId!!,
+                cardNumber = completePaymentViewVO.cardNumber,
+                amount = responseDirectPayment.responseDirectCancelPaymentDto.refund?.amount.toString(),
+                regDay = responseDirectPayment.responseDirectCancelPaymentDto.result.create,
+                authCode = responseDirectPayment.responseDirectCancelPaymentDto.refund?.authCd!!,
+                trxId = responseDirectPayment.responseDirectCancelPaymentDto.refund?.trxId!!,
+                prodQty = null,
+                prodName = null,
+                prodPrice = null,
+                payerTel = null,
+                payerName = null,
+                payerEmail = null,
             )
-
+            navHostController?.navigate(
+                MainView.CompletePayment.name,
+                bundleOf("responsePayAPI" to completePaymentViewVo),
+                NavOptions.Builder().setLaunchSingleTop(true).build()
+            )
         }
+        else -> {}
     }
 
-    if(testCommunicationViewModel != null) {
-        serialCommunicationResult(
-            testCommunicationViewModel = testCommunicationViewModel,
-            navHostController = navHostController,
-            dialogMessage = {
-                errorDialog(
-                    message = it,
-                    onDismissRequest = { },
-                )
-            },
-            paymentType = PaymentType.Refund
-        )
-    }
+    serialCommunicationResult(
+        deviceCommunicationViewModel = deviceCommunicationViewModel!!,
+        navHostController = navHostController,
+        dialogMessage = { errorDialog(message = it) },
+    )
 
     Scaffold(
         topBar = {
             when (completePaymentViewVO.paymentType) {
                 PaymentType.Approve -> {
-                    topNavigationCompletePaymentView("결제 완료 페이지")
+                    TopNavigationCompletePaymentView("결제 완료 페이지")
                 }
                 PaymentType.Refund -> {
-                    topNavigationCompletePaymentView("결제 취소 완료 페이지")
+                    TopNavigationCompletePaymentView("결제 취소 완료 페이지")
                 }
             }
         }
@@ -200,32 +164,32 @@ fun CompletePaymentMainView(
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "전표번호",
-                        value = completePaymentViewVO.trackId
+                        value = completePaymentViewVO.trackId!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "카드번호",
-                        value = completePaymentViewVO.cardNumber
+                        value = completePaymentViewVO.cardNumber!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "금액",
-                        value = completePaymentViewVO.amount
+                        value = completePaymentViewVO.amount!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "승인일자",
-                        value = completePaymentViewVO.regDay
+                        value = completePaymentViewVO.regDay!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "승인번호",
-                        value = completePaymentViewVO.authCode
+                        value = completePaymentViewVO.authCode!!
                     )
                     CompletePaymentContent(
                         modifier = Modifier.padding(top = 20.dp),
                         key = "거래번호",
-                        value = completePaymentViewVO.trxId
+                        value = completePaymentViewVO.trxId!!
                     )
                 }
 
@@ -234,7 +198,7 @@ fun CompletePaymentMainView(
                         .padding(start = 10.dp, end = 20.dp, bottom = 50.dp)
                 ) {
                     if (completePaymentViewVO.paymentType == PaymentType.Approve) {
-                        bottomRowButton(
+                        BottomRowButton(
                             modifier = Modifier
                                 .weight(1f)
                                 .background(colorResource(id = R.color.red))
@@ -244,22 +208,44 @@ fun CompletePaymentMainView(
                                             directPaymentViewModel?.requestDirectCancelPayment(
                                                 RequestDirectCancelPaymentDto(
                                                     payKey = mainActivityViewModel?.getUserInformation()?.payKey!!,
-                                                    amount = completePaymentViewVO.amount,
-                                                    rootTrxId = completePaymentViewVO.trxId,
-                                                    rootTrxDay = completePaymentViewVO.regDay
+                                                    amount = completePaymentViewVO.amount!!,
+                                                    rootTrxId = completePaymentViewVO.trxId!!,
+                                                    rootTrxDay = completePaymentViewVO.regDay!!,
+                                                    udf1 = null,
+                                                    udf2 = null,
+                                                    rootTrackId = null,
+                                                    trxId = null,
+                                                    authCd = null,
+                                                    settle = null,
                                                 )
                                             )
                                         }
-
                                         TransactionType.Offline -> {
-                                            testCommunicationViewModel?.requestOfflinePaymentCancel(
+                                            deviceCommunicationViewModel?.requestOfflinePaymentCancel(
                                                 RequestInsertPaymentDataDTO(
                                                     amount = Integer.parseInt(completePaymentViewVO.amount),
                                                     installment = completePaymentViewVO.installment,
+                                                    token = mainActivityViewModel?.getUserInformation()?.key!!,
+                                                    type = PaymentType.Refund.value,
+                                                    trxId = completePaymentViewVO.trxId,
                                                     authCd = completePaymentViewVO.authCode,
                                                     regDate = completePaymentViewVO.regDay,
-                                                    token = mainActivityViewModel?.getUserInformation()?.key!!,
-                                                    trxId = completePaymentViewVO.trxId
+                                                    prodQty = null,
+                                                    prodName = null,
+                                                    prodPrice = null,
+                                                    payerTel = null,
+                                                    payerName = null,
+                                                    payerEmail = null,
+                                                    dealerRate = null,
+                                                    distRate = null,
+                                                    number = null,
+                                                    van = null,
+                                                    vanId = null,
+                                                    vanTrxId = null,
+                                                    trackId = null,
+                                                    issuerCode = null,
+                                                    acquirerCode = null,
+                                                    resultMsg = null
                                                 )
                                             )
                                         }
@@ -268,19 +254,19 @@ fun CompletePaymentMainView(
                             value = "취소"
                         )
                     }
-                    bottomRowButton(
+                    BottomRowButton(
                         modifier = Modifier
                             .weight(1f)
                             .background(colorResource(id = R.color.teal_700)),
                         value = "PRINT"
                     )
-                    bottomRowButton(
+                    BottomRowButton(
                         modifier = Modifier
                             .weight(1f)
                             .background(colorResource(id = R.color.blackbb)),
                         value = "문자\n영수증"
                     )
-                    bottomRowButton(
+                    BottomRowButton(
                         modifier = Modifier
                             .weight(1f)
                             .background(colorResource(id = R.color.grey3)),
@@ -317,7 +303,7 @@ fun CompletePaymentContent(
 }
 
 @Composable
-fun bottomRowButton(
+fun BottomRowButton(
     modifier: Modifier = Modifier,
     value: String
 ) {
@@ -339,7 +325,7 @@ fun bottomRowButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun topNavigationCompletePaymentView(title: String) {
+fun TopNavigationCompletePaymentView(title: String) {
     CenterAlignedTopAppBar(
         title = {
             Text(title, fontWeight = FontWeight.Bold)
@@ -350,7 +336,6 @@ fun topNavigationCompletePaymentView(title: String) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun CompletePaymentMainPreView() {
@@ -365,11 +350,17 @@ fun CompletePaymentMainPreView() {
                 "1,806,004원",
                 "2020-03-16 14:02:02",
                 "30034798",
-                "T200316016511"
+                "T200316016511" ,
+                payerEmail = null,
+                trackId = null,
+                cardNumber = null,
+                regDay = null,
+                authCode = null,
+                trxId = null,
             ),
             mainActivityViewModel = null,
             directPaymentViewModel = null,
-            testCommunicationViewModel = null
+            deviceCommunicationViewModel = null
         )
     }
 }

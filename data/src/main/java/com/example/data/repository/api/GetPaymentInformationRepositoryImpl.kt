@@ -28,13 +28,13 @@ import kotlinx.coroutines.launch
 import org.mapstruct.factory.Mappers
 
 class GetPaymentInformationRepositoryImpl: GetPaymentInformationRepository {
-    override suspend fun statistics(
+    override fun statistics(
         onSuccess: (ResponseGetPaymentStatisticsDto) -> Unit,
         onError: (String) -> Unit,
         token: String?,
         body: RequestGetPaymentStatisticsDto
-    ) = flow<Unit> {
-        TODO("Not yet implemented")
+    ) {
+
     }
 
     override fun list(
@@ -49,7 +49,6 @@ class GetPaymentInformationRepositoryImpl: GetPaymentInformationRepository {
                     token,
                     ListTmsRequestData(Mappers.getMapper(RequestDataMapper::class.java).listToGetPaymentListModel(body))
                 ).suspendOnSuccess {
-                    Log.w("suspendOnSuccess", "suspendOnSuccess")
                     onSuccess(Mappers.getMapper(ResponseDataMapper::class.java).listToGetPaymentListModel(data.data!!))
                 }.suspendOnError {
                     onError(errorBody.toString())

@@ -122,15 +122,22 @@ fun DirectPaymentMainView(
             when (it) {
                 is ResponsePayAPI.DirectPaymentContent -> {
                     val completePaymentViewVo = CompletePaymentViewVO(
-                        TransactionType.Direct,
-                        PaymentType.Approve,
-                        it.responseDirectPaymentDto.pay?.card?.installment.toString(),
-                        it.responseDirectPaymentDto.pay?.trackId!!,
-                        it.responseDirectPaymentDto.pay?.card?.bin!!,
-                        it.responseDirectPaymentDto.pay?.amount.toString(),
-                        it.responseDirectPaymentDto.result.create,
-                        it.responseDirectPaymentDto.pay?.authCd!!,
-                        it.responseDirectPaymentDto.pay?.trxId!!
+                        transactionType = TransactionType.Direct,
+                        paymentType = PaymentType.Approve,
+                        amount = it.responseDirectPaymentDto.pay?.amount.toString(),
+                        installment = it.responseDirectPaymentDto.pay?.card?.installment.toString(),
+                        prodQty = null,
+                        prodName = null,
+                        prodPrice = null,
+                        payerTel = null,
+                        payerName = null,
+                        payerEmail =  null,
+                        trackId =  it.responseDirectPaymentDto.pay?.trackId!!,
+                        cardNumber =  it.responseDirectPaymentDto.pay?.card?.bin!!,
+                        regDay =  it.responseDirectPaymentDto.result.create,
+                        authCode =  it.responseDirectPaymentDto.pay?.authCd!!,
+                        trxId = it.responseDirectPaymentDto.pay?.trxId!!
+
                     )
                     navHostController?.navigate(
                         MainView.CompletePayment.name,
@@ -315,19 +322,40 @@ fun DirectPaymentMainView(
                             card = RequestDirectPaymentCard(
                                 number = cardNumber,
                                 expiry = expirationYear.substring(2) + expirationMonth,
-                                installment = if (installment == "일시불") "00" else installment
+                                installment = if (installment == "일시불") "00" else installment,
+                                cardId = null,
+                                cardType = null,
+                                cvv = null,
+                                issuer = null,
+                                last4 = null
                             ),
                             product = RequestDirectPaymentProduct(
                                 name = productName,
                                 qty = 1,
-                                price = amount
+                                price = amount,
+                                desc = null
                             ),
                             metadata =
                             if (directPaymentEssentialData.semiAuth == "Y") {
-                                RequestDirectPaymentMetadata("true", password, birthday)
+                                RequestDirectPaymentMetadata(
+                                    cardAuth = "true",
+                                    authPw = password,
+                                    authDob = birthday
+                                )
                             } else {
-                                RequestDirectPaymentMetadata("false")
-                            }
+                                RequestDirectPaymentMetadata(
+                                    cardAuth = "false",
+                                    authPw = null,
+                                    authDob = null
+                                )
+                            },
+                            authCd = null,
+                            fillerAmt = null,
+                            payerEmail = null,
+                            settle = null,
+                            trxId = null,
+                            udf1 = null,
+                            udf2 = null
                         )
                         val errorMessage: String? = validation(requestDirectPaymentDto)
                         if (errorMessage != null) {
@@ -545,7 +573,7 @@ fun dialog(
 @Composable
 fun errorDialog(
     message: String,
-    onDismissRequest: () -> Unit,
+    onDismissRequest: () -> Unit = {},
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     var dialogVisibility by remember { mutableStateOf(true) }
