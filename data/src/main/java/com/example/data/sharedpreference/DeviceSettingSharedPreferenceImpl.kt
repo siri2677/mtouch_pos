@@ -1,13 +1,24 @@
 package com.example.data.sharedpreference
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
-import com.example.data.vo.DeviceInformation
 import com.example.domain.repositoryInterface.DeviceSettingSharedPreference
+import com.example.domain.vo.DeviceType
 import com.google.gson.Gson
 
 
 class DeviceSettingSharedPreferenceImpl(val context: Context) : DeviceSettingSharedPreference {
+    private val sharedPreferences = context.getSharedPreferences(
+        DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(),
+        Context.MODE_PRIVATE
+    )
+
+    data class DeviceInformation(
+        val deviceType: DeviceType,
+        val information: String
+    )
+
     enum class DeviceSharedPreferenceKey {
         DEVICE_INFORMATION,
         EMPTY_STRING,
@@ -19,51 +30,63 @@ class DeviceSettingSharedPreferenceImpl(val context: Context) : DeviceSettingSha
         KEEP_BLUETOOTH_CONNECTION
     }
 
-    override fun getCurrentRegisteredDeviceType(): String {
-        val sharedPreferences = context.getSharedPreferences(
-            DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(),
-            Context.MODE_PRIVATE
+    override fun getDeviceConnectSetting(): DeviceSettingSharedPreference.DeviceConnectSetting? {
+        return Gson().fromJson(
+            sharedPreferences.getString(
+                DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+                ""
+            )!!,
+            DeviceSettingSharedPreference.DeviceConnectSetting::class.java
         )
-        val userDataJson = sharedPreferences.getString(
-            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(),
-            DeviceSharedPreferenceKey.EMPTY_STRING.toString()
-        )!!
-        return Gson().fromJson(userDataJson, DeviceInformation::class.java).deviceType
     }
 
-    override fun getCurrentRegisteredDeviceInformation(): String {
-        val sharedPreferences = context.getSharedPreferences(
-            DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(),
-            Context.MODE_PRIVATE
-        )
-        val userDataJson = sharedPreferences.getString(
-            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(),
-            DeviceSharedPreferenceKey.EMPTY_STRING.toString()
-        )!!
-        return Gson().fromJson(userDataJson, DeviceInformation::class.java).information
+    override fun setDeviceConnectSetting(deviceConnectSetting: DeviceSettingSharedPreference.DeviceConnectSetting) {
+        sharedPreferences.edit().putString(
+            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+            Gson().toJson(deviceConnectSetting)
+        ).apply()
     }
 
-    override fun setCurrentRegisteredDeviceType(deviceType: String, information: String) {
-        val sharedPreferences = context.getSharedPreferences(
-            DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(),
-            Context.MODE_PRIVATE
-        )
-        val editor = sharedPreferences.edit()
-        val gson = Gson().toJson(DeviceInformation(deviceType, information))
-        Log.w("setCurrent", gson)
-        editor.putString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), gson)
-        editor.apply()
+    override fun saveDeviceConnectStatus(isConnected: Boolean) {
+        sharedPreferences.edit().putString(
+            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+            Gson().toJson(getDeviceConnectSetting()?.copy(isConnected = isConnected))
+        ).apply()
+    }
+
+    override fun getCurrentRegisteredDeviceType(): DeviceType? {
+        return Gson().fromJson(
+            sharedPreferences.getString(
+                DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+                ""
+            )!!,
+            DeviceInformation::class.java
+        ).deviceType
+    }
+
+
+    override fun getCurrentRegisteredDeviceInformation(): String? {
+        return Gson().fromJson(
+            sharedPreferences.getString(
+                DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+                ""
+            )!!,
+            DeviceInformation::class.java
+        ).information
+    }
+
+    override fun setCurrentRegisteredDeviceType(deviceType: DeviceType, information: String) {
+        sharedPreferences.edit().putString(
+            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+            Gson().toJson(DeviceInformation(deviceType, information))
+        ).apply()
     }
 
     override fun clearCurrentRegisteredDeviceType() {
-        val sharedPreferences = context.getSharedPreferences(
-            DeviceSharedPreferenceKey.DEVICE_INFORMATION.toString(),
-            Context.MODE_PRIVATE
-        )
-        val editor = sharedPreferences.edit()
-        val gson = Gson().toJson(DeviceInformation("", DeviceSharedPreferenceKey.EMPTY_STRING.name))
-        editor.putString(DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.toString(), gson)
-        editor.commit()
+        sharedPreferences.edit().putString(
+            DeviceSharedPreferenceKey.CURRENT_REGISTERED_DEVICE_TYPE.name,
+            ""
+        ).commit()
     }
 
     override fun isKeepBluetoothConnection(): Boolean {

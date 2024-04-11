@@ -1,5 +1,5 @@
 android {
-    namespace = "com.example.cleanarchitech_text_0506"
+    namespace = "com.example.mtouchpos"
     defaultConfig {
         configurations.all {
             resolutionStrategy {
@@ -7,7 +7,7 @@ android {
                 force("androidx.emoji2:emoji2:1.3.0")
             }
         }
-        applicationId = "com.example.cleanarchitech_text_0506"
+        applicationId = "com.example.mtouchpos"
     }
     buildFeatures {
         compose = true
@@ -27,6 +27,7 @@ dependencies {
     androidTestImplementation(rootProject.libs.compose.ui.test.jnit4)
     debugImplementation(rootProject.libs.compose.ui.tooling)
     debugImplementation(rootProject.libs.compose.ui.test.manifest)
+    runtimeOnly(rootProject.libs.compose.runtime)
 
     implementation(rootProject.libs.bundles.androidx.compose)
     implementation(rootProject.libs.bundles.accompanist)
@@ -38,5 +39,4 @@ dependencies {
     testImplementation(rootProject.libs.junit)
     debugImplementation(rootProject.libs.test.junit)
     debugImplementation(rootProject.libs.test.espresso)
-
 }

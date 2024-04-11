@@ -1,8 +1,9 @@
 package com.example.domain.repositoryInterface
 
-import com.example.domain.dto.response.tms.ResponseGetUserInformationDto
+import com.example.domain.model.response.tms.ResponseTmsModel
+
 
 interface UserInformationSharedPreference {
-    fun getUserInformation(): ResponseGetUserInformationDto
-    fun setUserInformation(responseGetUserInformationDto: ResponseGetUserInformationDto)
+    fun getUserInformation(): ResponseTmsModel.GetUserInformation?
+    fun setUserInformation(responseGetUserInformationDto: ResponseTmsModel.GetUserInformation)
 }

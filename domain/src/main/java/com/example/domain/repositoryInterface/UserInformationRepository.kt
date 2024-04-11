@@ -1,10 +1,11 @@
 package com.example.domain.repositoryInterface
 
-import com.example.domain.dto.request.tms.RequestGetUserInformationDto
+import com.example.domain.model.request.tms.RequestTmsModel
+
 
 interface UserInformationRepository {
-    suspend fun getUserInformation(tmnId: String): RequestGetUserInformationDto
-    suspend fun insertUserInformation(responseGetUserInformationDto: RequestGetUserInformationDto)
-    suspend fun getAllUserInformation(): ArrayList<RequestGetUserInformationDto>
+    suspend fun getUserInformation(tmnId: String): RequestTmsModel.GetUserInformation
+    suspend fun insertUserInformation(responseGetUserInformationDto: RequestTmsModel.GetUserInformation)
+    fun getAllUserInformation(): List<RequestTmsModel.GetUserInformation>
     suspend fun deleteUserInformation(tmnId: String)
 }
