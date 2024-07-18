@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "cleanArchitech_text_0506"
+rootProject.name = "mtouchPos"
 include(":presentation")
 include(":data")
 include(":domain")

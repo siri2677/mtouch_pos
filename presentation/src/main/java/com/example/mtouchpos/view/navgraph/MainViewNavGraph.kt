@@ -1,0 +1,249 @@
+package com.example.mtouchpos.view.navgraph
+
+import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresApi
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavOptions
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
+import androidx.navigation.compose.navigation
+import com.example.mtouchpos.view.ui.BluetoothDevicePaymentDialog
+import com.example.mtouchpos.view.ui.CalendarView
+import com.example.mtouchpos.view.ui.CreditPaymentView
+import com.example.mtouchpos.view.ui.DirectPaymentView
+import com.example.mtouchpos.view.ui.LoginDialog
+import com.example.mtouchpos.view.ui.MainView
+import com.example.mtouchpos.view.ui.PaymentHistoryDetailView
+import com.example.mtouchpos.view.ui.PaymentHistoryLoadingDialog
+import com.example.mtouchpos.view.ui.PaymentHistoryView
+import com.example.mtouchpos.view.ui.PaymentHistoryViewTab
+import com.example.mtouchpos.view.ui.PgIdLoginDialog
+import com.example.mtouchpos.view.ui.RegisteredIdDialog
+import com.example.mtouchpos.view.ui.UsbDevicePaymentDialog
+import com.example.mtouchpos.view.ui.VanIdLoginDialog
+import com.example.mtouchpos.view.ui.bluetoothDevice
+import com.example.mtouchpos.view.ui.navigate
+import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
+import com.example.mtouchpos.view.ui.usbDevice
+import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
+import com.example.mtouchpos.vo.type.UseCaseResult
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.rememberPagerState
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Calendar
+import java.util.Locale
+
+class MainViewNavGraph(
+    override val navController: NavController,
+    override val navGraphBuilder: NavGraphBuilder
+): CommonViewNavGraph(navController, navGraphBuilder) {
+    fun mainViewGraph() {
+        navGraphBuilder.composable(NavigationGraphState.HomeView.Home.name) {
+            MainView(navController = navController)
+        }
+        navGraphBuilder.dialog(NavigationGraphState.HomeView.Login.name) {
+            LoginDialog(navController = navController)
+        }
+        navGraphBuilder.dialog(NavigationGraphState.HomeView.PgIdLogin.name) {
+            PgIdLoginDialog(navController = navController)
+        }
+        navGraphBuilder.dialog(NavigationGraphState.HomeView.VanIdLogin.name) {
+            VanIdLoginDialog(navController = navController)
+        }
+        navGraphBuilder.dialog(NavigationGraphState.HomeView.RegisteredId.name) {
+            RegisteredIdDialog(navController = navController)
+        }
+    }
+
+    fun creditPaymentGraph() {
+        navGraphBuilder.navigation(
+            startDestination = NavigationGraphState.CreditPaymentView.CreditPayment.name,
+            route = "creditPaymentGraph"
+        ) {
+            completePaymentPage()
+            composable(NavigationGraphState.CreditPaymentView.CreditPayment.name) {
+                CreditPaymentView(navController)
+            }
+        }
+    }
+
+//    fun completePaymentGraph() {
+//        commonViewNavGraph.run {
+//            navGraphBuilder.navigation(
+//                startDestination = NavigationGraphState.CommonView.CompletePayment.name,
+//                route = "completePaymentGraph"
+//            ) {
+//                completePaymentPage()
+//            }
+//        }
+//    }
+
+    fun directPaymentGraph() {
+        navGraphBuilder.navigation(
+            startDestination = NavigationGraphState.DirectPaymentView.DirectPayment.name,
+            route = "directPaymentGraph"
+        ) {
+            itemListDialog()
+            errorDialog()
+            completePaymentPage()
+            composable(NavigationGraphState.DirectPaymentView.DirectPayment.name) {
+                DirectPaymentView(navController = navController)
+            }
+        }
+    }
+
+    fun deviceConnectGraph() {
+        navGraphBuilder.navigation(
+            startDestination = NavigationGraphState.DeviceSettingView.Bluetooth.name,
+            route = "DeviceConnectGraph"
+        ) {
+            composable(NavigationGraphState.DeviceSettingView.Bluetooth.name) { backStackEntry ->
+                bluetoothDevice(navHostController = navController)
+            }
+            composable(NavigationGraphState.DeviceSettingView.USB.name) {
+                usbDevice(navHostController = navController)
+            }
+        }
+    }
+
+    @OptIn(ExperimentalPagerApi::class)
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun paymentHistoryGraph() {
+        navGraphBuilder.navigation(
+            startDestination = NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
+            route = "paymentHistoryGraph"
+        ) {
+            errorDialog()
+//            loadingDialog()
+            completePaymentPage()
+            dialog(NavigationGraphState.CommonView.LoadingDialog.name) { backStackEntry ->
+                PaymentHistoryLoadingDialog(
+                    navController = navController,
+                    paymentHistoryViewModel = backStackEntry.getSerializableArgument(
+                        NavigationBundleKey.RESPONSE_TMS_API)!!,
+                )
+            }
+            composable(NavigationGraphState.PaymentHistoryView.PaymentHistory.name) { backStackEntry ->
+                fun getDay(days: Long) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    LocalDateTime.now().minusDays(days).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                } else {
+                    val calendar = Calendar.getInstance()
+                    calendar.add(Calendar.DAY_OF_YEAR, -days.toInt())
+                    SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(calendar.time)
+                }
+
+                val pagerState = rememberPagerState()
+                val today = getDay(0)
+                val paymentPeriod = when (PaymentHistoryViewTab.values()[pagerState.currentPage]) {
+                    PaymentHistoryViewTab.Today -> PaymentHistoryViewModel.PeriodInfo(today, today)
+                    PaymentHistoryViewTab.Yesterday -> PaymentHistoryViewModel.PeriodInfo(getDay(1), today)
+                    PaymentHistoryViewTab.Week -> PaymentHistoryViewModel.PeriodInfo(getDay(7), today)
+                    PaymentHistoryViewTab.Custom -> backStackEntry.getSerializableArgument(
+                        NavigationBundleKey.SEARCH_PERIOD) ?: PaymentHistoryViewModel.PeriodInfo("", "")
+                }
+                var beforePaymentHistoryData: UseCaseResult<List<PaymentHistoryViewModel.PaymentHistoryInfo>> by remember { mutableStateOf(UseCaseResult.Init) }
+                val isNotDiff = beforePaymentHistoryData === backStackEntry.getSerializableArgument(
+                    NavigationBundleKey.RESPONSE_TMS_API) ?:
+                        UseCaseResult.Init
+
+                with(hiltViewModel() as PaymentHistoryViewModel) {
+                    val isDiffBeforeSearchPeriod = savePeriodInfo.value != paymentPeriod
+                    var isPopBackStack by remember { mutableStateOf(false) }
+
+                    BackHandler {
+                        isPopBackStack = true
+                        navController.popBackStack()
+                    }
+
+                    if(isDiffBeforeSearchPeriod) {
+                        if(paymentPeriod.first.isEmpty()) {
+                            setSaveInstance(paymentPeriod)
+                        } else {
+                            fetchPaymentList(paymentPeriod)
+                            setSaveInstance(paymentPeriod)
+//                            beforePaymentHistoryData = backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API) ?: UseCaseResult.Init
+                            navController.navigate(
+                                route = NavigationGraphState.CommonView.LoadingDialog.name,
+                                bundle = bundleOf(NavigationBundleKey.RESPONSE_TMS_API to this),
+                                navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                                    NavigationGraphState.PaymentHistoryView.PaymentHistory.name, inclusive = false, saveState = false).build()
+                            )
+                        }
+                    }
+//                    val test = backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API) as
+//                            UseCaseResult<List<PaymentHistoryViewModel.PaymentHistoryInfo>>?
+
+                    PaymentHistoryView(
+                        paymentHistoryViewModel = this,
+                        paymentHistoryData = if(isPopBackStack || isDiffBeforeSearchPeriod) {
+                            UseCaseResult.Init
+                        } else {
+                            backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API) ?: UseCaseResult.Init
+                        },
+                        navController = navController,
+                        paymentPeriod = paymentPeriod,
+                        pagerState = pagerState
+                    )
+                }
+            }
+            composable(NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name) { backStackEntry ->
+                PaymentHistoryDetailView(
+                    navController = navController,
+                    paymentHistoryInfo = backStackEntry.getSerializableArgument(RESPONSE_GET_PAYMENT_LIST)!!
+                )
+            }
+            composable(NavigationGraphState.PaymentHistoryView.Calendar.name) {
+                CalendarView(
+                    close = { navController.popBackStack() },
+                    dateSelected = { startDate, endDate ->
+                        navController.navigate(
+                            NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
+                            bundleOf(
+                                NavigationBundleKey.SEARCH_PERIOD to (
+                                        PaymentHistoryViewModel.PeriodInfo(
+                                            first = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                                            last = endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                                        )
+                                )
+                            ),
+                            NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                                NavigationGraphState.PaymentHistoryView.Calendar.name, true).build()
+                        )
+                    }
+                )
+            }
+//            dialog(NavigationGraphState.CommonView.LoadingDialog.name) { backStackEntry ->
+//                PaymentHistoryLoadingDialog(
+//                    navController = navController,
+//                    paymentHistoryViewModel = backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API)!!,
+//                )
+//            }
+            dialog(NavigationGraphState.CreditPaymentView.BluetoothDialog.name) { backStackEntry ->
+                BluetoothDevicePaymentDialog(
+                    navController = navController,
+                    paymentProcessState = backStackEntry.getSerializableArgument(
+                        NavigationBundleKey.ITEM_LIST
+                    )!!
+                )
+            }
+            dialog(NavigationGraphState.CreditPaymentView.UsbDialog.name) { backStackEntry ->
+                UsbDevicePaymentDialog(
+                    navController = navController,
+                    paymentProcessState = backStackEntry.getSerializableArgument(
+                        NavigationBundleKey.ITEM_LIST
+                    )!!
+                )
+            }
+        }
+    }
+}

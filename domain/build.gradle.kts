@@ -3,5 +3,8 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4")
+    implementation(rootProject.libs.coroutines)
+    implementation(rootProject.libs.gson)
+    implementation(rootProject.libs.javax.inject)
+    implementation(rootProject.libs.errorprone)
 }
