@@ -1,19 +1,22 @@
 package com.example.domain.repositoryInterface
 
-import com.example.domain.dto.request.pay.RequestDirectCancelPaymentDto
-import com.example.domain.dto.request.pay.RequestDirectPaymentDto
-import com.example.domain.dto.response.pay.ResponseDirectCancelPaymentDto
-import com.example.domain.dto.response.pay.ResponseDirectPaymentDto
+import com.example.domain.model.ApiResult
+import com.example.domain.model.payment.CardData
+import com.example.domain.model.payment.DirectPaymentData
+import com.example.domain.model.payment.PaymentDetailData
+import com.example.domain.model.payment.OfflinePaymentData
+import com.example.domain.model.payment.RootPaymentData
+import kotlinx.coroutines.flow.Flow
 
 interface DirectPaymentRepository {
-    fun approve(
-        onSuccess: (ResponseDirectPaymentDto) -> Unit,
-        onError: (String) -> Unit,
-        body: RequestDirectPaymentDto
-    )
-    fun refund(
-        onSuccess: (ResponseDirectCancelPaymentDto) -> Unit,
-        onError: (String) -> Unit,
-        body: RequestDirectCancelPaymentDto
-    )
+    suspend fun approve(
+        paymentInfo: OfflinePaymentData,
+        directPaymentInfo: DirectPaymentData
+    ): Flow<ApiResult<PaymentDetailData>>
+
+    suspend fun cancel(
+        paymentInfo: OfflinePaymentData,
+        rootPaymentInfo: RootPaymentData,
+        cardInfo: CardData
+    ): Flow<ApiResult<PaymentDetailData>>
 }
