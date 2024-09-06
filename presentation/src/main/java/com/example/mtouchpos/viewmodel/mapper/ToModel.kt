@@ -78,6 +78,6 @@ fun LoginViewModel.UserInfo.toUserData() = UserData(
 )
 
 fun PaymentHistoryViewModel.PeriodInfo.toPeriodData() = PeriodData(
-    first = first,
-    last = last,
+    first = startDay,
+    last = endDay,
 )

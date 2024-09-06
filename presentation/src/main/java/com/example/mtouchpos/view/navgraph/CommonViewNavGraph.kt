@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import com.example.mtouchpos.view.ui.BluetoothDevicePaymentDialog
 import com.example.mtouchpos.view.ui.CompletePaymentPage
-import com.example.mtouchpos.view.ui.PaymentHistoryLoadingDialog
 import com.example.mtouchpos.view.ui.UsbDevicePaymentDialog
 import com.example.mtouchpos.view.util.ErrorDialog
 import com.example.mtouchpos.view.util.ItemListDialog
@@ -20,12 +19,14 @@ open class CommonViewNavGraph(
 ) {
     inline fun <reified T : Serializable> NavBackStackEntry.getSerializableArgument(
         key: String
-    ): T? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    ): T? = try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arguments?.getSerializable(key, T::class.java)
         } else {
             arguments?.getSerializable(key) as T
         }
+    } catch (e: NullPointerException) {
+        null
     }
 
     fun itemListDialog() {
@@ -74,15 +75,6 @@ open class CommonViewNavGraph(
                     )!!
                 )
             }
-        }
-    }
-
-    fun loadingDialog() {
-        navGraphBuilder.dialog(NavigationGraphState.CommonView.LoadingDialog.name) { backStackEntry ->
-            PaymentHistoryLoadingDialog(
-                navController = navController,
-                paymentHistoryViewModel = backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API)!!,
-            )
         }
     }
 }

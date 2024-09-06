@@ -1,6 +1,5 @@
 package com.example.mtouchpos.view.ui
 
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,7 +30,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.mtouchpos.R
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.ui.theme.observeCompletePaymentInfo
 import com.example.mtouchpos.view.ui.theme.observeResultPaymentData
@@ -39,6 +37,7 @@ import com.example.mtouchpos.view.util.ColumnKeyValueTextBox
 import com.example.mtouchpos.view.util.RowSmallSizeTextBox
 import com.example.mtouchpos.viewmodel.DirectPaymentViewModel
 import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
+import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
 import com.example.mtouchpos.viewmodel.mapper.toDirectCancelPaymentInfo
 import com.example.mtouchpos.viewmodel.mapper.toOfflineCancelPaymentInfo
 import com.example.mtouchpos.vo.data.CompletePaymentInfo
@@ -78,7 +77,7 @@ fun CompletePaymentPage(
                 with(offlinePaymentViewModel) {
                     updateOfflineCancelPaymentInfo(completePaymentInfo.toOfflineCancelPaymentInfo(0, 0))
                     requestOfflineCancelPayment(
-                        CardTerminalFactory(context, setupWebPageLauncher).getCommunicateManger(Build.MODEL)
+                        CardTerminalFactory(context, setupWebPageLauncher)
                     )
                 }
             }

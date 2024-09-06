@@ -1,7 +1,6 @@
 package com.example.mtouchpos.viewmodel.usecasemanager.terminal
 
 import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -12,7 +11,6 @@ import com.example.domain.model.payment.RootPaymentData
 import com.example.domain.usecase.device.manager.CommunicateCardTerminalManager
 
 class CommunicatePM500(
-    private val context: Context,
     private val launcher: ManagedActivityResultLauncher<Intent, ActivityResult>
 ): CommunicateCardTerminalManager {
     override fun invoke(

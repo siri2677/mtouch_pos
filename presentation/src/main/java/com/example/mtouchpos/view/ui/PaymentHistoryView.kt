@@ -1,5 +1,6 @@
 package com.example.mtouchpos.view.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -22,9 +24,15 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -36,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
@@ -117,83 +126,123 @@ fun ReactPaymentHistoryData(
                 navController = navController
             )
         }
+
+        UseCaseResult.Loading -> {
+            LoadingDialog(navController)
+            PaymentHistoryLazyColumn(
+                navController = navController
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun PaymentHistoryView(
-    paymentHistoryData: UseCaseResult<List<PaymentHistoryViewModel.PaymentHistoryInfo>>,
-    navController: NavController = rememberNavController(),
-    paymentPeriod: PaymentHistoryViewModel.PeriodInfo,
-    pagerState: PagerState
+    paymentHistoryViewModel: PaymentHistoryViewModel = hiltViewModel(),
+    navController: NavController,
+    customPaymentPeriod: PaymentHistoryViewModel.PeriodInfo?
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    var currentPage = false
+    data class ButtonData(
+        val text: String,
+        val onClickAction: () -> Unit
+    )
+
+    val paymentPeriod =
+        paymentHistoryViewModel.periodInfo.collectAsStateWithLifecycle().value
+    val paymentHistoryInfo =
+        paymentHistoryViewModel.paymentHistoryInfo.collectAsStateWithLifecycle(UseCaseResult.Init).value
+    val buttons = paymentHistoryViewModel.run {
+        listOf(
+            ButtonData("오늘") {
+                updatePeriodInfoAndFetchPaymentList(0)
+            },
+            ButtonData("1일") {
+                updatePeriodInfoAndFetchPaymentList(1)
+            },
+            ButtonData("7일") {
+                updatePeriodInfoAndFetchPaymentList(7)
+            },
+            ButtonData("직접설정") {
+                navController.navigate(NavigationGraphState.PaymentHistoryView.Calendar.name)
+            },
+        )
+    }
+
+    var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
+
+    LaunchedEffect(Unit) {
+        customPaymentPeriod?.let { paymentHistoryViewModel.updatePeriodInfoAndFetchPaymentList(it) }
+    }
 
     Scaffold(
-        topBar = { TopNavigation("결제 내역") }
+        topBar = { TopNavigation("결제 내역", navController) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
-            with(PaymentHistoryViewTab.values()) {
-                TabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            height = 2.dp,
-                            color = colorResource(id = R.color.watermelon)
-                        )
-                    }
-                ) {
-                    forEachIndexed { index, title ->
-                        Tab(
-                            text = {
-                                Text(
-                                    text = title.value,
-                                    color = colorResource(id = R.color.black)
-                                )
-                            },
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                currentPage = true
-                                coroutineScope.launch { pagerState.scrollToPage(index) }
-                            }
-                        )
-                    }
-                }
-
-                HorizontalPager(
-                    count = size,
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.Top
-                ) { page ->
-                    Column(
-                        modifier = Modifier.padding(page.dp),
-                    ) {
-                        if(this@with[pagerState.currentPage] == Custom) {
-                            selection(paymentPeriod, navController)
-                        }
-                        ReactPaymentHistoryData(
-                            paymentHistoryData = if(currentPage) UseCaseResult.Init else paymentHistoryData,
-                            navController = navController
-                        )
-                    }
+            selection(
+                paymentHistoryViewModel = paymentHistoryViewModel,
+                paymentPeriod = paymentPeriod
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                buttons.forEachIndexed { index, buttonData ->
+                    DateSelectButton(
+                        text = buttonData.text,
+                        clickEvent = buttonData.onClickAction,
+                        isSelected = selectedIndex == index,
+                        onTap = { selectedIndex = index }
+                    )
                 }
             }
+            ReactPaymentHistoryData(
+                paymentHistoryData = paymentHistoryInfo,
+                navController = navController
+            )
         }
     }
 }
 
 @Composable
+fun DateSelectButton(
+    text: String,
+    clickEvent: () -> Unit,
+    isSelected: Boolean,
+    onTap: () -> Unit,
+) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val borderColor = colorResource(id = if (isSelected) R.color.black else R.color.grey5)
+
+    OutlinedButton(
+        onClick = {
+            onTap()
+            clickEvent()
+        },
+        modifier = Modifier
+            .width((screenWidth * 0.225).dp),
+//            .offset(x = (isFirst * (-1)).dp),
+        shape = RectangleShape,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Text(
+            textAlign = TextAlign.Center,
+            fontSize = 13.sp,
+            fontFamily = FontFamily(Font(R.font.ns_acr)),
+            color = borderColor,
+            text = text
+        )
+    }
+}
+
+@Composable
 fun selection(
-    paymentPeriod: PaymentHistoryViewModel.PeriodInfo,
-    navController: NavController
+    paymentHistoryViewModel: PaymentHistoryViewModel,
+    paymentPeriod: PaymentHistoryViewModel.PeriodInfo
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Column(
@@ -217,7 +266,7 @@ fun selection(
             ) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = paymentPeriod.first,
+                    text = paymentPeriod.startDay,
                     fontSize = 15.sp,
                     fontFamily = FontFamily(Font(R.font.ns_acr)),
                     lineHeight = 15.sp
@@ -243,7 +292,7 @@ fun selection(
             ) {
                 Text(
                     textAlign = TextAlign.Center,
-                    text = paymentPeriod.last,
+                    text = paymentPeriod.endDay,
                     fontSize = 15.sp,
                     fontFamily = FontFamily(Font(R.font.ns_acr)),
                     lineHeight = 15.sp
@@ -263,7 +312,7 @@ fun selection(
                     modifier = Modifier
                         .width(30.dp)
                         .height(30.dp)
-                        .clickable { navController.navigate(NavigationGraphState.PaymentHistoryView.Calendar.name) }
+                        .clickable { paymentHistoryViewModel.fetchPaymentList() }
                 )
             }
         }
@@ -385,22 +434,6 @@ fun PaymentHistoryList(
     )
 }
 
-@Composable
-fun PaymentHistoryLoadingDialog(
-    paymentHistoryViewModel: PaymentHistoryViewModel,
-    navController: NavController
-) {
-    val paymentHistoryData = paymentHistoryViewModel.paymentHistoryInfo.collectAsStateWithLifecycle(UseCaseResult.Init).value
-    LoadingDialog(navController)
-    if(paymentHistoryData != UseCaseResult.Init) {
-        navController.popBackStack()
-        navController.navigate(
-            NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
-            bundleOf(NavigationBundleKey.RESPONSE_TMS_API to paymentHistoryData),
-            NavOptions.Builder().setLaunchSingleTop(true).build()
-        )
-    }
-}
 
 @OptIn(ExperimentalPagerApi::class)
 @Preview(showBackground = true)

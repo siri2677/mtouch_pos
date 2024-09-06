@@ -12,7 +12,6 @@ import com.example.domain.model.payment.RootPaymentData
 import com.example.domain.usecase.device.manager.CommunicateCardTerminalManager
 
 class CommunicateXPDA(
-    private val context: Context,
     private val launcher: ManagedActivityResultLauncher<Intent, ActivityResult>
 ): CommunicateCardTerminalManager {
     override fun invoke(

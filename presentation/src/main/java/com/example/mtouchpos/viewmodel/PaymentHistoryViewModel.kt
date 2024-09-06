@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.Serializable
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,9 +47,22 @@ class PaymentHistoryViewModel @Inject constructor(
     )
 
     data class PeriodInfo(
-        val first: String,
-        val last: String
-    ): Serializable
+        val startDay: String = "",
+        val endDay: String = ""
+    ) : Serializable {
+        companion object {
+            private fun getDay(daysAgo: Long): String = SimpleDateFormat(
+                "yyyyMMdd",
+                Locale.getDefault()
+            ).format(
+                Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_YEAR, -daysAgo.toInt())
+                }.time
+            )
+
+            fun createPeriod(startDaysAgo: Long, endDaysAgo: Long) = PeriodInfo(getDay(startDaysAgo), getDay(endDaysAgo))
+        }
+    }
 
     enum class StatisticType { APPROVE, CANCEL, TOTAL }
 
@@ -56,12 +72,13 @@ class PaymentHistoryViewModel @Inject constructor(
     private val _paymentStatisticInfo = MutableSharedFlow<UseCaseResult<HashMap<StatisticType, PaymentStatisticInfo>>>()
     val paymentStatisticInfo = _paymentStatisticInfo.asSharedFlow()
 
-    private val _savePeriodInfo = MutableStateFlow(PeriodInfo("",""))
-    val savePeriodInfo = _savePeriodInfo.asStateFlow()
+    private val _periodInfo = MutableStateFlow(PeriodInfo())
+    val periodInfo = _periodInfo.asStateFlow()
 
-    fun fetchPaymentList(periodInfo: PeriodInfo) {
+    fun fetchPaymentList() {
         viewModelScope.launch {
-            fetchPaymentHistoryListUseCase(periodInfo.toPeriodData()).map { apiResult ->
+            _paymentHistoryInfo.emit(UseCaseResult.Loading)
+            fetchPaymentHistoryListUseCase(periodInfo.value.toPeriodData()).map { apiResult ->
                 apiResult.toUseCaseResult { list ->
                     list.map { it.toPaymentHistoryInfo() }
                 }
@@ -77,13 +94,13 @@ class PaymentHistoryViewModel @Inject constructor(
         }
     }
 
-//    fun initPaymentHistoryInfo() {
-//        viewModelScope.launch {
-//            _paymentHistoryInfo.resetReplayCache()
-//            _paymentHistoryInfo.emit(UseCaseResult.Init)
-//        }
-////        _paymentHistoryInfo.value = UseCaseResult.Init
-//    }
+    fun updatePeriodInfoAndFetchPaymentList(days: Long) {
+        _periodInfo.value = PeriodInfo.createPeriod(days, 0)
+        fetchPaymentList()
+    }
 
-    fun setSaveInstance(periodInfo: PeriodInfo) { _savePeriodInfo.value = periodInfo }
+    fun updatePeriodInfoAndFetchPaymentList(periodInfo: PeriodInfo) {
+        _periodInfo.value = periodInfo
+        fetchPaymentList()
+    }
 }

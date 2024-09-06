@@ -13,7 +13,6 @@ import com.example.domain.usecase.device.manager.CommunicateCardTerminalManager
 
 class CommunicateQ2(
     private val context: Context,
-    private val launcher: ManagedActivityResultLauncher<Intent, ActivityResult>
 ): CommunicateCardTerminalManager {
     override fun invoke(
         paymentInfo: OfflinePaymentData,
@@ -22,7 +21,7 @@ class CommunicateQ2(
     ): String? {
         return try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(""))
-            launcher.launch(intent)
+            context.startActivity(intent)
             null
         } catch (e: ActivityNotFoundException) {
             "앱 설치 후 결제 요청바랍니다"

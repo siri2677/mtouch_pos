@@ -74,7 +74,7 @@ fun UseCaseResult<String>.observeResultLogin(
         is UseCaseResult.Success -> afterProcess()
         is UseCaseResult.Error -> this.navigateToErrorDialog(navController)
         is UseCaseResult.Exception -> this.navigateToErrorDialog(navController)
-        UseCaseResult.Init -> {}
+        else -> {}
     }
 }
 
@@ -101,6 +101,6 @@ fun UseCaseResult<CompletePaymentInfo>.observeCompletePaymentInfo(navController:
         is UseCaseResult.Success -> this.value.navigateToCompletePaymentView(navController)
         is UseCaseResult.Error -> this.navigateToErrorDialog(navController)
         is UseCaseResult.Exception -> this.navigateToErrorDialog(navController)
-        UseCaseResult.Init -> {}
+        else -> {}
     }
 }

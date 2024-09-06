@@ -150,7 +150,7 @@ fun PaymentHistoryDetailView(
                                         with(offlinePaymentViewModel) {
                                             updateOfflineCancelPaymentInfo(paymentHistoryInfo.toOfflineCancelPaymentInfo(0, 0))
                                             requestOfflineCancelPayment(
-                                                CardTerminalFactory(context, setupWebPageLauncher).getCommunicateManger(Build.MODEL)
+                                                CardTerminalFactory(context, setupWebPageLauncher)
                                             )
                                         }
                                     }

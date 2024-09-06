@@ -1,20 +1,15 @@
 package com.example.mtouchpos.view.navgraph
 
 import android.os.Build
-import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresApi
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.core.os.bundleOf
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.navigation
+import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
 import com.example.mtouchpos.view.ui.BluetoothDevicePaymentDialog
 import com.example.mtouchpos.view.ui.CalendarView
 import com.example.mtouchpos.view.ui.CreditPaymentView
@@ -22,26 +17,17 @@ import com.example.mtouchpos.view.ui.DirectPaymentView
 import com.example.mtouchpos.view.ui.LoginDialog
 import com.example.mtouchpos.view.ui.MainView
 import com.example.mtouchpos.view.ui.PaymentHistoryDetailView
-import com.example.mtouchpos.view.ui.PaymentHistoryLoadingDialog
 import com.example.mtouchpos.view.ui.PaymentHistoryView
-import com.example.mtouchpos.view.ui.PaymentHistoryViewTab
 import com.example.mtouchpos.view.ui.PgIdLoginDialog
 import com.example.mtouchpos.view.ui.RegisteredIdDialog
 import com.example.mtouchpos.view.ui.UsbDevicePaymentDialog
 import com.example.mtouchpos.view.ui.VanIdLoginDialog
 import com.example.mtouchpos.view.ui.bluetoothDevice
 import com.example.mtouchpos.view.ui.navigate
-import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
 import com.example.mtouchpos.view.ui.usbDevice
 import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
-import com.example.mtouchpos.vo.type.UseCaseResult
 import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.rememberPagerState
-import java.text.SimpleDateFormat
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
-import java.util.Locale
 
 class MainViewNavGraph(
     override val navController: NavController,
@@ -114,67 +100,11 @@ class MainViewNavGraph(
         ) {
             errorDialog()
             completePaymentPage()
-            dialog(NavigationGraphState.CommonView.LoadingDialog.name) { backStackEntry ->
-                PaymentHistoryLoadingDialog(
-                    navController = navController,
-                    paymentHistoryViewModel = backStackEntry.getSerializableArgument(
-                        NavigationBundleKey.RESPONSE_TMS_API)!!,
-                )
-            }
             composable(NavigationGraphState.PaymentHistoryView.PaymentHistory.name) { backStackEntry ->
-                fun getDay(days: Long) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    LocalDateTime.now().minusDays(days).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-                } else {
-                    val calendar = Calendar.getInstance()
-                    calendar.add(Calendar.DAY_OF_YEAR, -days.toInt())
-                    SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(calendar.time)
-                }
-
-                val pagerState = rememberPagerState()
-                val today = getDay(0)
-                val paymentPeriod = when (PaymentHistoryViewTab.values()[pagerState.currentPage]) {
-                    PaymentHistoryViewTab.Today -> PaymentHistoryViewModel.PeriodInfo(today, today)
-                    PaymentHistoryViewTab.Yesterday -> PaymentHistoryViewModel.PeriodInfo(getDay(1), today)
-                    PaymentHistoryViewTab.Week -> PaymentHistoryViewModel.PeriodInfo(getDay(7), today)
-                    PaymentHistoryViewTab.Custom -> backStackEntry.getSerializableArgument(
-                        NavigationBundleKey.SEARCH_PERIOD) ?: PaymentHistoryViewModel.PeriodInfo("", "")
-                }
-
-                with(hiltViewModel() as PaymentHistoryViewModel) {
-                    val isDiffBeforeSearchPeriod = savePeriodInfo.value != paymentPeriod
-                    var isPopBackStack by remember { mutableStateOf(false) }
-
-                    BackHandler {
-                        isPopBackStack = true
-                        navController.popBackStack()
-                    }
-
-                    if(isDiffBeforeSearchPeriod) {
-                        if(paymentPeriod.first.isEmpty()) {
-                            setSaveInstance(paymentPeriod)
-                        } else {
-                            fetchPaymentList(paymentPeriod)
-                            setSaveInstance(paymentPeriod)
-                            navController.navigate(
-                                route = NavigationGraphState.CommonView.LoadingDialog.name,
-                                bundle = bundleOf(NavigationBundleKey.RESPONSE_TMS_API to this),
-                                navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
-                                    NavigationGraphState.PaymentHistoryView.PaymentHistory.name, inclusive = false, saveState = false).build()
-                            )
-                        }
-                    }
-
-                    PaymentHistoryView(
-                        paymentHistoryData = if(isPopBackStack || isDiffBeforeSearchPeriod) {
-                            UseCaseResult.Init
-                        } else {
-                            backStackEntry.getSerializableArgument(NavigationBundleKey.RESPONSE_TMS_API) ?: UseCaseResult.Init
-                        },
-                        navController = navController,
-                        paymentPeriod = paymentPeriod,
-                        pagerState = pagerState
-                    )
-                }
+                PaymentHistoryView(
+                    navController = navController,
+                    customPaymentPeriod = backStackEntry.getSerializableArgument(NavigationBundleKey.SEARCH_PERIOD)
+                )
             }
             composable(NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name) { backStackEntry ->
                 PaymentHistoryDetailView(
@@ -191,8 +121,8 @@ class MainViewNavGraph(
                             bundleOf(
                                 NavigationBundleKey.SEARCH_PERIOD to (
                                         PaymentHistoryViewModel.PeriodInfo(
-                                            first = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
-                                            last = endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                                            startDay = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                                            endDay = endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                                         )
                                 )
                             ),

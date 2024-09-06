@@ -18,6 +18,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +26,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.view.WindowCompat
+import androidx.navigation.NavController
 import com.example.mtouchpos.R
+import com.example.mtouchpos.view.util.clickable
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -89,6 +92,25 @@ fun TopNavigation(title: String) {
         },
         navigationIcon = {
             Icon(Icons.Default.ArrowBack, contentDescription = "Menu")
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopNavigation(
+    title: String,
+    navController: NavController
+) {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(title, fontWeight = FontWeight.Bold)
+        },
+        navigationIcon = {
+            Icon(
+                imageVector = Icons.Default.ArrowBack, contentDescription = "Menu",
+                modifier = Modifier.clickable { navController.navigateUp() }
+            )
         }
     )
 }

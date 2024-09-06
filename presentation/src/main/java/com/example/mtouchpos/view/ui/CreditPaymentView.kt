@@ -1,6 +1,5 @@
 package com.example.mtouchpos.view.ui
 
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -46,15 +45,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import com.example.mtouchpos.R
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
-import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey
+import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.ui.theme.observeResultPaymentData
 import com.example.mtouchpos.view.util.GradientButton
 import com.example.mtouchpos.view.util.SelectDialog
 import com.example.mtouchpos.viewmodel.LoginViewModel
 import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
+import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
 
 @Composable
 fun CreditPaymentView(
@@ -198,7 +197,7 @@ fun CreditPaymentView(
                     fontSize = 20.sp,
                     onClick = {
                         offlinePaymentViewModel.requestOfflinePayment(
-                            CardTerminalFactory(context, setupWebPageLauncher).getCommunicateManger(Build.MODEL)
+                            CardTerminalFactory(context, setupWebPageLauncher)
                         )
                     }
                 )

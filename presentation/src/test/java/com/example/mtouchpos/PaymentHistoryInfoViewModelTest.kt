@@ -10,6 +10,7 @@ import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
 import com.example.mtouchpos.viewmodel.mapper.toPaymentHistoryInfo
 import com.example.mtouchpos.viewmodel.mapper.toPaymentStatisticInfo
 import com.example.mtouchpos.viewmodel.mapper.toUseCaseResult
+import com.example.mtouchpos.vo.type.UseCaseResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -77,7 +78,8 @@ class PaymentHistoryInfoViewModelTest {
         coEvery { getPaymentHistoryList(any()) } returns flow { emit(apiResult) }
 
         viewModel.paymentHistoryInfo.test {
-            viewModel.fetchPaymentList(periodInfo)
+            viewModel.updatePeriodInfoAndFetchPaymentList(periodInfo)
+            assertEquals(UseCaseResult.Loading, awaitItem())
             assertEquals(awaitItem(), useCaseResult)
         }
 

@@ -11,8 +11,7 @@ sealed interface NavigationGraphState {
     enum class CommonView: NavigationGraphState {
         ItemListDialog,
         ErrorDialog,
-        CompletePayment,
-        LoadingDialog
+        CompletePayment
     }
     enum class CreditPaymentView: NavigationGraphState {
         CreditPayment,
