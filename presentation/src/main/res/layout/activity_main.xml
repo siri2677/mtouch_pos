@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerlayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:openDrawer="start">
+
+
+    <include
+        layout="@layout/main_layout"
+        android:id="@+id/mainLayout"/>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="225dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@color/white">
+
+        <LinearLayout
+            android:layout_width="225dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="155dp"
+                android:background="@drawable/line_shape"
+                android:paddingStart="20dp"
+                android:paddingTop="13.5dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="13.5dp">
+
+                <ImageView
+                    android:id="@+id/logoImageView"
+                    android:layout_width="18.3dp"
+                    android:layout_height="28.8dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/logo2" />
+
+                <ImageView
+                    android:layout_width="52.3dp"
+                    android:layout_height="9.5dp"
+                    android:layout_marginStart="4.5dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_toRightOf="@+id/logoImageView"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/mtouch" />
+
+                <ImageView
+                    android:id="@+id/menuCloseButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp"
+                    android:layout_alignParentEnd="true"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/close_icon_guide" />
+
+                <TextView
+                    android:id="@+id/menuTerminalIdTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_above="@+id/menuMchtNameTextView"
+                    android:layout_marginBottom="13.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:textColor="@color/white"
+                    android:textSize="20.1dp"
+                    tools:text="TEST0003" />
+
+                <TextView
+                    android:id="@+id/menuMchtNameTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:fontFamily="@font/ns_aceb"
+                    android:textColor="@color/white"
+                    android:textSize="25.1dp"
+                    tools:text="주식회사 광원" />
+
+            </RelativeLayout>
+
+            <!--            main-->
+            <LinearLayout
+                android:id="@+id/mainButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/main_icon" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acb"
+                    android:text="Main"
+                    android:textColor="@color/watermelon"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+            <!--            pay-->
+            <LinearLayout
+                android:id="@+id/menuPaymentButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/pay_icon_b" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:text="결제"
+                    android:textColor="@color/black_two"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+            <!--            history-->
+            <LinearLayout
+                android:id="@+id/menuHistoryButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/history_icon_b" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:text="거래내역"
+                    android:textColor="@color/black_two"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+            <!--            total-->
+            <LinearLayout
+                android:id="@+id/menuTotalButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/history_icon_b" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:text="집계내역"
+                    android:textColor="@color/black_two"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+            <!--            service-->
+            <LinearLayout
+                android:id="@+id/menuServiceButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/service_icon_b" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:text="고객센터"
+                    android:textColor="@color/black_two"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+            <!--            setting-->
+            <LinearLayout
+                android:id="@+id/menuSettingButton"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp">
+
+                <ImageView
+                    android:layout_width="19.8dp"
+                    android:layout_height="18dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/setting_icon_b" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="17.5dp"
+                    android:fontFamily="@font/ns_acr"
+                    android:text="설정"
+                    android:textColor="@color/black_two"
+                    android:textSize="17dp" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.navigation.NavigationView>
+
+</androidx.drawerlayout.widget.DrawerLayout>

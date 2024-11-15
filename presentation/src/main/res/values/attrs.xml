@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="windowBackground" format="reference|color" />
+    <attr name="colorBackgroundCacheHint" format="color" />
+    <attr name="windowIsTranslucent" format="boolean" />
+    <attr name="windowAnimationStyle" format="reference" />
+</resources>

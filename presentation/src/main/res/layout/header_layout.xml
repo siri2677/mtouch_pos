@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:gravity="center_horizontal"
+    android:background="@color/white"
+    android:elevation="3dp">
+
+    <ImageView
+        android:id="@+id/backButton"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:src="@drawable/back"
+        android:padding="15dp"
+        android:layout_width="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/headerTitleTextView"
+        android:text="APP 인증"
+        android:layout_gravity="center"
+        android:textSize="20dp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/ns_aceb"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</FrameLayout>

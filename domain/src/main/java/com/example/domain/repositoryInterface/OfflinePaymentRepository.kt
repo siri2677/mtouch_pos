@@ -1,0 +1,25 @@
+package com.example.domain.repositoryInterface
+
+import com.example.domain.model.ApiResult
+import com.example.domain.model.payment.PaymentProcessStatus
+import com.example.domain.model.payment.PaymentDetailData
+import com.example.domain.model.payment.OfflinePaymentData
+import com.example.domain.model.payment.OfflinePaymentPushData
+import com.example.domain.model.payment.VanData
+import kotlinx.coroutines.flow.Flow
+
+interface OfflinePaymentRepository {
+    suspend operator fun invoke(
+        offlinePaymentData: OfflinePaymentData
+    ): Flow<ApiResult<VanData>>
+
+    suspend fun ksnetSocketCommunicate(
+        resultCommunicateData: PaymentProcessStatus.CompleteDeviceCommunication,
+        paymentInfo: OfflinePaymentData,
+        paymentVanInfo: VanData
+    ): Flow<ApiResult<PaymentDetailData>>
+
+    suspend fun push(
+        offlinePaymentPushData: OfflinePaymentPushData
+    ): Flow<ApiResult<PaymentDetailData>>
+}
