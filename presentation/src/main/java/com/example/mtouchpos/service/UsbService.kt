@@ -105,7 +105,7 @@ class UsbService: Service(), SerialInputOutputManager.Listener {
         try {
             val usbManager = applicationContext.getSystemService(USB_SERVICE) as UsbManager
             val usbConnection = usbManager.openDevice(driver.device)
-            driver.ports[0].also {
+            usbSerialPort = driver.ports[0].also {
                 it.open(usbConnection)
                 it.setParameters(38400, 8, 1, UsbSerialPort.PARITY_NONE)
             }
@@ -114,7 +114,7 @@ class UsbService: Service(), SerialInputOutputManager.Listener {
             }
             DeviceCommunicateResponseDataImpl.onConnected()
         } catch (e: Exception) {
-            Log.w("error", "disconnetDevice")
+            Log.w("error", e.toString())
         }
     }
 
