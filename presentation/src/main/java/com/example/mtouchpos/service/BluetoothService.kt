@@ -21,11 +21,16 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.DeviceCommunicateResponseDataImpl
+import com.example.mtouchpos.managerImpl.cardreader.CardReaderResponseImpl
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.util.UUID
-import kotlin.io.encoding.Base64
 
 @AndroidEntryPoint
 class BluetoothService: Service() {
@@ -65,7 +70,8 @@ class BluetoothService: Service() {
     private val notificationId = 1
     private val channelId = "MyServiceChannel"
     private var writeData: ByteArray? = null
-
+    var retryCount = 0
+    lateinit var connectReader: Job
     lateinit var bluetoothGatt: BluetoothGatt
 
     fun isBluetoothGattInitialized() = ::bluetoothGatt.isInitialized
@@ -82,11 +88,11 @@ class BluetoothService: Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
-                NotificationChannel(channelId, "My Service Channel", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Channel for My Service"
-                }
-            )
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val notificationChannel = NotificationChannel(channelId, "My Service Channel", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Channel for My Service"
+            }
+            notificationManager.createNotificationChannel(notificationChannel)
         }
 
         startForeground(
@@ -101,84 +107,87 @@ class BluetoothService: Service() {
 
     @SuppressWarnings("MissingPermission")
     fun checkConnect(bluetoothDevice: String): Boolean {
-        val bluetoothManager = this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-
-        bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).any {
+        val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
+        return bluetoothManager.getConnectedDevices(BluetoothProfile.GATT).any {
             it.address == bluetoothDevice
-        }.let {
-            return it
         }
     }
 
     @SuppressWarnings("MissingPermission")
     fun connectDevice(bluetoothDevice: String) {
         if(checkConnect(bluetoothDevice)) {
-            DeviceCommunicateResponseDataImpl.onConnected()
-        } else {
-            bluetoothGatt = (this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
-                .getRemoteDevice(bluetoothDevice)
-                .connectGatt(
-                    this,
-                    false,
-                    object : BluetoothGattCallback() {
-                        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-                            when(newState) {
-                                BluetoothProfile.STATE_CONNECTED -> {
-//                                    DeviceCommunicateResponseDataImpl.onConnected()
-                                    Log.d("STATE_CONNECTED", "STATE_CONNECTED")
-                                    gatt.discoverServices()
-                                }
-                                BluetoothProfile.STATE_DISCONNECTED -> {
-                                    Log.d("STATE_DISCONNECTED", "STATE_DISCONNECTED")
-                                    gatt.disconnect()
-                                    gatt.close()
-                                    stopSelf()
-                                }
-                            }
-                        }
-
-                        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-                            if (status != BluetoothGatt.GATT_SUCCESS) return
-                            gatt?.let { gatt ->
-                                FindCharacteristic(gatt, CHARACTERISTIC_RESPONSE_STRING).let {
-                                    gatt.setCharacteristicNotification(it, true)
-                                    it?.getDescriptor(UUID.fromString(CLIENT_CHARACTERISTIC_CONFIG))
-                                }?.also {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        gatt?.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
-                                    } else {
-                                        it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                                        gatt?.writeDescriptor(it)
-                                    }
-                                    Log.d("onServicesDiscovered", "onServicesDiscovered")
-                                    DeviceCommunicateResponseDataImpl.onConnected()
-                                }
-                            }
-                        }
-
-                        override fun onCharacteristicWrite(
-                            gatt: BluetoothGatt,
-                            characteristic: BluetoothGattCharacteristic,
-                            status: Int
-                        ) {
-                            Log.d("write", "status: " + status + " characteristic: uuid : " + characteristic?.uuid + " value: " + characteristic?.value)
-                            Handler(Looper.getMainLooper()).postDelayed({
-                                writeData?.let { if(it[3].toString() == "-64") DeviceCommunicateResponseDataImpl.onConnected() }
-                            }, 1500)
-                        }
-
-                        override fun onCharacteristicChanged(
-                            gatt: BluetoothGatt,
-                            characteristic: BluetoothGattCharacteristic,
-                            value: ByteArray
-                        ) {
-                            writeData = null
-                            Log.d(ContentValues.TAG, "Characteristic change successfully, $value")
-                            DeviceCommunicateResponseDataImpl.onResultCommunicate(value)
-                        }
-                    }
-                )
+            CardReaderResponseImpl.onConnected()
+            stopRetry(null)
+            return
         }
+
+        val callback = object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                when(newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        Log.d("STATE_CONNECTED", "STATE_CONNECTED")
+                        gatt.discoverServices()
+                    }
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        Log.d("STATE_DISCONNECTED", "STATE_DISCONNECTED")
+                        gatt.disconnect()
+                        gatt.close()
+                        stopSelf()
+                    }
+                }
+            }
+
+            override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                if (status != BluetoothGatt.GATT_SUCCESS) return
+                gatt?.let { gatt ->
+                    FindCharacteristic(gatt, CHARACTERISTIC_RESPONSE_STRING).let {
+                        gatt.setCharacteristicNotification(it, true)
+                        it?.getDescriptor(UUID.fromString(CLIENT_CHARACTERISTIC_CONFIG))
+                    }?.also {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            gatt?.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                        } else {
+                            it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                            gatt?.writeDescriptor(it)
+                        }
+                        Log.d("onServicesDiscovered", "onServicesDiscovered")
+                        CardReaderResponseImpl.onConnected()
+                    }
+                }
+            }
+
+            override fun onCharacteristicWrite(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                status: Int
+            ) {
+                Log.d("write", "status: " + status + " characteristic: uuid : " + characteristic?.uuid + " value: " + characteristic?.value)
+                CoroutineScope(Dispatchers.IO).launch {
+                    delay(1500)
+                    writeData?.let { if(it[3].toString() == "-64") CardReaderResponseImpl.onConnected() }
+                }
+            }
+
+            override fun onCharacteristicChanged(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic,
+                value: ByteArray
+            ) {
+                writeData = null
+                Log.d(ContentValues.TAG, "Characteristic change successfully, $value")
+                CardReaderResponseImpl.onResultCommunicate(value)
+            }
+        }
+
+        connectReader = CoroutineScope(Dispatchers.IO).launch {
+            CardReaderResponseImpl.onDisConnected(retryCount++)
+            delay(3000)
+            connectDevice(bluetoothDevice)
+        }
+
+        bluetoothGatt = (getSystemService(BLUETOOTH_SERVICE) as BluetoothManager).adapter
+            .getRemoteDevice(bluetoothDevice)
+            .connectGatt(this, false, callback)
     }
 
     @SuppressLint("MissingPermission")
@@ -197,6 +206,12 @@ class BluetoothService: Service() {
         }
     }
 
+    fun stopRetry(byteArray: ByteArray?) {
+        byteArray?.let { sendData(it) }
+        retryCount = 0
+        if(::connectReader.isInitialized) connectReader.cancel()
+    }
+
     @SuppressLint("MissingPermission")
     fun disConnect() {
         bluetoothGatt.disconnect()
@@ -209,7 +224,6 @@ class BluetoothService: Service() {
             disConnect()
         } catch (e: Exception){
         }
-//        DeviceOperationCallbackImpl.onDisConnected()
     }
 
 }

@@ -60,13 +60,13 @@ import com.example.mtouchpos.R
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey
 import com.example.mtouchpos.view.ui.theme.TopNavigationMain
-import com.example.mtouchpos.viewmodel.LoginViewModel
+import com.example.mtouchpos.viewmodel.LoginVM
 import com.google.accompanist.flowlayout.FlowRow
 
 @Composable
 fun MainView(
     navController: NavController,
-    mainViewModel: LoginViewModel = hiltViewModel()
+    mainViewModel: LoginVM = hiltViewModel()
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Scaffold(

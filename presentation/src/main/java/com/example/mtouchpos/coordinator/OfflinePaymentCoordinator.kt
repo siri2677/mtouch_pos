@@ -12,15 +12,15 @@ import androidx.core.os.bundleOf
 import androidx.core.util.Consumer
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
-import com.example.domain.usecase.device.manager.CommunicateCardTerminalManager
+import com.example.domain.manager.cardterminal.CardTerminalCommunicateManager
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.navigate
 import com.example.mtouchpos.view.util.ErrorDialogContent
+import com.example.mtouchpos.view.util.LoadingDialog
 import com.example.mtouchpos.view.util.LoadingDialogContent
-import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
-import com.example.mtouchpos.vo.type.PurchaseType
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
+import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.type.UseCaseResult
 import java.io.Serializable
 import java.net.URLDecoder
@@ -28,18 +28,14 @@ import java.net.URLDecoder
 class OfflinePaymentCoordinator(
     override val navController: NavController,
     private val componentActivity: ComponentActivity,
-    val offlinePaymentViewModel: OfflinePaymentViewModel
+    val offlinePaymentViewModel: OfflinePaymentVM,
+    val route: String
 ): CommonCoordinator(navController), Serializable {
-    data class PaymentProcess(
-        val merchantUrl: String?,
-        val offlinePaymentInfo: OfflinePaymentViewModel.OfflinePaymentInfo
-    ): Serializable
-
     fun configureIntent(
         isSuccess: Boolean,
         message: String,
         merchantUrl: String,
-        paymentProcessState: OfflinePaymentViewModel.PaymentProcessState.CompletePayment? = null
+        paymentProcessState: OfflinePaymentVM.PaymentProcessState.CompletePayment? = null
     ) {
         val queryParameter = StringBuilder().apply {
             append(merchantUrl)
@@ -60,11 +56,10 @@ class OfflinePaymentCoordinator(
         componentActivity.finish()
     }
 
-    fun navigateToDeviceDialog(paymentProcess: PaymentProcess) {
+    fun navigateToDeviceDialog() {
         navController.navigate(
-            route = NavigationGraphState.CreditPaymentView.PaymentProcessDialog.name,
-            bundle = bundleOf(NavigationBundleKey.DIALOG_DATA to paymentProcess),
-            navOptions = NavOptions.Builder().setLaunchSingleTop(true).build()
+            route = "${NavigationGraphState.CreditPaymentView.PaymentProcessDialog.name}$route",
+            navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(NavigationGraphState.CreditPaymentView.CreditPayment.name, false).build()
         )
     }
 
@@ -76,14 +71,26 @@ class OfflinePaymentCoordinator(
         )
     }
 
+    private fun ApprovedPaymentType.CompletePaymentViewInfo.navigateToCompletePaymentView() {
+        navController.navigate(
+            route = "${NavigationGraphState.CommonView.CompletePayment.name}$route",
+            bundle = bundleOf(
+                NavigationBundleKey.RESULT_DATA to this,
+                NavigationBundleKey.BEFORE_NAVGRAPH to navController.currentBackStackEntry!!.destination.route!!
+            ),
+            navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                NavigationGraphState.HomeView.Home.name, false).build()
+        )
+    }
+
     @Composable
-    fun cardTerminalActivityResult(merchantUrl: String?) = rememberLauncherForActivityResult(
+    fun CardTerminalActivityResult() = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         when(result.data?.data?.getQueryParameter("response_msg")) {
             "PAYMENT_CANCEL" -> {
                 val message = "결제가 취소 되었습니다."
-                merchantUrl?.let { merchantUrl ->
+                offlinePaymentViewModel.offlinePaymentInfo.value.merchantUrl?.let { merchantUrl ->
                     configureIntent(
                         isSuccess = false,
                         message = message,
@@ -96,9 +103,7 @@ class OfflinePaymentCoordinator(
                 offlinePaymentViewModel.pushOfflinePayment(
                     amount = null,
                     installment = result.data?.data?.getQueryParameter("installment")!!,
-                    purchaseType = if(result.data?.data?.getQueryParameter("trdtype") == "1") PurchaseType.APPROVE
-                    else PurchaseType.REFUND,
-                    authCode = result.data?.data?.getQueryParameter("approval_no")!!,
+                    authCode = result.data?.data?.getQueryParameter("approval_no")!!.trim(),
                     authDate = result.data?.data?.getQueryParameter("approval_date")!!,
                     cardNumber = result.data?.data?.getQueryParameter("card_no")!!
                 )
@@ -107,16 +112,12 @@ class OfflinePaymentCoordinator(
     }
 
     @Composable
-    fun cardTerminalNewIntent(
-        paymentProcessState: OfflinePaymentViewModel.PaymentProcessState,
-        callBack: CardTerminalFactory.CallBack,
-        merchantUrl: String?,
-    ) {
+    fun CardTerminalNewIntent() {
         Consumer<Intent> {
             when (it.data?.getQueryParameter("setleSuccesAt")) {
                 "X" -> {
                     val message = URLDecoder.decode(it.data?.getQueryParameter("setleMssage"), "UTF-8")
-                    merchantUrl?.let { merchantUrl ->
+                    offlinePaymentViewModel.offlinePaymentInfo.value.merchantUrl?.let { merchantUrl ->
                         configureIntent(
                             isSuccess = false,
                             message = message,
@@ -128,10 +129,9 @@ class OfflinePaymentCoordinator(
                 "O" -> {
                     offlinePaymentViewModel.pushOfflinePayment(
                         installment = it.data?.getQueryParameter("instlmtMonth")!!,
-                        purchaseType = if(it.data?.getQueryParameter("delngSe") == "1") PurchaseType.APPROVE else PurchaseType.REFUND,
                         authCode = it.data?.getQueryParameter("confmNo")!!,
                         authDate = it.data?.getQueryParameter("confmDe")!! + it.data?.getQueryParameter("confmTime")!!,
-                        cardNumber = it.data?.getQueryParameter("cardNo")!!
+                        cardNumber = it.data?.getQueryParameter("cardNo")!!.replace("-", "")
                     )
                 }
             }
@@ -141,20 +141,10 @@ class OfflinePaymentCoordinator(
                 onDispose { componentActivity.removeOnNewIntentListener(it) }
             }
         }
-
-        paymentResult(
-            paymentProcessState = paymentProcessState,
-            communicateCardTerminalManager = CardTerminalFactory(
-                context = componentActivity,
-                launcher = cardTerminalActivityResult(merchantUrl),
-                callBack = callBack
-            ),
-            merchantUrl = merchantUrl
-        )
     }
 
     @Composable
-    fun observeResultLogin(
+    fun ObserveResultLogin(
         intent: Intent,
         reactLogin: UseCaseResult<String>,
         merchantUrl: String
@@ -162,21 +152,17 @@ class OfflinePaymentCoordinator(
         LaunchedEffect(reactLogin) {
             when(reactLogin) {
                 is UseCaseResult.Success -> {
-                    val offlinePaymentInfo = OfflinePaymentViewModel.OfflinePaymentInfo.Approve(
+                    val offlinePaymentInfo = OfflinePaymentVM.OfflinePaymentInfo.Approve(
                         installment = intent.data?.getQueryParameter("installment") ?: "",
                         totalAmount = intent.data?.getQueryParameter("totalAmount")?.toInt() ?: 0,
                         trackId = intent.data?.getQueryParameter("trackId") ?: "",
                         freeAmount = intent.data?.getQueryParameter("freeAmount")?.toInt() ?: 0,
-                        serviceAmount = intent.data?.getQueryParameter("serviceAmount")?.toInt() ?: 0
+                        serviceAmount = intent.data?.getQueryParameter("serviceAmount")?.toInt() ?: 0,
+                        merchantUrl = intent.data?.getQueryParameter("callbackAppUrl")
                     )
 
-                    with(offlinePaymentViewModel) {
-                        updateOfflinePaymentInfo(offlinePaymentInfo)
-                        PaymentProcess(
-                            merchantUrl = merchantUrl,
-                            offlinePaymentInfo = offlinePaymentInfo
-                        ).let { navigateToDeviceDialog(it) }
-                    }
+                    offlinePaymentViewModel.updateOfflinePaymentInfo(offlinePaymentInfo)
+                    navigateToDeviceDialog()
                 }
 
                 is UseCaseResult.Error -> configureIntent(
@@ -194,17 +180,18 @@ class OfflinePaymentCoordinator(
                 else -> {}
             }
         }
+        if(this is UseCaseResult.Loading) LoadingDialog(navController)
     }
 
     @Composable
-    fun paymentResult(
-        paymentProcessState: OfflinePaymentViewModel.PaymentProcessState,
-        communicateCardTerminalManager: CommunicateCardTerminalManager?,
+    fun PaymentResult(
+        paymentProcessState: OfflinePaymentVM.PaymentProcessState,
+        communicateCardTerminalManager: CardTerminalCommunicateManager?,
         merchantUrl: String?,
         paymentProcess: @Composable () -> Unit = {}
     ) {
         when(paymentProcessState) {
-            is OfflinePaymentViewModel.PaymentProcessState.Error -> {
+            is OfflinePaymentVM.PaymentProcessState.Error -> {
                 merchantUrl?.let {
                     configureIntent(
                         isSuccess = false,
@@ -221,7 +208,7 @@ class OfflinePaymentCoordinator(
                 }
             }
 
-            is OfflinePaymentViewModel.PaymentProcessState.CompletePayment -> {
+            is OfflinePaymentVM.PaymentProcessState.CompletePayment -> {
                 merchantUrl?.let {
                     configureIntent(
                         isSuccess = true,
@@ -229,10 +216,13 @@ class OfflinePaymentCoordinator(
                         merchantUrl = it,
                         paymentProcessState = paymentProcessState
                     )
-                } ?: paymentProcessState.data.navigateToCompletePaymentView(navController)
+                } ?: paymentProcessState.data.navigateToCompletePaymentView()
             }
 
-            OfflinePaymentViewModel.PaymentProcessState.Loading -> LoadingDialogContent()
+            OfflinePaymentVM.PaymentProcessState.Loading,
+            is OfflinePaymentVM.PaymentProcessState.ApprovePayment -> LoadingDialogContent()
+
+            OfflinePaymentVM.PaymentProcessState.Init -> {}
 
             else -> paymentProcess()
         }

@@ -51,8 +51,8 @@ import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONS
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.theme.MtouchPos
 import com.example.mtouchpos.view.ui.theme.TopNavigation
-import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
-import com.example.mtouchpos.vo.data.ApprovedPaymentType
+import com.example.mtouchpos.viewmodel.PaymentHistoryVM
+import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.type.PurchaseType
 import com.example.mtouchpos.vo.type.UseCaseResult
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -98,9 +98,9 @@ fun ReactPaymentHistoryData(
 
 @Composable
 fun PaymentHistoryView(
-    paymentHistoryViewModel: PaymentHistoryViewModel = hiltViewModel(),
+    paymentHistoryViewModel: PaymentHistoryVM = hiltViewModel(),
     navController: NavController,
-    customPaymentPeriod: PaymentHistoryViewModel.PeriodInfo?
+    customPaymentPeriod: PaymentHistoryVM.PeriodInfo?
 ) {
     data class ButtonData(
         val text: String,
@@ -178,8 +178,8 @@ fun PaymentHistoryView(
 
 @Composable
 fun selection(
-    paymentHistoryViewModel: PaymentHistoryViewModel,
-    paymentPeriod: PaymentHistoryViewModel.PeriodInfo
+    paymentHistoryViewModel: PaymentHistoryVM,
+    paymentPeriod: PaymentHistoryVM.PeriodInfo
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Column(
@@ -263,7 +263,7 @@ fun DateSelectButton(
     isSelected: Boolean,
     isFirst: Int,
     onTap: () -> Unit,
-    paymentHistoryViewModel: PaymentHistoryViewModel
+    paymentHistoryViewModel: PaymentHistoryVM
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val borderColor = colorResource(id = if (isSelected) R.color.black else R.color.grey4)

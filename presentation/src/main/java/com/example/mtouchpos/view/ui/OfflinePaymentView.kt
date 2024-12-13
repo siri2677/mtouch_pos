@@ -50,54 +50,29 @@ import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.util.GradientButton
 import com.example.mtouchpos.view.util.SelectDialog
-import com.example.mtouchpos.viewmodel.LoginViewModel
-import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
+import com.example.mtouchpos.viewmodel.LoginVM
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 
 @Composable
-fun CreditPaymentView(navController: NavController) {
+fun OfflinePaymentView(
+    navController: NavController,
+    offlinePaymentViewModel: OfflinePaymentVM,
+    loginViewModel: LoginVM = hiltViewModel()
+) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current as ComponentActivity
-
-    val loginViewModel = hiltViewModel<LoginViewModel>()
-    val offlinePaymentViewModel = hiltViewModel<OfflinePaymentViewModel>()
 
     val offlinePaymentCoordinator = OfflinePaymentCoordinator(
         navController = navController,
         offlinePaymentViewModel = offlinePaymentViewModel,
-        componentActivity = context
+        componentActivity = context,
+        route = NavigationGraphState.CreditPaymentView.CreditPayment.name
     )
 
     val offlinePaymentInfo = offlinePaymentViewModel.offlinePaymentInfo
-        .collectAsStateWithLifecycle().value
-    val paymentProcessState = offlinePaymentViewModel.paymentProcessState
-        .collectAsStateWithLifecycle(OfflinePaymentViewModel.PaymentProcessState.Init).value
+        .collectAsStateWithLifecycle().value as OfflinePaymentVM.OfflinePaymentInfo.Approve
 
-    offlinePaymentCoordinator.cardTerminalNewIntent(
-        paymentProcessState = paymentProcessState,
-        callBack = CardTerminalFactory.CallBack.Home,
-        merchantUrl = null
-    )
-
-
-//    offlinePaymentCoordinator.getConsumer().let {
-//        DisposableEffect(context, navController) {
-//            context.addOnNewIntentListener(it)
-//            onDispose { context.removeOnNewIntentListener(it) }
-//        }
-//    }
-//
-//    if (communicateCardTerminalManager != null) {
-//        Log.w("communicate", communicateCardTerminalManager.toString())
-//        Log.w("paymentProcessState", paymentProcessState.toString())
-//        offlinePaymentCoordinator.paymentResult(paymentProcessState)
-//    }
-
-//    offlinePaymentCoordinator.observeResultPaymentData(
-//        paymentProcessState = offlinePaymentViewModel.paymentProcessState
-//            .collectAsState(OfflinePaymentViewModel.PaymentProcessState.Init).value,
-//        communicateCardTerminalManager = communicateCardTerminalManager
-//    )
+    offlinePaymentCoordinator.CardTerminalNewIntent()
 
     Scaffold(
         topBar = { TopNavigation("신용 결제", navController) }
@@ -204,10 +179,8 @@ fun CreditPaymentView(navController: NavController) {
                             .height(60.dp),
                         fontSize = 20.sp,
                         onClick = {
-                            OfflinePaymentCoordinator.PaymentProcess(
-                                merchantUrl = null,
-                                offlinePaymentInfo = offlinePaymentInfo
-                            ).let { offlinePaymentCoordinator.navigateToDeviceDialog(it) }
+                            offlinePaymentViewModel.processInit()
+                            offlinePaymentCoordinator.navigateToDeviceDialog()
                         }
                     )
                 }

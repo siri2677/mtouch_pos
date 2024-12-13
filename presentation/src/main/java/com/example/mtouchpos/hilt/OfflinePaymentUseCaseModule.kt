@@ -1,28 +1,27 @@
 package com.example.mtouchpos.hilt
 
 import android.content.Context
-import com.example.domain.model.device.KsnetCardReaderRequestBuilder
-import com.example.domain.model.device.KsnetCardReaderResponseBuilder
-import com.example.domain.model.device.DeviceInfo
-import com.example.domain.repositoryInterface.DeviceRepository
-import com.example.domain.repositoryInterface.OfflinePaymentRepository
-import com.example.domain.usecase.device.SearchBluetoothDevice
-import com.example.domain.usecase.device.CommunicateKsnetCardReader
-import com.example.domain.usecase.device.ConnectCardReader
-import com.example.domain.usecase.device.FetchConnectedDeviceInfo
-import com.example.domain.usecase.device.UpdateConnectedDeviceInfo
-import com.example.domain.usecase.device.SearchUsbDevice
-import com.example.domain.usecase.device.manager.CommunicateDeviceManager
-import com.example.domain.usecase.device.manager.ConnectDeviceManager
+import com.example.domain.model.cardreader.KsnetCardReaderRequestBuilder
+import com.example.domain.model.cardreader.KsnetCardReaderResponseBuilder
+import com.example.domain.model.cardreader.CardReaderData
+import com.example.domain.repository.DeviceRepository
+import com.example.domain.repository.OfflinePaymentRepository
+import com.example.domain.usecase.cardreader.SearchBluetoothDevice
+import com.example.domain.usecase.cardreader.CommunicateKsnetCardReader
+import com.example.domain.usecase.cardreader.ConnectCardReader
+import com.example.domain.usecase.cardreader.FetchConnectedDeviceInfo
+import com.example.domain.usecase.cardreader.UpdateConnectedDeviceInfo
+import com.example.domain.usecase.cardreader.SearchUsbDevice
+import com.example.domain.manager.cardreader.CardReaderCommunicateManager
+import com.example.domain.manager.cardreader.CardReaderConnectManager
 import com.example.domain.usecase.offlinePayment.PushOfflineCancelPayment
 import com.example.domain.usecase.offlinePayment.PushOfflinePayment
 import com.example.domain.usecase.offlinePayment.RequestOfflineCancelPayment
 import com.example.domain.usecase.offlinePayment.RequestOfflinePayment
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.DeviceCommunicateResponseDataImpl
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.bluetooth.SearchBluetooth
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.usb.SearchUsb
-import com.example.mtouchpos.viewmodel.DeviceSettingViewModel
-import com.google.gson.Gson
+import com.example.mtouchpos.managerImpl.cardreader.CardReaderResponseImpl
+import com.example.mtouchpos.managerImpl.cardreader.bluetooth.SearchBluetooth
+import com.example.mtouchpos.managerImpl.cardreader.usb.SearchUsb
+import com.example.mtouchpos.viewmodel.CardReaderConnectVM
 import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
@@ -36,9 +35,9 @@ import kotlinx.coroutines.sync.Mutex
 @InstallIn(ViewModelComponent::class)
 object OfflinePaymentUseCaseModule {
     private val gsonBuilder = GsonBuilder().registerTypeAdapterFactory(
-        RuntimeTypeAdapterFactory.of(DeviceInfo::class.java, "type")
-            .registerSubtype(DeviceSettingViewModel.BluetoothDeviceInfo::class.java)
-            .registerSubtype(DeviceSettingViewModel.UsbDeviceInfo::class.java)
+        RuntimeTypeAdapterFactory.of(CardReaderData::class.java, "type")
+            .registerSubtype(CardReaderConnectVM.BluetoothDeviceInfo::class.java)
+            .registerSubtype(CardReaderConnectVM.UsbDeviceInfo::class.java)
     )
 
     @Provides
@@ -100,13 +99,13 @@ object OfflinePaymentUseCaseModule {
     fun provideDeviceCommunicateUseCase(
         offlinePaymentRepository: OfflinePaymentRepository,
         fetchConnectedDeviceInfo: FetchConnectedDeviceInfo,
-        deviceConnectManager: ConnectDeviceManager,
-        deviceCommunicateManager: CommunicateDeviceManager,
+        deviceConnectManager: CardReaderConnectManager,
+        deviceCommunicateManager: CardReaderCommunicateManager,
         deviceConnect: ConnectCardReader
     ): CommunicateKsnetCardReader = CommunicateKsnetCardReader(
         offlinePaymentRepository = offlinePaymentRepository,
         fetchConnectedDeviceInfo = fetchConnectedDeviceInfo,
-        deviceOperationCallback = DeviceCommunicateResponseDataImpl,
+        deviceOperationCallback = CardReaderResponseImpl,
         deviceConnectManager = deviceConnectManager,
         deviceCommunicateManager = deviceCommunicateManager,
         deviceConnect = deviceConnect,
@@ -118,7 +117,7 @@ object OfflinePaymentUseCaseModule {
     @ViewModelScoped
     fun provideDeviceConnectUseCase(): ConnectCardReader = ConnectCardReader(
         mutex = Mutex(),
-        deviceOperationCallback = DeviceCommunicateResponseDataImpl
+        deviceOperationCallback = CardReaderResponseImpl
     )
 
     @Provides

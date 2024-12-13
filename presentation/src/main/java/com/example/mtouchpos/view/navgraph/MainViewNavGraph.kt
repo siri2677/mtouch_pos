@@ -10,21 +10,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.navigation
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
+import com.example.mtouchpos.view.sharedViewModel
 import com.example.mtouchpos.view.ui.CalendarView
-import com.example.mtouchpos.view.ui.CreditPaymentView
+import com.example.mtouchpos.view.ui.OfflinePaymentView
 import com.example.mtouchpos.view.ui.DirectPaymentView
 import com.example.mtouchpos.view.ui.LoginDialog
 import com.example.mtouchpos.view.ui.MainView
 import com.example.mtouchpos.view.ui.PaymentHistoryDetailView
 import com.example.mtouchpos.view.ui.PaymentHistoryView
-import com.example.mtouchpos.view.ui.PaymentProcessDialog
 import com.example.mtouchpos.view.ui.PgIdLoginDialog
 import com.example.mtouchpos.view.ui.RegisteredIdDialog
 import com.example.mtouchpos.view.ui.VanIdLoginDialog
-import com.example.mtouchpos.view.ui.bluetoothDevice
+import com.example.mtouchpos.view.ui.BluetoothDevice
 import com.example.mtouchpos.view.ui.navigate
-import com.example.mtouchpos.view.ui.usbDevice
-import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
+import com.example.mtouchpos.view.ui.UsbDevice
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
+import com.example.mtouchpos.viewmodel.PaymentHistoryVM
 import java.time.format.DateTimeFormatter
 
 class MainViewNavGraph(
@@ -35,7 +36,7 @@ class MainViewNavGraph(
         navGraphBuilder.composable(NavigationGraphState.HomeView.Home.name) {
             MainView(navController = navController)
         }
-        navGraphBuilder.composable(NavigationGraphState.HomeView.Login.name) {
+        navGraphBuilder.dialog(NavigationGraphState.HomeView.Login.name) {
             LoginDialog(navController = navController)
         }
         navGraphBuilder.dialog(NavigationGraphState.HomeView.PgIdLogin.name) {
@@ -54,10 +55,13 @@ class MainViewNavGraph(
             startDestination = NavigationGraphState.CreditPaymentView.CreditPayment.name,
             route = "creditPaymentGraph"
         ) {
-            completePaymentPage()
-//            creditPaymentGraph1(this)
+            completePaymentPage(this, NavigationGraphState.CreditPaymentView.CreditPayment.name)
+            paymentProcessDialog(this, NavigationGraphState.CreditPaymentView.CreditPayment.name)
             composable(NavigationGraphState.CreditPaymentView.CreditPayment.name) {
-                CreditPaymentView(navController)
+                OfflinePaymentView(
+                    navController = navController,
+                    offlinePaymentViewModel = it.sharedViewModel<OfflinePaymentVM>(navController)
+                )
             }
         }
     }
@@ -69,9 +73,12 @@ class MainViewNavGraph(
         ) {
             itemListDialog()
             errorDialog()
-//            completePaymentPage()
+            completePaymentPage(this)
             composable(NavigationGraphState.DirectPaymentView.DirectPayment.name) {
-                DirectPaymentView(navController = navController)
+                DirectPaymentView(
+                    navController = navController,
+
+                )
             }
         }
     }
@@ -82,10 +89,10 @@ class MainViewNavGraph(
             route = "DeviceConnectGraph"
         ) {
             composable(NavigationGraphState.DeviceSettingView.Bluetooth.name) { backStackEntry ->
-                bluetoothDevice(navHostController = navController)
+                BluetoothDevice(navHostController = navController)
             }
             composable(NavigationGraphState.DeviceSettingView.USB.name) {
-                usbDevice(navHostController = navController)
+                UsbDevice(navHostController = navController)
             }
         }
     }
@@ -96,6 +103,8 @@ class MainViewNavGraph(
             startDestination = NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
             route = "paymentHistoryGraph"
         ) {
+            completePaymentPage(this, NavigationGraphState.PaymentHistoryView.PaymentHistory.name)
+            paymentProcessDialog(this, NavigationGraphState.PaymentHistoryView.PaymentHistory.name)
             errorDialog()
             composable(NavigationGraphState.PaymentHistoryView.PaymentHistory.name) { backStackEntry ->
                 PaymentHistoryView(
@@ -103,10 +112,11 @@ class MainViewNavGraph(
                     customPaymentPeriod = backStackEntry.getSerializableArgument(NavigationBundleKey.SEARCH_PERIOD)
                 )
             }
-            composable(NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name) { backStackEntry ->
+            composable(NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name) {
                 PaymentHistoryDetailView(
                     navController = navController,
-                    paymentHistoryInfo = backStackEntry.getSerializableArgument(RESPONSE_GET_PAYMENT_LIST)!!
+                    offlinePaymentViewModel = it.sharedViewModel<OfflinePaymentVM>(navController),
+                    paymentHistoryInfo = it.getSerializableArgument(RESPONSE_GET_PAYMENT_LIST)!!
                 )
             }
             composable(NavigationGraphState.PaymentHistoryView.Calendar.name) {
@@ -117,7 +127,7 @@ class MainViewNavGraph(
                             NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
                             bundleOf(
                                 NavigationBundleKey.SEARCH_PERIOD to (
-                                        PaymentHistoryViewModel.PeriodInfo(
+                                        PaymentHistoryVM.PeriodInfo(
                                             startDay = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
                                             endDay = endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
                                         )

@@ -1,8 +1,6 @@
 package com.example.domain.model.payment
 
-import java.io.Serializable
-
-sealed class OfflinePaymentData: Serializable {
+sealed class OfflinePaymentData {
     abstract val amountData: AmountData
     abstract val installment: String
     abstract val trackId: String?

@@ -7,7 +7,7 @@ import com.example.domain.usecase.user.DeleteUserInfo
 import com.example.domain.usecase.user.FetchConnectedUserInfo
 import com.example.domain.usecase.user.FetchSavedUserInfo
 import com.example.domain.usecase.user.LoginUser
-import com.example.mtouchpos.viewmodel.LoginViewModel
+import com.example.mtouchpos.viewmodel.LoginVM
 import com.example.mtouchpos.viewmodel.mapper.toUseCaseResult
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -27,13 +27,13 @@ class LoginViewModelTest {
     @get:Rule
     var mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var viewModel: LoginViewModel
+    private lateinit var viewModel: LoginVM
     private lateinit var fetchSavedUserInfoUseCase: FetchSavedUserInfo
     private lateinit var deleteUserInfoUseCase: DeleteUserInfo
     private lateinit var fetchConnectedUserInfoUseCase: FetchConnectedUserInfo
     private lateinit var loginUserUseCase: LoginUser
 
-    private val userInfo = LoginViewModel.UserInfo(
+    private val userInfo = LoginVM.UserInfo(
         tmnId = "test0003",
         serial = "12345",
         mchtId = "ktest"
@@ -58,7 +58,7 @@ class LoginViewModelTest {
         fetchConnectedUserInfoUseCase = mockk<FetchConnectedUserInfo>()
         loginUserUseCase = mockk<LoginUser>()
 
-        viewModel = LoginViewModel(
+        viewModel = LoginVM(
             fetchSavedUserInfoUseCase = fetchSavedUserInfoUseCase,
             deleteUserInfoUseCase = deleteUserInfoUseCase,
             fetchConnectedUserInfoUseCase = fetchConnectedUserInfoUseCase,
@@ -90,7 +90,7 @@ class LoginViewModelTest {
     fun `fetchUserInfoList success emits userInfoList result`() = runTest {
         val apiResult = listOf(userDetailData)
         val useCaseResult = apiResult.map {
-            LoginViewModel.UserInfo(
+            LoginVM.UserInfo(
                 tmnId = it.tmnId,
                 serial = it.serial,
                 mchtId = it.mchtId

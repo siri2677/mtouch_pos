@@ -3,7 +3,7 @@ package com.example.domain.usecase.directPayment
 import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.DirectPaymentData
 import com.example.domain.model.payment.PaymentDetailData
-import com.example.domain.repositoryInterface.DirectPaymentRepository
+import com.example.domain.repository.DirectPaymentRepository
 import kotlinx.coroutines.flow.Flow
 
 class RequestDirectCancelPayment(private val directPaymentRepository: DirectPaymentRepository) {

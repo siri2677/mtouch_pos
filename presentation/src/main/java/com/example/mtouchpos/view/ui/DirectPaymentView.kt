@@ -44,20 +44,20 @@ import com.example.mtouchpos.view.ui.theme.MtouchPos
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.util.GradientButton
 import com.example.mtouchpos.view.util.SelectDialog
-import com.example.mtouchpos.viewmodel.DirectPaymentViewModel
-import com.example.mtouchpos.viewmodel.LoginViewModel
+import com.example.mtouchpos.viewmodel.DirectPaymentVM
+import com.example.mtouchpos.viewmodel.LoginVM
 import java.util.Calendar
 
 @Composable
 fun DirectPaymentView(
-    mainActivityViewModel: LoginViewModel = hiltViewModel(),
-    directPaymentViewModel: DirectPaymentViewModel = hiltViewModel(),
+    mainActivityViewModel: LoginVM = hiltViewModel(),
+    directPaymentViewModel: DirectPaymentVM = hiltViewModel(),
     navController: NavController = rememberNavController()
 ) {
     data class TextBox(
         val label: String,
         val text: String,
-        val onTextChange: (String) -> DirectPaymentViewModel.DirectPaymentInfo
+        val onTextChange: (String) -> DirectPaymentVM.DirectPaymentInfo
     )
 
     data class ButtonColumn(
@@ -65,7 +65,7 @@ fun DirectPaymentView(
         val value: String,
         val list: List<String>,
         val initValue: String,
-        val onTextChange: (String) -> DirectPaymentViewModel.DirectPaymentInfo
+        val onTextChange: (String) -> DirectPaymentVM.DirectPaymentInfo
     )
 
     val currentConnectedUserInfo = mainActivityViewModel.fetchCurrentConnectedUserInfo()

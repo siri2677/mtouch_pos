@@ -1,13 +1,13 @@
 package com.example.mtouchpos
 
 import android.content.Context
-import com.example.domain.model.device.DeviceConnectStatus
-import com.example.domain.usecase.device.SearchBluetoothDevice
-import com.example.domain.usecase.device.ConnectCardReader
-import com.example.domain.usecase.device.UpdateConnectedDeviceInfo
-import com.example.domain.usecase.device.SearchUsbDevice
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.bluetooth.ConnectBluetooth
-import com.example.mtouchpos.viewmodel.DeviceSettingViewModel
+import com.example.domain.model.cardreader.CardReaderStatus
+import com.example.domain.usecase.cardreader.SearchBluetoothDevice
+import com.example.domain.usecase.cardreader.ConnectCardReader
+import com.example.domain.usecase.cardreader.UpdateConnectedDeviceInfo
+import com.example.domain.usecase.cardreader.SearchUsbDevice
+import com.example.mtouchpos.managerImpl.cardreader.bluetooth.ConnectBluetooth
+import com.example.mtouchpos.viewmodel.CardReaderConnectVM
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,19 +26,19 @@ class DeviceSettingViewModelTest {
     @get:Rule
     var mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var deviceSettingViewModel: DeviceSettingViewModel
+    private lateinit var deviceSettingViewModel: CardReaderConnectVM
     private lateinit var context: Context
     private lateinit var searchBluetoothDeviceUseCase: SearchBluetoothDevice
     private lateinit var searchUsbDeviceUseCase: SearchUsbDevice
     private lateinit var deviceConnectUseCase: ConnectCardReader
     private lateinit var updateConnectedDeviceInfoUseCase: UpdateConnectedDeviceInfo
 
-    private val bluetoothDeviceInfo = DeviceSettingViewModel.BluetoothDeviceInfo(
+    private val bluetoothDeviceInfo = CardReaderConnectVM.BluetoothDeviceInfo(
         deviceInformation = "f0:00:00:00:00:00",
         deviceName = "ksr03"
     )
 
-    private val usbDeviceInfo = DeviceSettingViewModel.UsbDeviceInfo(
+    private val usbDeviceInfo = CardReaderConnectVM.UsbDeviceInfo(
         deviceInformation = "/dev/bus/usb/001/003",
         deviceName = "1027",
         productName = "24577"
@@ -51,7 +51,7 @@ class DeviceSettingViewModelTest {
         deviceConnectUseCase = mockk<ConnectCardReader>()
         updateConnectedDeviceInfoUseCase = mockk<UpdateConnectedDeviceInfo>()
         context = mockk<Context>()
-        deviceSettingViewModel = DeviceSettingViewModel(
+        deviceSettingViewModel = CardReaderConnectVM(
             searchBluetoothDeviceUseCase = searchBluetoothDeviceUseCase,
             searchUsbDeviceUseCase = searchUsbDeviceUseCase,
             connectDeviceUseCase = deviceConnectUseCase,
@@ -69,11 +69,11 @@ class DeviceSettingViewModelTest {
 
         with(deviceSettingViewModel.deviceInfo.value) {
             when(this) {
-                is DeviceSettingViewModel.BluetoothDeviceInfo -> {
+                is CardReaderConnectVM.BluetoothDeviceInfo -> {
                     assertEquals(deviceInformation, bluetoothDeviceInfo.deviceInformation)
                     assertEquals(deviceName, bluetoothDeviceInfo.deviceName)
                 }
-                is DeviceSettingViewModel.UsbDeviceInfo -> {
+                is CardReaderConnectVM.UsbDeviceInfo -> {
                     assertEquals(deviceInformation, usbDeviceInfo.deviceInformation)
                     assertEquals(deviceName, usbDeviceInfo.deviceName)
                     assertEquals(productName, usbDeviceInfo.productName)
@@ -106,8 +106,8 @@ class DeviceSettingViewModelTest {
 
     @Test
     fun `deviceConnect success emits deviceConnectState result`() = runTest  {
-        val deviceConnectStatus = DeviceConnectStatus.ConnectComplete
-        val deviceConnectState = DeviceSettingViewModel.DeviceConnectState.Connected
+        val deviceConnectStatus = CardReaderStatus.Connected
+        val deviceConnectState = CardReaderConnectVM.DeviceConnectState.Connected
 
         coEvery { deviceConnectUseCase(any(), any()) } returns flow { emit(deviceConnectStatus) }
 

@@ -17,11 +17,11 @@ class LoginCoordinator(override val navController: NavController): CommonCoordin
     }
 
     @Composable
-    fun observeResultLogin(
+    fun ObserveResultLogin(
         context: Context,
         reactLogin: UseCaseResult<String>
     ) {
-        reactLogin.navigateForUseCaseResult {
+        reactLogin.NavigateForUseCaseResult {
             Toast.makeText(context, "로그인이 완료되었습니다", Toast.LENGTH_SHORT).show()
             navigateToHome()
         }

@@ -1,12 +1,12 @@
 package com.example.domain.usecase.offlinePayment
 
-import com.example.domain.repositoryInterface.OfflinePaymentRepository
-import com.example.domain.usecase.device.CommunicateKsnetCardReader
+import com.example.domain.repository.OfflinePaymentRepository
+import com.example.domain.usecase.cardreader.CommunicateKsnetCardReader
 import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.PaymentProcessStatus
 import com.example.domain.model.payment.OfflinePaymentData
 import com.example.domain.model.payment.VanData
-import com.example.domain.usecase.device.manager.CommunicateCardTerminalManager
+import com.example.domain.manager.cardterminal.CardTerminalCommunicateManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapMerge
@@ -20,7 +20,7 @@ class RequestOfflineCancelPayment @Inject constructor(
 ) {
     suspend operator fun invoke(
         offlinePaymentData: OfflinePaymentData.Cancel,
-        communicateCardTerminal: CommunicateCardTerminalManager?
+        communicateCardTerminal: CardTerminalCommunicateManager?
     ): Flow<ApiResult<PaymentProcessStatus>> = flow {
         offlinePaymentRepository(offlinePaymentData).flatMapMerge { apiResult ->
             when (apiResult) {
@@ -37,7 +37,7 @@ class RequestOfflineCancelPayment @Inject constructor(
 
     private fun handleSuccess(
         offlinePaymentData: OfflinePaymentData.Cancel,
-        communicateCardTerminal: CommunicateCardTerminalManager?,
+        communicateCardTerminal: CardTerminalCommunicateManager?,
         apiResult: ApiResult.Success<VanData>
     ): Flow<ApiResult<PaymentProcessStatus>> = flow {
         communicateCardTerminal?.let {

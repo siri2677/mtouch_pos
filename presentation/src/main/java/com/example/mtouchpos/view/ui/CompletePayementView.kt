@@ -33,45 +33,46 @@ import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.util.ColumnKeyValueTextBox
 import com.example.mtouchpos.view.util.RowSmallSizeTextBox
-import com.example.mtouchpos.viewmodel.DirectPaymentViewModel
-import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
-import com.example.mtouchpos.vo.data.ApprovedPaymentType
+import com.example.mtouchpos.viewmodel.DirectPaymentVM
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
+import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.type.PurchaseType
 
 @Composable
-fun CompletePaymentPage(
+fun CompletePaymentView(
     navController: NavController = rememberNavController(),
+    offlinePaymentViewModel: OfflinePaymentVM,
+    argument: String,
     completePaymentViewInfo: ApprovedPaymentType.CompletePaymentViewInfo,
     beforeNavGraph: String
 ) {
     val context = LocalContext.current as ComponentActivity
 
-    when (beforeNavGraph) {
+//    Log.w("beforeNavGraph", beforeNavGraph.toString())
+    when (argument) {
         NavigationGraphState.DirectPaymentView.DirectPayment.name -> {
-            val directPaymentViewModel = hiltViewModel<DirectPaymentViewModel>()
+            val directPaymentViewModel = hiltViewModel<DirectPaymentVM>()
 
             DirectPaymentCoordinator(navController).observeResultPaymentData(
                 directPaymentViewModel.reactDirectPaymentInfo
                     .collectAsStateWithLifecycle().value
             )
 
-            CompletePaymentPage(navController, completePaymentViewInfo) {
+            CompletePaymentView(navController, completePaymentViewInfo) {
                 directPaymentViewModel.requestDirectCancelPayment(completePaymentViewInfo)
             }
         }
 
-        NavigationGraphState.CreditPaymentView.BluetoothDialog.name,
-        NavigationGraphState.CreditPaymentView.UsbDialog.name,
         NavigationGraphState.CreditPaymentView.CreditPayment.name -> {
-            val offlinePaymentViewModel = hiltViewModel<OfflinePaymentViewModel>()
+//            val offlinePaymentViewModel = hiltViewModel<OfflinePaymentViewModel>()
             val offlinePaymentCoordinator = OfflinePaymentCoordinator(
                 navController = navController,
                 offlinePaymentViewModel = offlinePaymentViewModel,
-                componentActivity = context
+                componentActivity = context,
+                route = argument
             )
             val paymentProcessState = offlinePaymentViewModel.paymentProcessState
-                .collectAsStateWithLifecycle(OfflinePaymentViewModel.PaymentProcessState.Init).value
+                .collectAsStateWithLifecycle(OfflinePaymentVM.PaymentProcessState.Init).value
 
 //            offlinePaymentCoordinator.observeResultPaymentData(
 //                paymentProcessState = offlinePaymentViewModel.paymentProcessState
@@ -79,29 +80,22 @@ fun CompletePaymentPage(
 //                communicateCardTerminalManager = communicateCardTerminalManager
 //            )
 
-            offlinePaymentCoordinator.cardTerminalNewIntent(
-                paymentProcessState = paymentProcessState,
-                callBack = CardTerminalFactory.CallBack.Home,
-                merchantUrl = null
-            )
+            offlinePaymentCoordinator.CardTerminalNewIntent()
 
-            CompletePaymentPage(navController, completePaymentViewInfo) {
-                OfflinePaymentCoordinator.PaymentProcess(
-                    merchantUrl = null,
-                    offlinePaymentInfo = offlinePaymentViewModel.offlinePaymentInfo.value
-                ).let { offlinePaymentCoordinator.navigateToDeviceDialog(it) }
+            CompletePaymentView(navController, completePaymentViewInfo) {
+                offlinePaymentViewModel.updateOfflineCancelPaymentInfo(completePaymentViewInfo.toCancelPaymentInfo())
+                offlinePaymentCoordinator.navigateToDeviceDialog()
             }
         }
 
-        NavigationGraphState.CommonView.CompletePayment.name,
-        NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name -> {
-            CompletePaymentPage(navController, completePaymentViewInfo)
+        NavigationGraphState.PaymentHistoryView.PaymentHistory.name -> {
+            CompletePaymentView(navController, completePaymentViewInfo)
         }
     }
 }
 
 @Composable
-fun CompletePaymentPage(
+fun CompletePaymentView(
     navController: NavController,
     paymentDetailInfo: ApprovedPaymentType.CompletePaymentViewInfo,
     cancelPayment: () -> Unit = {}

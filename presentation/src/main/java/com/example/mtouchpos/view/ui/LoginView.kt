@@ -44,25 +44,25 @@ import com.example.mtouchpos.R
 import com.example.mtouchpos.coordinator.LoginCoordinator
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.util.GradientButton
-import com.example.mtouchpos.viewmodel.LoginViewModel
+import com.example.mtouchpos.viewmodel.LoginVM
 import com.example.mtouchpos.vo.type.UseCaseResult
 
 @Composable
 fun PgIdLoginDialog(
     navController: NavController,
-    loginViewModel: LoginViewModel = hiltViewModel()
+    loginViewModel: LoginVM = hiltViewModel()
 ) {
     data class TextBox(
         val title: String,
         val default: String,
-        val edit: (String) -> LoginViewModel.UserInfo
+        val edit: (String) -> LoginVM.UserInfo
     )
 
     val context = LocalContext.current
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val loginInfo = loginViewModel.loginInfo.collectAsStateWithLifecycle().value
 
-    LoginCoordinator(navController).observeResultLogin(
+    LoginCoordinator(navController).ObserveResultLogin(
         context = context,
         reactLogin = loginViewModel.reactLogin
             .collectAsStateWithLifecycle(UseCaseResult.Init).value
@@ -186,7 +186,7 @@ fun VanIdLoginDialog(navController: NavController) {
 @Composable
 fun RegisteredIdDialog(
     navController: NavController,
-    loginViewModel: LoginViewModel = hiltViewModel()
+    loginViewModel: LoginVM = hiltViewModel()
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
@@ -196,7 +196,7 @@ fun RegisteredIdDialog(
         loginViewModel.fetchUserInfoList()
     }
 
-    LoginCoordinator(navController).observeResultLogin(
+    LoginCoordinator(navController).ObserveResultLogin(
         context = context,
         reactLogin = loginViewModel.reactLogin.collectAsStateWithLifecycle(UseCaseResult.Init).value
     )

@@ -1,6 +1,7 @@
 package com.example.mtouchpos.service
 
 import android.R
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -13,121 +14,171 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
 import android.os.Binder
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.DeviceCommunicateResponseDataImpl
+import com.example.mtouchpos.managerImpl.cardreader.CardReaderResponseImpl
 import com.hoho.android.usbserial.driver.UsbSerialPort
 import com.hoho.android.usbserial.driver.UsbSerialProber
 import com.hoho.android.usbserial.util.SerialInputOutputManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.retryWhen
+import java.io.IOException
 
 @AndroidEntryPoint
 class UsbService: Service(), SerialInputOutputManager.Listener {
     companion object {
         const val USB_DEVICE = "usbDevice"
+        private const val NOTIFICATION_ID = 1
+        private const val CHANNEL_ID = "MyServiceChannel"
+        private const val ACTION_GRANT_USB = "ACTION_GRANT_USB"
     }
 
-    private val notificationId = 1
-    private val channelId = "MyServiceChannel"
-    private val actionGrantUsb = "ACTION_GRANT_USB"
-
+    private val usbManager by lazy { getSystemService(USB_SERVICE) as UsbManager }
     private lateinit var usbIoManager: SerialInputOutputManager
-    lateinit var usbSerialPort: UsbSerialPort
+    private lateinit var usbSerialPort: UsbSerialPort
+    private lateinit var usbDevice: String
+    private var connectUsbJob: Job? = null
+    private var retryCount = 0
 
     private inner class UsbPermissionReceiver : BroadcastReceiver() {
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == actionGrantUsb) {
-                val usbManager = context.getSystemService(USB_SERVICE) as UsbManager
-                val usbDevice = intent.getStringExtra("usbDevice")
-                if(usbManager.hasPermission(getUsbDevice(usbDevice!!))){
-                    connectProcess(usbDevice!!)
-                }
-                context.unregisterReceiver(this)
+            if (intent.action == ACTION_GRANT_USB) {
+                connectWithPermissionCheck(usbDevice)
+                unregisterReceiver(this)
             }
         }
     }
 
-    inner class MyBinder : Binder() {
-        fun getService(): UsbService = this@UsbService
-    }
+    inner class MyBinder : Binder() { fun getService() = this@UsbService }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return MyBinder()
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        if (Intent().action.equals("android.hardware.usb.action.USB_DEVICE_ATTACHED")) {
-            Log.w("disConnect", "usb")
-        }
-    }
+    override fun onBind(intent: Intent?) = MyBinder()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         createNotificationChannel()
-        connectDevice(intent?.getStringExtra(USB_DEVICE)!!)
+        intent?.getStringExtra(USB_DEVICE)?.let { connectWithPermissionCheck(it) }
         return START_STICKY
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(
-                NotificationChannel(channelId, "My Service Channel", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = "Channel for My Service"
-                }
-            )
+            val notificationChannel = NotificationChannel(
+                CHANNEL_ID,
+                "My Service Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Channel for My Service"
+            }
+            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(notificationChannel)
         }
-        startForeground(
-            notificationId,
-            NotificationCompat.Builder(this, channelId)
-                .setContentTitle("mtouch앱 실행중입니다.")
-                .setContentText("USB 연결 진행 상태입니다.")
-                .setSmallIcon(R.drawable.sym_def_app_icon)
-                .build()
-        )
+
+        val notificationCompat = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("mtouch앱 실행중입니다.")
+            .setContentText("USB 연결 진행 상태입니다.")
+            .setSmallIcon(R.drawable.sym_def_app_icon)
+            .build()
+        startForeground(NOTIFICATION_ID, notificationCompat)
     }
 
-    fun connectDevice(usbDevice: String) {
-        val usbManager = this.getSystemService(USB_SERVICE) as UsbManager
-        if(usbManager.hasPermission(getUsbDevice(usbDevice))){
-            connectProcess(usbDevice)
-        } else {
-            requestPermission(usbDevice, usbManager)
+    private fun connectProcess(usbDevice: UsbDevice) {
+        val driver = UsbSerialProber.getDefaultProber().probeDevice(usbDevice)
+        usbSerialPort = driver.ports[0].also {
+            it.open(usbManager.openDevice(driver.device))
+            it.setParameters(38400, 8, 1, UsbSerialPort.PARITY_NONE)
+        }
+        usbIoManager = SerialInputOutputManager(usbSerialPort, this@UsbService).also {
+            it.start()
         }
     }
 
-    private fun connectProcess(usbDevice: String) {
-        var driver = UsbSerialProber.getDefaultProber().probeDevice(getUsbDevice(usbDevice))
+
+    fun connectWithPermissionCheck(usbDevice: String) {
         try {
-            val usbManager = applicationContext.getSystemService(USB_SERVICE) as UsbManager
-            val usbConnection = usbManager.openDevice(driver.device)
-            driver.ports[0].also {
-                it.open(usbConnection)
-                it.setParameters(38400, 8, 1, UsbSerialPort.PARITY_NONE)
+            val device = getUsbDevice(usbDevice)
+            if(usbManager.hasPermission(device)){
+                CardReaderResponseImpl.onRegistered()
+            } else {
+                requestPermission(device)
             }
-            usbIoManager = SerialInputOutputManager(usbSerialPort, this@UsbService).also {
-                it.start()
-            }
-            DeviceCommunicateResponseDataImpl.onConnected()
-        } catch (e: Exception) {
-            Log.w("error", "disconnetDevice")
+        } catch (e: NoSuchElementException) {
+            CardReaderResponseImpl.onError("장치와의 연결이 끊긴 상태입니다.")
         }
     }
 
-    private fun requestPermission(usbDevice: String, usbManager: UsbManager) {
-        this.registerReceiver(UsbPermissionReceiver(), IntentFilter(actionGrantUsb))
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
-        val intent = Intent(actionGrantUsb)
-        intent.putExtra("usbDevice", usbDevice)
-        val permissionIntent = PendingIntent.getBroadcast(this, 0, intent, flags)
-        usbManager.requestPermission(getUsbDevice(usbDevice), permissionIntent)
+    fun connect(usbDevice: String) {
+        this.usbDevice = usbDevice
+        try {
+            val device = getUsbDevice(usbDevice)
+            if (!usbManager.hasPermission(device)) {
+                CardReaderResponseImpl.onError("장치권한이 해제된 상태입니다.")
+                return
+            }
+            if (isConnected()) {
+                CardReaderResponseImpl.onConnected()
+            } else {
+                connectWithRetry()
+            }
+        } catch (e: NoSuchElementException) {
+            connectWithRetry()
+        }
     }
 
-    fun isUsbGattInitialized() = ::usbSerialPort.isInitialized
+    fun stopRetry(byteArray: ByteArray?) {
+        connectUsbJob?.cancel()
+        retryCount = 0
+        byteArray?.let { sendData(it) }
+    }
+
+    private fun connectWithRetry() {
+        connectUsbJob?.cancel()
+        connectUsbJob = flow<Unit> {
+            CardReaderResponseImpl.onDisConnected(retryCount++)
+            connectProcess(getUsbDevice(usbDevice))
+            delay(1500)
+            if(isConnected()) {
+                CardReaderResponseImpl.onConnected()
+                stopRetry(null)
+            }
+        }.retryWhen { cause, attempt ->
+            delay(1500)
+            cause.handleRetryException()
+        }.catch {
+        }.onCompletion {
+            if (it == null) retryCount = 0
+        }.launchIn(CoroutineScope(Dispatchers.IO))
+    }
+
+    private fun Throwable.handleRetryException() = when (this) {
+        is IOException, is NullPointerException, is NoSuchElementException -> true
+        is IllegalArgumentException -> {
+            try {
+                usbManager.hasPermission(getUsbDevice(usbDevice))
+            } catch (e: Exception) {
+                true
+            }
+        }
+        else -> false
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun requestPermission(usbDevice: UsbDevice) {
+        registerReceiver(UsbPermissionReceiver(), IntentFilter(ACTION_GRANT_USB))
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        val permissionIntent = PendingIntent.getBroadcast(this, 0, Intent(ACTION_GRANT_USB), flags)
+        usbManager.requestPermission(usbDevice, permissionIntent)
+    }
+
+    fun isConnected() = if(::usbIoManager.isInitialized && ::usbSerialPort.isInitialized) {
+        usbIoManager.state == SerialInputOutputManager.State.RUNNING
+    } else false
 
     fun disConnect() {
         try {
@@ -138,30 +189,43 @@ class UsbService: Service(), SerialInputOutputManager.Listener {
         }
     }
 
+    fun sendData(byteArray: ByteArray) {
+        val spn = StringBuilder()
+            .append("request bytes: ")
+            .append(byteArray.toHex())
+            .append("\n")
+        Log.w("requestData", spn.toString())
+        if(isConnected()) { usbSerialPort.write(byteArray, 0) }
+    }
+
     override fun onNewData(data: ByteArray) {
-        DeviceCommunicateResponseDataImpl.onResultCommunicate(data)
+        val spn = StringBuilder()
+            .append("request bytes: ")
+            .append(data.toHex())
+            .append("\n")
+        Log.w("responseData", spn.toString())
+        CardReaderResponseImpl.onResultCommunicate(data)
     }
 
     override fun onRunError(e: Exception?) {
-        val mainLooper = Handler(Looper.getMainLooper())
-        mainLooper.post {
-            if(e?.message == "USB get_status request failed"){
-                stopSelf()
-            }
-        }
+        if (e?.message == "USB get_status request failed") { connectWithRetry() }
     }
 
-    private fun getUsbDevice(usbDeviceInformation: String): UsbDevice? {
-        (applicationContext.getSystemService(Context.USB_SERVICE) as UsbManager).deviceList.values.map {
-            if(stringFormat(it.toString()) == stringFormat(usbDeviceInformation)) { return it }
-        }
-        return null
+    private fun getUsbDevice(usbDeviceInformation: String): UsbDevice {
+        fun stringFormat(string: String) = string.replace(Regex("""/dev/bus/usb/\d+/\d+="""), "")
+            .replace(Regex("""mSerialNumberReader=[^,]+,"""), "")
+            .replace(Regex("""mName=[^,]+,"""), "")
+            .replace(Regex(""" mHasAudioPlayback=[^,]+, """), "")
+            .replace(Regex("""mHasAudioCapture=[^,]+, """), "")
+            .replace(Regex("""mHasMidi=[^,]+, """), "")
+            .replace(Regex("""mHasVideoCapture=[^,]+, """), "")
+            .replace(Regex("""mHasVideoPlayback=[^,]+, """), "")
+
+        return usbManager.deviceList.values.firstOrNull { stringFormat(it.toString()) == stringFormat(usbDeviceInformation) }
+            ?: throw NoSuchElementException()
     }
 
-    private fun stringFormat(string: String): String {
-        val regex = Regex("""mSerialNumberReader=[^,]+""")
-        return regex.replace(string, "")
-    }
+    private fun ByteArray.toHex(): String = joinToString(" ") { "%02X".format(it) }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -169,6 +233,6 @@ class UsbService: Service(), SerialInputOutputManager.Listener {
             disConnect()
         } catch (e: Exception){
         }
-        DeviceCommunicateResponseDataImpl.onDisConnected()
+        CardReaderResponseImpl.onDisConnected(0)
     }
 }

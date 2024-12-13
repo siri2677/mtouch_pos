@@ -30,45 +30,37 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.mtouchpos.R
 import com.example.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.example.mtouchpos.view.navgraph.NavigationGraphState
 
 import com.example.mtouchpos.view.util.ColumnKeyValueTextBox
 import com.example.mtouchpos.view.util.RowSmallSizeTextBox
-import com.example.mtouchpos.viewmodel.LoginViewModel
-import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
-import com.example.mtouchpos.viewmodel.factory.CardTerminalFactory
-import com.example.mtouchpos.vo.data.ApprovedPaymentType
+import com.example.mtouchpos.viewmodel.LoginVM
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
+import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.type.PurchaseType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentHistoryDetailView(
     navController: NavController = rememberNavController(),
+    offlinePaymentViewModel: OfflinePaymentVM,
     paymentHistoryInfo: ApprovedPaymentType.PaymentHistoryViewInfo,
-    mainViewModel: LoginViewModel = hiltViewModel()
+    mainViewModel: LoginVM = hiltViewModel()
 ) {
     val context = LocalContext.current as ComponentActivity
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val offlinePaymentViewModel = hiltViewModel<OfflinePaymentViewModel>(
-        context, OfflinePaymentViewModel.SINGLE_INSTANCE
-    )
-    val paymentProcessState = offlinePaymentViewModel.paymentProcessState
-        .collectAsStateWithLifecycle(OfflinePaymentViewModel.PaymentProcessState.Init).value
     val offlinePaymentCoordinator = OfflinePaymentCoordinator(
         navController = navController,
         offlinePaymentViewModel = offlinePaymentViewModel,
-        componentActivity = context
+        componentActivity = context,
+        route = NavigationGraphState.PaymentHistoryView.PaymentHistory.name
     )
 
-    offlinePaymentCoordinator.cardTerminalNewIntent(
-        paymentProcessState = paymentProcessState,
-        callBack = CardTerminalFactory.CallBack.Home,
-        merchantUrl = null
-    )
+    offlinePaymentCoordinator.CardTerminalNewIntent()
 
     Scaffold(
         topBar = {
@@ -151,10 +143,8 @@ fun PaymentHistoryDetailView(
                                 .background(colorResource(id = value))
                                 .clickable {
                                     if (key == "취소") {
-                                        OfflinePaymentCoordinator.PaymentProcess(
-                                            merchantUrl = null,
-                                            offlinePaymentInfo = paymentHistoryInfo.toCancelPaymentInfo()
-                                        ).let { offlinePaymentCoordinator.navigateToDeviceDialog(it) }
+                                        offlinePaymentViewModel.updateOfflineCancelPaymentInfo(paymentHistoryInfo.toCancelPaymentInfo())
+                                        offlinePaymentCoordinator.navigateToDeviceDialog()
                                     }
                                 },
                             value = key

@@ -3,34 +3,32 @@ package com.example.mtouchpos.hilt
 import android.content.Context
 import com.example.data.internal.UserInformationDatabase
 import com.example.data.remote.RetrofitBuilder
-import com.example.data.repository.DeviceRepositoryImpl
-import com.example.data.repository.DirectPaymentRepositoryImpl
-import com.example.data.repository.OfflinePaymentRepositoryImpl
-import com.example.data.repository.PaymentHistoryRepositoryImpl
-import com.example.data.repository.UserRepositoryImpl
-import com.example.domain.model.device.DeviceConnectStatus
-import com.example.domain.repositoryInterface.DeviceRepository
-import com.example.domain.repositoryInterface.DirectPaymentRepository
-import com.example.domain.repositoryInterface.OfflinePaymentRepository
-import com.example.domain.repositoryInterface.PaymentHistoryRepository
-import com.example.domain.repositoryInterface.UserRepository
-import com.example.domain.usecase.device.FetchConnectedDeviceInfo
-import com.example.domain.usecase.device.manager.CommunicateDeviceManager
-import com.example.domain.usecase.device.manager.ConnectDeviceManager
+import com.example.data.repositoryImpl.DeviceRepositoryImpl
+import com.example.data.repositoryImpl.DirectPaymentRepositoryImpl
+import com.example.data.repositoryImpl.OfflinePaymentRepositoryImpl
+import com.example.data.repositoryImpl.PaymentHistoryRepositoryImpl
+import com.example.data.repositoryImpl.UserRepositoryImpl
+import com.example.domain.model.cardreader.CardReaderStatus
+import com.example.domain.repository.DeviceRepository
+import com.example.domain.repository.DirectPaymentRepository
+import com.example.domain.repository.OfflinePaymentRepository
+import com.example.domain.repository.PaymentHistoryRepository
+import com.example.domain.repository.UserRepository
+import com.example.domain.usecase.cardreader.FetchConnectedDeviceInfo
+import com.example.domain.manager.cardreader.CardReaderCommunicateManager
+import com.example.domain.manager.cardreader.CardReaderConnectManager
 import com.example.domain.usecase.user.FetchConnectedUserInfo
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.bluetooth.CommunicateBluetooth
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.bluetooth.ConnectBluetooth
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.usb.CommunicateUsb
-import com.example.mtouchpos.viewmodel.usecasemanager.reader.usb.ConnectUsb
-import com.example.mtouchpos.viewmodel.DeviceSettingViewModel
+import com.example.mtouchpos.managerImpl.cardreader.bluetooth.CommunicateBluetooth
+import com.example.mtouchpos.managerImpl.cardreader.bluetooth.ConnectBluetooth
+import com.example.mtouchpos.managerImpl.cardreader.usb.CommunicateUsb
+import com.example.mtouchpos.managerImpl.cardreader.usb.ConnectUsb
+import com.example.mtouchpos.viewmodel.CardReaderConnectVM
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ViewModelScoped
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 
@@ -40,7 +38,7 @@ import kotlinx.coroutines.sync.Mutex
 object RepositoryModule {
     private const val USER_INFORMATION = "userInformation"
     private const val DEVICE_INFORMATION = "deviceInformation"
-    private const val SVC_TMS_URL = "https://svctmsdev.mtouch.com"
+    private const val SVC_TMS_URL = "https://svctms.mtouch.com"
     private const val SVC_API_URL = "https://svcapi.mtouch.com"
 
     @Provides
@@ -95,22 +93,21 @@ object RepositoryModule {
     fun provideDeviceCommunicateManager(
         @ApplicationContext context: Context,
         fetchConnectedDeviceInfo: FetchConnectedDeviceInfo
-    ): CommunicateDeviceManager {
+    ): CardReaderCommunicateManager {
         val mutex = Mutex()
-        val emptyDeviceCommunicateManager = object : CommunicateDeviceManager {
+        val emptyDeviceCommunicateManager = object : CardReaderCommunicateManager {
             override fun bindingService() {}
             override fun unBindingService() {}
-            override fun connect(deviceInfo: String) = flow {
-                emit(DeviceConnectStatus.DisConnected)
-            }
+            override fun stopRetry(byteArray: ByteArray) {}
+            override fun connect(deviceInfo: String) {}
             override fun sendData(byteArray: ByteArray) {}
-            override fun isDeviceServiceInitialized(): Boolean = false
+//            override fun isDeviceServiceInitialized(): Boolean = false
         }
 
         return provideDeviceRepository(context).getDeviceInformation()?.let {
             when(fetchConnectedDeviceInfo()) {
-                is DeviceSettingViewModel.BluetoothDeviceInfo -> CommunicateBluetooth(context, mutex)
-                is DeviceSettingViewModel.UsbDeviceInfo -> CommunicateUsb(context, mutex)
+                is CardReaderConnectVM.BluetoothDeviceInfo -> CommunicateBluetooth(context, mutex)
+                is CardReaderConnectVM.UsbDeviceInfo -> CommunicateUsb(context, mutex)
                 else -> emptyDeviceCommunicateManager
             }
         } ?: emptyDeviceCommunicateManager
@@ -121,16 +118,16 @@ object RepositoryModule {
     fun provideDeviceConnectManager(
         @ApplicationContext context: Context,
         fetchConnectedDeviceInfo: FetchConnectedDeviceInfo
-    ): ConnectDeviceManager {
-        val emptyDeviceConnectManager = object: ConnectDeviceManager {
+    ): CardReaderConnectManager {
+        val emptyDeviceConnectManager = object: CardReaderConnectManager {
             override fun connect(deviceInfo: String) {}
             override fun disConnect() {}
         }
 
         return provideDeviceRepository(context).getDeviceInformation()?.let {
             when(fetchConnectedDeviceInfo()) {
-                is DeviceSettingViewModel.BluetoothDeviceInfo -> ConnectBluetooth(context)
-                is DeviceSettingViewModel.UsbDeviceInfo -> ConnectUsb(context)
+                is CardReaderConnectVM.BluetoothDeviceInfo -> ConnectBluetooth(context)
+                is CardReaderConnectVM.UsbDeviceInfo -> ConnectUsb(context)
                 else -> emptyDeviceConnectManager
             }
         } ?: emptyDeviceConnectManager

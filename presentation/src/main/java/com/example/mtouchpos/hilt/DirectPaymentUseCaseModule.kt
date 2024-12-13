@@ -1,7 +1,7 @@
 package com.example.mtouchpos.hilt
 
 import android.content.Context
-import com.example.domain.repositoryInterface.DirectPaymentRepository
+import com.example.domain.repository.DirectPaymentRepository
 import com.example.domain.usecase.directPayment.RequestDirectCancelPayment
 import com.example.domain.usecase.directPayment.RequestDirectPayment
 import dagger.Module

@@ -1,6 +1,6 @@
 package com.example.domain.usecase.user
 
-import com.example.domain.repositoryInterface.UserRepository
+import com.example.domain.repository.UserRepository
 import com.example.domain.model.ApiResult
 import com.example.domain.model.user.UserData
 import com.example.domain.model.user.UserDetailData

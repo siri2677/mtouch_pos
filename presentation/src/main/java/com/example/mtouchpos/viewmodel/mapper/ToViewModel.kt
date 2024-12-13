@@ -4,9 +4,9 @@ import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.PaymentProcessStatus
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.paymentHistory.PaymentStatisticData
-import com.example.mtouchpos.viewmodel.OfflinePaymentViewModel
-import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
-import com.example.mtouchpos.vo.data.ApprovedPaymentType
+import com.example.mtouchpos.viewmodel.OfflinePaymentVM
+import com.example.mtouchpos.viewmodel.PaymentHistoryVM
+import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.type.PurchaseType
 import com.example.mtouchpos.vo.type.UseCaseResult
 
@@ -42,21 +42,21 @@ fun PaymentDetailData.toPaymentHistoryInfo() = ApprovedPaymentType.PaymentHistor
 )
 
 fun PaymentStatisticData.toPaymentStatisticInfo() =
-    HashMap<PaymentHistoryViewModel.StatisticType, PaymentHistoryViewModel.PaymentStatisticInfo>().apply {
+    HashMap<PaymentHistoryVM.StatisticType, PaymentHistoryVM.PaymentStatisticInfo>().apply {
         put(
-            PaymentHistoryViewModel.StatisticType.APPROVE,
-            PaymentHistoryViewModel.PaymentStatisticInfo(
+            PaymentHistoryVM.StatisticType.APPROVE,
+            PaymentHistoryVM.PaymentStatisticInfo(
                 approveAmount.toInt(),
                 approveCount.toInt()
             )
         )
         put(
-            PaymentHistoryViewModel.StatisticType.CANCEL,
-            PaymentHistoryViewModel.PaymentStatisticInfo(cancelAmount.toInt(), cancelCount.toInt())
+            PaymentHistoryVM.StatisticType.CANCEL,
+            PaymentHistoryVM.PaymentStatisticInfo(cancelAmount.toInt(), cancelCount.toInt())
         )
         put(
-            PaymentHistoryViewModel.StatisticType.TOTAL,
-            PaymentHistoryViewModel.PaymentStatisticInfo(
+            PaymentHistoryVM.StatisticType.TOTAL,
+            PaymentHistoryVM.PaymentStatisticInfo(
                 approveAmount.toInt() + cancelAmount.toInt(),
                 approveCount.toInt() + cancelCount.toInt()
             )
@@ -67,29 +67,32 @@ fun ApiResult<PaymentProcessStatus>.toPaymentProcessState() = when(this) {
     is ApiResult.Success -> {
         when(val status = this.value) {
             is PaymentProcessStatus.CompletePayment-> {
-                OfflinePaymentViewModel.PaymentProcessState.CompletePayment(
+                OfflinePaymentVM.PaymentProcessState.CompletePayment(
                     status.data.toCompletePaymentInfo()
                 )
             }
             is PaymentProcessStatus.ApprovePayment -> {
-                OfflinePaymentViewModel.PaymentProcessState.Loading
+                OfflinePaymentVM.PaymentProcessState.ApprovePayment(status.trackId)
             }
-            is PaymentProcessStatus.DeviceCommunication.FallBack -> {
-                OfflinePaymentViewModel.PaymentProcessState.Fallback(status.description)
+            is PaymentProcessStatus.CommunicateReader.FallBack -> {
+                OfflinePaymentVM.PaymentProcessState.Fallback(status.description)
             }
-            PaymentProcessStatus.DeviceCommunication.InsertIC -> {
-                OfflinePaymentViewModel.PaymentProcessState.InsertIC
+            PaymentProcessStatus.CommunicateReader.InsertIC -> {
+                OfflinePaymentVM.PaymentProcessState.InsertIC
             }
-            PaymentProcessStatus.DeviceCommunication.ReadingIC -> {
-                OfflinePaymentViewModel.PaymentProcessState.ReadingIC
+            PaymentProcessStatus.CommunicateReader.ReadingIC -> {
+                OfflinePaymentVM.PaymentProcessState.ReadingIC
+            }
+            is PaymentProcessStatus.ConnectReader.Retry -> {
+                OfflinePaymentVM.PaymentProcessState.Retry(status.count)
             }
             else -> throw Exception("not support type: ${this::class.java.simpleName}")
         }
     }
     is ApiResult.Error -> {
-        OfflinePaymentViewModel.PaymentProcessState.Error(this.message)
+        OfflinePaymentVM.PaymentProcessState.Error(this.message)
     }
     is ApiResult.Exception -> {
-        OfflinePaymentViewModel.PaymentProcessState.Error(this.exception.message.toString())
+        OfflinePaymentVM.PaymentProcessState.Error(this.exception.message.toString())
     }
 }

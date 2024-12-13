@@ -1,7 +1,7 @@
 package com.example.mtouchpos.hilt
 
 import android.content.Context
-import com.example.domain.repositoryInterface.PaymentHistoryRepository
+import com.example.domain.repository.PaymentHistoryRepository
 import com.example.domain.usecase.paymentHistory.CheckDirectPayment
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryList
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryStatistics

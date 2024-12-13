@@ -1,7 +1,7 @@
 package com.example.mtouchpos.hilt
 
 import android.content.Context
-import com.example.domain.repositoryInterface.UserRepository
+import com.example.domain.repository.UserRepository
 import com.example.domain.usecase.user.DeleteUserInfo
 import com.example.domain.usecase.user.FetchConnectedUserInfo
 import com.example.domain.usecase.user.FetchSavedUserInfo

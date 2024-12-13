@@ -6,7 +6,7 @@ import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.paymentHistory.PaymentStatisticData
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryList
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryStatistics
-import com.example.mtouchpos.viewmodel.PaymentHistoryViewModel
+import com.example.mtouchpos.viewmodel.PaymentHistoryVM
 import com.example.mtouchpos.viewmodel.mapper.toPaymentHistoryInfo
 import com.example.mtouchpos.viewmodel.mapper.toPaymentStatisticInfo
 import com.example.mtouchpos.viewmodel.mapper.toUseCaseResult
@@ -26,11 +26,11 @@ class PaymentHistoryInfoViewModelTest {
     @get:Rule
     var mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var viewModel: PaymentHistoryViewModel
+    private lateinit var viewModel: PaymentHistoryVM
     private lateinit var getPaymentHistoryList: FetchPaymentHistoryList
     private lateinit var getPaymentHistoryStatistics: FetchPaymentHistoryStatistics
 
-    private val periodInfo = PaymentHistoryViewModel.PeriodInfo(
+    private val periodInfo = PaymentHistoryVM.PeriodInfo(
         "20240101",
         "20240101"
     )
@@ -59,7 +59,7 @@ class PaymentHistoryInfoViewModelTest {
         getPaymentHistoryList = mockk<FetchPaymentHistoryList>()
         getPaymentHistoryStatistics = mockk<FetchPaymentHistoryStatistics>()
 
-        viewModel = PaymentHistoryViewModel(
+        viewModel = PaymentHistoryVM(
             fetchPaymentHistoryListUseCase = getPaymentHistoryList,
             fetchPaymentHistoryStatisticsUseCase = getPaymentHistoryStatistics
         )

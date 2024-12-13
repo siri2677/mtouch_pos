@@ -5,7 +5,7 @@ import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.usecase.directPayment.RequestDirectCancelPayment
 import com.example.domain.usecase.directPayment.RequestDirectPayment
-import com.example.mtouchpos.viewmodel.DirectPaymentViewModel
+import com.example.mtouchpos.viewmodel.DirectPaymentVM
 import com.example.mtouchpos.viewmodel.mapper.toCompletePaymentInfo
 import com.example.mtouchpos.viewmodel.mapper.toUseCaseResult
 import com.example.mtouchpos.vo.type.PaymentType
@@ -27,11 +27,11 @@ class RequestDirectPaymentViewModelTest {
     @get:Rule
     var mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var viewModel: DirectPaymentViewModel
+    private lateinit var viewModel: DirectPaymentVM
     private lateinit var directPayment: RequestDirectPayment
     private lateinit var directCancelPayment: RequestDirectCancelPayment
 
-    private val directPaymentInfo = DirectPaymentViewModel.DirectPaymentInfo(
+    private val directPaymentInfo = DirectPaymentVM.DirectPaymentInfo(
         amount = "15000",
         installment = "03",
         trackId = "AXD_${Date().time}",
@@ -48,7 +48,7 @@ class RequestDirectPaymentViewModelTest {
         authDob = "1985-04-12"
     )
 
-    private val directCancelPaymentInfo = DirectPaymentViewModel.DirectCancelPaymentInfo(
+    private val directCancelPaymentInfo = DirectPaymentVM.DirectCancelPaymentInfo(
         amount = "12000",
         installment = "6",
         trackId = "TRCK20230712XYZ",
@@ -76,7 +76,7 @@ class RequestDirectPaymentViewModelTest {
         directPayment = mockk<RequestDirectPayment>()
         directCancelPayment = mockk<RequestDirectCancelPayment>()
 
-        viewModel = DirectPaymentViewModel(
+        viewModel = DirectPaymentVM(
             directPayment = directPayment,
             directCancelPayment = directCancelPayment
         )

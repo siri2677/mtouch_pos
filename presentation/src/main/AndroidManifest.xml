@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.mtouchpos">
 
+    <uses-feature android:name="android.hardware.usb.host" />
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
@@ -59,13 +61,18 @@
                     android:scheme="mtouchpos" />
             </intent-filter>
 
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.ACTION_USB_DEVICE_DETACHED" />
+            </intent-filter>
+
             <meta-data
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
         </activity>
 
         <activity
-            android:name=".view.CreditPaymentActivity"
+            android:name=".view.ExternalActivity"
             android:configChanges="orientation|keyboardHidden"
             android:exported="true"
             android:launchMode="singleTask"

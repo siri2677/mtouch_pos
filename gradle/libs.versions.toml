@@ -72,6 +72,7 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 android-material = { module = "com.google.android.material:material", version.ref = "android-material" }
 
 # kotlin
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
 
