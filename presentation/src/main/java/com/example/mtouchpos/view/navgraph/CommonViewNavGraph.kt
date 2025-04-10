@@ -10,20 +10,10 @@ import androidx.navigation.compose.dialog
 import com.example.mtouchpos.view.sharedViewModel
 import com.example.mtouchpos.view.ui.CompletePaymentView
 import com.example.mtouchpos.view.ui.PaymentProcessDialog
-import com.example.mtouchpos.view.util.ErrorDialog
+import com.example.mtouchpos.view.util.MessageDialog
 import com.example.mtouchpos.view.util.ItemListDialog
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import java.io.Serializable
-
-object CompleteDestination {
-    const val ROUTE = "complete"
-    const val ARGUMENT_KEY = "param" // Optional argument
-}
-
-object PaymentProcessDestination {
-    const val ROUTE = "paymentProcess"
-    const val ARGUMENT_KEY = "param" // Optional argument
-}
 
 open class CommonViewNavGraph(
     open val navController: NavController,
@@ -50,13 +40,11 @@ open class CommonViewNavGraph(
         }
     }
 
-    fun errorDialog() {
-        navGraphBuilder.dialog(NavigationGraphState.CommonView.ErrorDialog.name) { backStackEntry ->
-            ErrorDialog(
+    fun messageDialog() {
+        navGraphBuilder.dialog(NavigationGraphState.CommonView.MessageDialog.name) { backStackEntry ->
+            MessageDialog(
                 navController = navController,
-                message = backStackEntry.getSerializableArgument(NavigationBundleKey.MESSAGE)!!,
-//                reDirectPage = backStackEntry.getSerializableArgument(NavigationBundleKey.reDirectPage)!!
-//                onDismissRequest = backStackEntry.getSerializableArgument(NavigationBundleKey.onDismiss)
+                message = backStackEntry.getSerializableArgument(NavigationBundleKey.MESSAGE)!!
             )
         }
     }
@@ -65,18 +53,12 @@ open class CommonViewNavGraph(
         navGraphBuilder: NavGraphBuilder,
         argument: String = ""
     ) {
-        navGraphBuilder.composable("${NavigationGraphState.CommonView.CompletePayment.name}$argument") { backStackEntry ->
-            Log.w("argument", argument)
+        navGraphBuilder.composable("${NavigationGraphState.CommonView.CompletePayment.name}/$argument") {
             CompletePaymentView(
                 navController = navController,
                 argument = argument,
-                completePaymentViewInfo = backStackEntry.getSerializableArgument(
-                    NavigationBundleKey.RESULT_DATA
-                )!!,
-                offlinePaymentViewModel = backStackEntry.sharedViewModel<OfflinePaymentVM>(navController),
-                beforeNavGraph = backStackEntry.getSerializableArgument(
-                    NavigationBundleKey.BEFORE_NAVGRAPH
-                )!!
+                complete = it.getSerializableArgument(NavigationBundleKey.RESULT_DATA)!!,
+                offlinePaymentViewModel = it.sharedViewModel<OfflinePaymentVM>(navController)
             )
         }
     }
@@ -85,12 +67,11 @@ open class CommonViewNavGraph(
         navGraphBuilder: NavGraphBuilder,
         argument: String = ""
     ) {
-        navGraphBuilder.dialog("${NavigationGraphState.CreditPaymentView.PaymentProcessDialog.name}$argument") { backStackEntry ->
-            Log.w("argument", argument)
+        navGraphBuilder.dialog("${NavigationGraphState.CreditPaymentView.PaymentProcessDialog.name}/$argument") {
             PaymentProcessDialog(
                 navController = navController,
                 argument = argument,
-                offlinePaymentViewModel = backStackEntry.sharedViewModel<OfflinePaymentVM>(navController)
+                offlinePaymentViewModel = it.sharedViewModel<OfflinePaymentVM>(navController)
             )
         }
     }

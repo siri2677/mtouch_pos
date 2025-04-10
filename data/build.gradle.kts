@@ -17,8 +17,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_20
+        targetCompatibility = JavaVersion.VERSION_20
     }
 }
 
@@ -27,8 +27,11 @@ dependencies {
     implementation(rootProject.libs.bundles.retrofit)
     implementation(rootProject.libs.gson)
     implementation(rootProject.libs.hilt)
+    implementation(rootProject.libs.tedPermission)
+    implementation(rootProject.libs.mik3y.usb)
 
     api(rootProject.libs.room)
+    implementation(libs.core)
 
     ksp(rootProject.libs.room.compiler)
     ksp(rootProject.libs.hilt.compiler)

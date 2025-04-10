@@ -60,6 +60,7 @@ import com.example.mtouchpos.R
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey
 import com.example.mtouchpos.view.ui.theme.TopNavigationMain
+import com.example.mtouchpos.view.util.SelectDialog
 import com.example.mtouchpos.viewmodel.LoginVM
 import com.google.accompanist.flowlayout.FlowRow
 
@@ -86,10 +87,10 @@ fun MainView(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 LoginStatus(
-                    mainViewModel.fetchCurrentConnectedUserInfo()?.let {
-                        it.tmnId
-                    } ?: "로그아웃 상태 입니다"
+                    navController,
+                    mainViewModel.fetchCurrentConnectedUserInfo()?.tmnId ?: "로그아웃 상태 입니다"
                 )
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -97,7 +98,7 @@ fun MainView(
                     item {
                         SalesAmount(screenWidth, "일간 매출 내역", "일간 취소 내역")
                         SalesAmount(screenWidth, "월간 매출 내역", "월간 취소 내역")
-                        Announcement(screenWidth)
+//                        Announcement(screenWidth)
                     }
 
                     item {
@@ -113,8 +114,12 @@ fun MainView(
                                                 .setPopUpTo(NavigationGraphState.HomeView.Home.name, false).build()
                                         )
                                     } ?: navController.navigate(
-                                        route = NavigationGraphState.CommonView.ErrorDialog.name,
-                                        bundle = bundleOf(NavigationBundleKey.MESSAGE to "로그인 후 서비스 이용하시기 바랍니다"),
+                                        route = NavigationGraphState.CommonView.MessageDialog.name,
+                                        bundle = bundleOf(
+                                            NavigationBundleKey.MESSAGE to SelectDialog(
+                                                initValue = "로그인 후 서비스 이용하시기 바랍니다"
+                                            )
+                                        ),
                                         navOptions = NavOptions.Builder().setLaunchSingleTop(true).build()
                                     )
                                 }
@@ -203,8 +208,7 @@ fun GridMenu(clickEvent: (String) -> Unit) {
         MainGridItem(text = "장치관리", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
         MainGridItem(text = "현금영수증", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
         MainGridItem(text = "거래내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory),
-        MainGridItem(text = "집계내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory),
-        MainGridItem(text = "공지사항", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory)
+        MainGridItem(text = "집계내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory)
     )
 
     mainGridItems.forEachIndexed { index, mainGridItem ->
@@ -214,8 +218,7 @@ fun GridMenu(clickEvent: (String) -> Unit) {
                 .paint(painterResource(id = R.drawable.card_bt), contentScale = ContentScale.FillBounds)
                 .width((screenWidth * 0.45).dp)
                 .height(40.dp)
-                .clickable(onClick = { clickEvent(mainGridItem.navigationGraphState.toString()) })
-                .then(if (index % 2 == 0) Modifier.padding(start = 10.dp) else Modifier.padding(end = 10.dp)),
+                .clickable(onClick = { clickEvent(mainGridItem.navigationGraphState.toString()) }),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -240,14 +243,9 @@ fun BottomNavigation(navController: NavController) {
                     contentDescription = "login"
                 )
             },
-            label = {
-                Text(
-                    "로그인",
-                    fontSize = 12.sp,
-                )
-            },
-            selected = currentRoute == NavigationGraphState.HomeView.Login.name,
-            onClick = { navController.navigate(NavigationGraphState.HomeView.Login.name) }
+            label = { Text("로그인", fontSize = 12.sp) },
+            selected = currentRoute == NavigationGraphState.HomeView.PgIdLogin.name,
+            onClick = { navController.navigate(NavigationGraphState.HomeView.PgIdLogin.name) }
         )
 
         BottomNavigationItem(
@@ -259,26 +257,6 @@ fun BottomNavigation(navController: NavController) {
             },
             label = { Text("설정", fontSize = 12.sp) },
             selected = currentRoute == "settings",
-            onClick = { }
-        )
-
-        BottomNavigationItem(
-            icon = {
-                Icon(
-                    painterResource(id = R.drawable.customer_service_center_icon),
-                    contentDescription = "D",
-                    modifier = Modifier
-                        .size(22.5.dp)
-                        .padding(bottom = 2.dp)
-                )
-            },
-            label = {
-                Text(
-                    "고객센터",
-                    fontSize = 12.sp,
-                )
-            },
-            selected = currentRoute == NavigationGraphState.HomeView.Home.name,
             onClick = { }
         )
     }
@@ -356,7 +334,10 @@ fun SalesAmount(
 }
 
 @Composable
-fun LoginStatus(terminalId: String) {
+fun LoginStatus(
+    navController: NavController,
+    terminalId: String
+) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Column(
         modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
@@ -365,6 +346,7 @@ fun LoginStatus(terminalId: String) {
             modifier = Modifier
                 .width((screenWidth * 0.9).dp)
                 .height(30.dp)
+                .clickable(onClick = { navController.navigate(NavigationGraphState.HomeView.RegisteredId.name) })
                 .clip(RoundedCornerShape(10.dp))
                 .background(
                     brush = Brush.horizontalGradient(

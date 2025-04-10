@@ -10,6 +10,7 @@ import com.example.mtouchpos.viewmodel.LoginVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.viewmodel.PaymentHistoryVM
 import com.example.mtouchpos.vo.info.ApprovedPaymentType
+import com.example.mtouchpos.vo.info.UserInfo
 
 fun DirectPaymentVM.DirectPaymentInfo.toApproveDirectPaymentData() = DirectPaymentData.Approve(
     totalAmount = amount.toInt(),
@@ -35,7 +36,7 @@ fun DirectPaymentVM.DirectCancelPaymentInfo.toCancelDirectPaymentData() = Direct
 
 fun OfflinePaymentVM.OfflinePaymentInfo.Approve.toApprovePaymentData() = OfflinePaymentData.Approve(
     amountData = AmountData(
-        totalAmount = totalAmount,
+        totalAmount = totalAmount.toInt(),
         freeAmount = freeAmount,
         serviceAmount = serviceAmount,
     ),
@@ -45,7 +46,7 @@ fun OfflinePaymentVM.OfflinePaymentInfo.Approve.toApprovePaymentData() = Offline
 
 fun OfflinePaymentVM.OfflinePaymentInfo.Cancel.toCancelPaymentData() = OfflinePaymentData.Cancel(
     amountData = AmountData(
-        totalAmount = amount.toInt(),
+        totalAmount = totalAmount.toInt(),
         freeAmount = freeAmount,
         serviceAmount = serviceAmount,
     ),
@@ -56,7 +57,7 @@ fun OfflinePaymentVM.OfflinePaymentInfo.Cancel.toCancelPaymentData() = OfflinePa
     authDate = authDate,
 )
 
-fun LoginVM.UserInfo.toUserData() = UserData(
+fun UserInfo.toUserData() = UserData(
     tmnId = tmnId,
     serial = serial,
     mchtId = mchtId
@@ -67,8 +68,8 @@ fun PaymentHistoryVM.PeriodInfo.toPeriodData() = PeriodData(
     last = endDay,
 )
 
-fun ApprovedPaymentType.toDirectCancelPaymentInfo() = DirectPaymentVM.DirectCancelPaymentInfo(
-    amount = amount,
-    trackId = trackId,
-    trxId = trxId,
+fun ApprovedPaymentType.CompletePaymentViewInfo.toDirectCancelPaymentInfo() = DirectPaymentVM.DirectCancelPaymentInfo(
+    amount = totalAmount,
+    trackId = trackId!!,
+    trxId = trxId!!,
 )

@@ -2,12 +2,9 @@ package com.example.mtouchpos
 
 import android.content.Context
 import com.example.domain.model.cardreader.CardReaderStatus
-import com.example.domain.usecase.cardreader.SearchBluetoothDevice
-import com.example.domain.usecase.cardreader.ConnectCardReader
 import com.example.domain.usecase.cardreader.UpdateConnectedDeviceInfo
-import com.example.domain.usecase.cardreader.SearchUsbDevice
 import com.example.mtouchpos.managerImpl.cardreader.bluetooth.ConnectBluetooth
-import com.example.mtouchpos.viewmodel.CardReaderConnectVM
+import com.example.mtouchpos.viewmodel.UsbCardReaderSettingVM
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,19 +23,19 @@ class DeviceSettingViewModelTest {
     @get:Rule
     var mainDispatcherRule = MainDispatcherRule()
 
-    private lateinit var deviceSettingViewModel: CardReaderConnectVM
+    private lateinit var deviceSettingViewModel: UsbCardReaderSettingVM
     private lateinit var context: Context
-    private lateinit var searchBluetoothDeviceUseCase: SearchBluetoothDevice
+    private lateinit var searchBluetoothDeviceUseCase: SearchDevice
     private lateinit var searchUsbDeviceUseCase: SearchUsbDevice
     private lateinit var deviceConnectUseCase: ConnectCardReader
     private lateinit var updateConnectedDeviceInfoUseCase: UpdateConnectedDeviceInfo
 
-    private val bluetoothDeviceInfo = CardReaderConnectVM.BluetoothDeviceInfo(
+    private val bluetoothDeviceInfo = UsbCardReaderSettingVM.BluetoothDeviceInfo(
         deviceInformation = "f0:00:00:00:00:00",
         deviceName = "ksr03"
     )
 
-    private val usbDeviceInfo = CardReaderConnectVM.UsbDeviceInfo(
+    private val usbDeviceInfo = UsbCardReaderSettingVM.UsbDeviceInfo(
         deviceInformation = "/dev/bus/usb/001/003",
         deviceName = "1027",
         productName = "24577"
@@ -46,12 +43,12 @@ class DeviceSettingViewModelTest {
 
     @Before
     fun setup() {
-        searchBluetoothDeviceUseCase = mockk<SearchBluetoothDevice>()
+        searchBluetoothDeviceUseCase = mockk<SearchDevice>()
         searchUsbDeviceUseCase = mockk<SearchUsbDevice>()
         deviceConnectUseCase = mockk<ConnectCardReader>()
         updateConnectedDeviceInfoUseCase = mockk<UpdateConnectedDeviceInfo>()
         context = mockk<Context>()
-        deviceSettingViewModel = CardReaderConnectVM(
+        deviceSettingViewModel = UsbCardReaderSettingVM(
             searchBluetoothDeviceUseCase = searchBluetoothDeviceUseCase,
             searchUsbDeviceUseCase = searchUsbDeviceUseCase,
             connectDeviceUseCase = deviceConnectUseCase,
@@ -69,11 +66,11 @@ class DeviceSettingViewModelTest {
 
         with(deviceSettingViewModel.deviceInfo.value) {
             when(this) {
-                is CardReaderConnectVM.BluetoothDeviceInfo -> {
+                is UsbCardReaderSettingVM.BluetoothDeviceInfo -> {
                     assertEquals(deviceInformation, bluetoothDeviceInfo.deviceInformation)
                     assertEquals(deviceName, bluetoothDeviceInfo.deviceName)
                 }
-                is CardReaderConnectVM.UsbDeviceInfo -> {
+                is UsbCardReaderSettingVM.UsbDeviceInfo -> {
                     assertEquals(deviceInformation, usbDeviceInfo.deviceInformation)
                     assertEquals(deviceName, usbDeviceInfo.deviceName)
                     assertEquals(productName, usbDeviceInfo.productName)
@@ -107,7 +104,7 @@ class DeviceSettingViewModelTest {
     @Test
     fun `deviceConnect success emits deviceConnectState result`() = runTest  {
         val deviceConnectStatus = CardReaderStatus.Connected
-        val deviceConnectState = CardReaderConnectVM.DeviceConnectState.Connected
+        val deviceConnectState = UsbCardReaderSettingVM.DeviceConnectState.Connected
 
         coEvery { deviceConnectUseCase(any(), any()) } returns flow { emit(deviceConnectStatus) }
 

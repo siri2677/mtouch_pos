@@ -45,6 +45,7 @@ import androidx.core.os.bundleOf
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import com.example.mtouchpos.R
 import com.example.mtouchpos.coordinator.PaymentHistoryCoordinator
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
@@ -113,12 +114,15 @@ fun PaymentHistoryView(
         listOf(
             ButtonData("오늘") {
                 updatePeriodInfoAndFetchPaymentList(0)
+                fetchPaymentList()
             },
             ButtonData("1일") {
                 updatePeriodInfoAndFetchPaymentList(1)
+                fetchPaymentList()
             },
             ButtonData("7일") {
                 updatePeriodInfoAndFetchPaymentList(7)
+                fetchPaymentList()
             },
             ButtonData("직접설정") {
                 navController.navigate(NavigationGraphState.PaymentHistoryView.Calendar.name)
@@ -132,7 +136,12 @@ fun PaymentHistoryView(
 
     LaunchedEffect(Unit) {
         delay(1)
-        customPaymentPeriod?.let { paymentHistoryViewModel.updatePeriodInfoAndFetchPaymentList(it) }
+        customPaymentPeriod?.let {
+            if(selectedIndex == 3) {
+                paymentHistoryViewModel.updatePeriodInfoAndFetchPaymentList(customPaymentPeriod)
+                paymentHistoryViewModel.fetchPaymentList()
+            }
+        }
     }
 
     Scaffold(
@@ -148,7 +157,7 @@ fun PaymentHistoryView(
                     )
                 }
         ) {
-            selection(
+            Selection(
                 paymentHistoryViewModel = paymentHistoryViewModel,
                 paymentPeriod = paymentPeriod
             )
@@ -177,7 +186,7 @@ fun PaymentHistoryView(
 }
 
 @Composable
-fun selection(
+fun Selection(
     paymentHistoryViewModel: PaymentHistoryVM,
     paymentPeriod: PaymentHistoryVM.PeriodInfo
 ) {
@@ -306,27 +315,29 @@ fun PaymentHistoryList(
             .height(100.dp)
             .clickable {
                 navController.navigate(
-                    NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name,
-                    bundleOf(RESPONSE_GET_PAYMENT_LIST to paymentDetailInfo)
+                    route = NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name,
+                    bundle = bundleOf(RESPONSE_GET_PAYMENT_LIST to paymentDetailInfo),
+                    navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                        NavigationGraphState.PaymentHistoryView.PaymentHistory.name, false).build()
                 )
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         val modifierData = when(paymentDetailInfo.purchaseType) {
-            PurchaseType.REFUND -> {
-                ModifierData(
-                    colorId = R.color.red,
-                    paymentType = "취소",
-                    transactionDate = paymentDetailInfo.authDate
-                )
-            }
-
             PurchaseType.APPROVE -> {
                 ModifierData(
                     colorId = R.color.teal_200,
                     paymentType = "승인",
-                    transactionDate = paymentDetailInfo.authDate
+                    transactionDate = paymentDetailInfo.regDay
+                )
+            }
+
+            PurchaseType.REFUND -> {
+                ModifierData(
+                    colorId = R.color.red,
+                    paymentType = "취소",
+                    transactionDate = paymentDetailInfo.regDay
                 )
             }
         }
@@ -356,7 +367,7 @@ fun PaymentHistoryList(
             )
             Text(
                 textAlign = TextAlign.Right,
-                text = paymentDetailInfo.authCode,
+                text = paymentDetailInfo.authCd,
                 fontSize = 10.sp,
                 color = colorResource(id = R.color.teal_700),
                 fontFamily = FontFamily(Font(R.font.ns_acr)),
@@ -369,7 +380,7 @@ fun PaymentHistoryList(
         Row {
             Text(
                 textAlign = TextAlign.Left,
-                text = paymentDetailInfo.issuerName ?: "",
+                text = paymentDetailInfo.brand,
                 fontSize = 13.sp,
                 color = colorResource(id = R.color.black),
                 fontFamily = FontFamily(Font(R.font.ns_acr)),

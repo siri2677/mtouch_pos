@@ -45,6 +45,7 @@ import com.example.mtouchpos.coordinator.LoginCoordinator
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.util.GradientButton
 import com.example.mtouchpos.viewmodel.LoginVM
+import com.example.mtouchpos.vo.info.UserInfo
 import com.example.mtouchpos.vo.type.UseCaseResult
 
 @Composable
@@ -55,7 +56,7 @@ fun PgIdLoginDialog(
     data class TextBox(
         val title: String,
         val default: String,
-        val edit: (String) -> LoginVM.UserInfo
+        val edit: (String) -> UserInfo
     )
 
     val context = LocalContext.current
@@ -67,19 +68,6 @@ fun PgIdLoginDialog(
         reactLogin = loginViewModel.reactLogin
             .collectAsStateWithLifecycle(UseCaseResult.Init).value
     )
-
-//    mainActivityViewModel.reactLogin
-//        .collectAsStateWithLifecycle(UseCaseResult.Init).value
-//        .observeResultLogin(
-//            navController = navController,
-//            afterProcess = {
-//                Toast.makeText(context, "로그인이 완료되었습니다", Toast.LENGTH_SHORT).show()
-//                navController.navigate(
-//                    route = NavigationGraphState.HomeView.Home.name,
-//                    navOptions = NavOptions.Builder().setRestoreState(true).build()
-//                )
-//            }
-//        )
 
     Dialog(
         onDismissRequest = { navController.popBackStack() }
@@ -135,70 +123,21 @@ fun PgIdLoginDialog(
 }
 
 @Composable
-fun VanIdLoginDialog(navController: NavController) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-    var text by remember { mutableStateOf("") }
-
-    Dialog(
-        onDismissRequest = { navController.popBackStack() }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-            color = Color.White
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("VANID 로그인", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    label = { Text("단말기 번호") },
-                    modifier = Modifier
-                        .width((screenWidth * 0.7).dp)
-                        .padding(top = 10.dp)
-                )
-                GradientButton(
-                    text = "로그인",
-                    modifier = Modifier
-                        .width((screenWidth * 0.7).dp)
-                        .padding(vertical = 12.dp),
-                    fontSize = 16.sp
-                )
-
-            }
-        }
-    }
-}
-
-@Composable
 fun RegisteredIdDialog(
     navController: NavController,
     loginViewModel: LoginVM = hiltViewModel()
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
-    var selectedIndex by remember { mutableIntStateOf(-2) }
 
-    LaunchedEffect(Unit) {
-        loginViewModel.fetchUserInfoList()
-    }
+    val reactLogin = loginViewModel.reactLogin.collectAsStateWithLifecycle(UseCaseResult.Init).value
+    val userInfo = loginViewModel.userInfo.collectAsStateWithLifecycle(emptyList()).value
+    val loginInfo = loginViewModel.loginInfo.collectAsStateWithLifecycle().value
+    var selectedIndex by remember { mutableIntStateOf(-2) }
 
     LoginCoordinator(navController).ObserveResultLogin(
         context = context,
-        reactLogin = loginViewModel.reactLogin.collectAsStateWithLifecycle(UseCaseResult.Init).value
+        reactLogin = reactLogin
     )
 
     Dialog(
@@ -222,7 +161,7 @@ fun RegisteredIdDialog(
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("등록된 아이디 조회", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("등록된 터미널 아이디 조회", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
                 LazyColumn(
                     modifier = Modifier
@@ -230,24 +169,33 @@ fun RegisteredIdDialog(
                         .padding(top = 10.dp),
                 ) {
                     item {
-                        with(loginViewModel) {
-                            loginInfoList.collectAsStateWithLifecycle().value.forEachIndexed { index, gridItem ->
-                                RegisteredIdList(
-                                    tmnId = gridItem.tmnId,
-                                    isSelected = selectedIndex == index,
-                                    onItemTap = {
+                        userInfo.forEachIndexed { index, gridItem ->
+                            RegisteredIdList(
+                                tmnId = gridItem.tmnId,
+                                isSelected = selectedIndex == index,
+                                onItemTap = {
+                                    if(selectedIndex == index) {
+                                        selectedIndex = -1
+                                        loginViewModel.updateUserInfo(
+                                            loginInfo.copy(
+                                                mchtId = "",
+                                                tmnId = "",
+                                                serial = ""
+                                            )
+                                        )
+                                    } else {
                                         selectedIndex = index
-                                        updateUserInfo(
-                                            loginInfo.value.copy(
+                                        loginViewModel.updateUserInfo(
+                                            loginInfo.copy(
                                                 mchtId = gridItem.mchtId,
                                                 tmnId = gridItem.tmnId,
                                                 serial = gridItem.serial
                                             )
                                         )
-                                    },
-                                    onDeleteTap = { deleteUserInfo(gridItem.tmnId) }
-                                )
-                            }
+                                    }
+                                },
+                                onDeleteTap = { loginViewModel.deleteUserInfo(gridItem.tmnId) }
+                            )
                         }
                     }
                 }
@@ -293,9 +241,7 @@ fun RegisteredIdList(
                 text = "삭제",
                 modifier = Modifier
                     .weight(0.2f)
-                    .clickable(
-                        onClick = { onDeleteTap() }
-                    ),
+                    .clickable(onClick = { onDeleteTap() }),
                 color = Color.Black,
                 textAlign = TextAlign.End,
             )
@@ -303,65 +249,11 @@ fun RegisteredIdList(
     }
 }
 
-@Composable
-fun LoginDialog(navController: NavController) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp
-
-    Dialog(
-        onDismissRequest = { navController.popBackStack() }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp),
-            color = Color.White
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                listOf(
-                    "PGID 로그인" to NavigationGraphState.HomeView.PgIdLogin.name,
-                    "VANID 로그인" to NavigationGraphState.HomeView.VanIdLogin.name,
-                    "등록된 아이디 조회" to NavigationGraphState.HomeView.RegisteredId.name
-                ).forEach {
-                    GradientButton(
-                        text = it.first,
-                        modifier = Modifier
-                            .width((screenWidth * 0.7).dp)
-                            .padding(vertical = 10.dp),
-                        onClick = { navController.navigate(it.second) },
-                        fontSize = 16.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun loginDialog() {
-    val context = LocalContext.current
-    val navController = rememberNavController()
-    LoginDialog(navController)
-}
-
 @Preview(showBackground = true)
 @Composable
 fun pgloginDialog() {
     val navController = rememberNavController()
-//    LoginView().pgIdLoginDialog(navController)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun vanloginDiaglog() {
-    val navController = rememberNavController()
-    VanIdLoginDialog(navController)
+    PgIdLoginDialog(navController)
 }
 
 @Preview(showBackground = true)

@@ -1,14 +1,12 @@
 package com.example.mtouchpos
 
 import app.cash.turbine.test
-import com.example.domain.manager.cardreader.CardReaderCommunicateManager
+import com.example.domain.repository.CardReaderCommunicateRepository
 import com.example.domain.model.ApiResult
-import com.example.domain.model.payment.PaymentProcessStatus
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.usecase.cardreader.FetchConnectedDeviceInfo
-import com.example.domain.usecase.offlinePayment.RequestOfflineCancelPayment
 import com.example.domain.usecase.offlinePayment.RequestOfflinePayment
-import com.example.mtouchpos.viewmodel.CardReaderConnectVM
+import com.example.mtouchpos.viewmodel.UsbCardReaderSettingVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.viewmodel.mapper.toPaymentProcessState
 import io.mockk.coEvery
@@ -31,7 +29,7 @@ class RequestOfflinePaymentViewModelTest {
     private lateinit var fetchConnectedDeviceInfo: FetchConnectedDeviceInfo
     private lateinit var offlinePayment: RequestOfflinePayment
     private lateinit var offlineCancelPayment: RequestOfflineCancelPayment
-    private lateinit var deviceCommunicateManager: CardReaderCommunicateManager
+    private lateinit var deviceCommunicateManager: CardReaderCommunicateRepository
 
     private val sampleOfflinePaymentInfo = OfflinePaymentVM.OfflinePaymentInfo(
         freeAmount = 10,
@@ -63,7 +61,7 @@ class RequestOfflinePaymentViewModelTest {
         trxId = "TRX987654321"
     )
 
-    private val bluetoothDeviceInfo = CardReaderConnectVM.BluetoothDeviceInfo(
+    private val bluetoothDeviceInfo = UsbCardReaderSettingVM.BluetoothDeviceInfo(
         deviceInformation = "f0:00:00:00:00:00",
         deviceName = "ksr03"
     )
@@ -73,11 +71,11 @@ class RequestOfflinePaymentViewModelTest {
         fetchConnectedDeviceInfo = mockk<FetchConnectedDeviceInfo>()
         offlinePayment = mockk<RequestOfflinePayment>()
         offlineCancelPayment = mockk<RequestOfflineCancelPayment>()
-        deviceCommunicateManager = mockk<CardReaderCommunicateManager>()
+        deviceCommunicateManager = mockk<CardReaderCommunicateRepository>()
 
         viewModel = OfflinePaymentVM(
             fetchConnectedDeviceInfoUseCase = fetchConnectedDeviceInfo,
-            offlinePaymentUseCase = offlinePayment,
+            requestOfflinePaymentUseCase = offlinePayment,
             offlineCancelPaymentUseCase = offlineCancelPayment,
         )
     }
@@ -123,7 +121,7 @@ class RequestOfflinePaymentViewModelTest {
     @Test
     fun `requestOfflinePayment success emits paymentProcessState result`() = runTest {
         val apiResult = ApiResult.Success(
-            PaymentProcessStatus.CompletePayment(paymentDetailData)
+            OfflinePaymentProcessStatus.CompletePayment(paymentDetailData)
         )
         val paymentProcessState = apiResult.toPaymentProcessState()
 
@@ -140,7 +138,7 @@ class RequestOfflinePaymentViewModelTest {
     @Test
     fun `requestOfflineCancelPayment success emits paymentProcessState result`() = runTest {
         val apiResult = ApiResult.Success(
-            PaymentProcessStatus.CompletePayment(paymentDetailData)
+            OfflinePaymentProcessStatus.CompletePayment(paymentDetailData)
         )
         val paymentProcessState = apiResult.toPaymentProcessState()
 

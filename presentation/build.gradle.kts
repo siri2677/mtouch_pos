@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -44,8 +45,9 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_20
+        targetCompatibility = JavaVersion.VERSION_20
     }
 }
 
@@ -53,15 +55,21 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
 
+    implementation(files("libs/cloudpossdkV1.6.3.4_Standard.aar"))
+    implementation(files("libs/device.sdk.print.aar"))
+    implementation(files("libs/AndroidAPI.jar"))
+    implementation(files("libs/classes.jar"))
+
     implementation(platform(rootProject.libs.compose.bom))
     androidTestImplementation(platform(rootProject.libs.compose.bom))
     debugImplementation(rootProject.libs.compose.ui.tooling)
     androidTestImplementation(rootProject.libs.compose.ui.test.jnit4)
     debugImplementation(rootProject.libs.compose.ui.test.manifest)
     runtimeOnly(rootProject.libs.compose.runtime)
-
     implementation(rootProject.libs.bundles.compose)
 
+    implementation(rootProject.libs.zxing)
+    implementation(rootProject.libs.coroutines)
     implementation(rootProject.libs.android.material)
     implementation(rootProject.libs.rxAndroidBLE)
     implementation(rootProject.libs.mik3y.usb)
@@ -72,10 +80,15 @@ dependencies {
     debugImplementation(rootProject.libs.test.junit)
     debugImplementation(rootProject.libs.test.espresso)
 
+    implementation(platform(rootProject.libs.firebase.bom))
+    implementation(rootProject.libs.firebase.analytics)
+
     implementation(rootProject.libs.gson)
     ksp(rootProject.libs.hilt.compiler)
     implementation(rootProject.libs.hilt)
 
     implementation(rootProject.libs.kotlinx.serialization.json)
     implementation(rootProject.libs.errorprone)
+
+    coreLibraryDesugaring(libs.desugaring.jdk)
 }

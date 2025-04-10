@@ -25,6 +25,7 @@
     <color name="grey5">#CFCFCF</color>
     <color name="grey6">#e9ecef</color>
     <color name="grey7">#f1f3f5</color>
+    <color name="grey8">#f6f8fa</color>
 
     <color name="clrHeaderBackground">#848684</color>
     <color name="clrhcllogobackground">#006BB6</color>
@@ -104,7 +105,8 @@
     <color name="material_deep_teal_20">#ff80cbc4</color>
     <color name="material_deep_teal_50">#ff009688</color>
 
-
+    <color name="skyBlue">#87CEEB</color>
+    <color name="coral">#FF6F61</color>
     <color name="orange_pink">#ff6e4f</color>
     <color name="watermelon">#ff3a55</color>
     <color name="pink">#F08FA9</color>

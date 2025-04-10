@@ -1,8 +1,9 @@
 package com.example.data.repositoryImpl
 
-import com.example.data.dto.request.RequestDirectPayment
-import com.example.data.dto.response.ResponseDirectPayment
 import com.example.data.remote.apiservice.PayAPIService
+import com.example.data.remote.dto.request.RequestDirectPayment
+import com.example.data.remote.dto.response.ResponseDirectPayment
+import com.example.data.remote.handleApiResultDetail
 import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.DirectPaymentData
 import com.example.domain.model.payment.PaymentDetailData
@@ -111,21 +112,30 @@ class DirectPaymentRepositoryImpl @Inject constructor(
     )
 
     private fun ResponseDirectPayment.DirectPayment.toPaymentDetailInfo() = PaymentDetailData(
-        amount = pay!!.amount.toString(),
-        installment = pay!!.card.installment.toString(),
-        trackId = pay!!.trackId,
-        cardNumber = "${pay!!.card.bin}${"**********"}${pay!!.card.last4}",
-        issuerName = pay!!.card.issuer,
+        totalAmount = pay!!.amount.toString(),
+        taxAmount = null,
+        freeAmount = null,
+        supplyAmount = null,
+        serviceAmount = null,
+        installment = pay.card.installment.toString(),
+        trackId = pay.trackId,
+        cardNumber = "${pay.card.bin}${"**********"}${pay.card.last4}",
+        issuerName = pay.card.issuer,
+        purchaseName = pay.product.name,
         authDate = result.create,
-        authCode = pay!!.authCd!!,
-        trxId = pay!!.trxId,
+        authCode = pay.authCd!!,
+        trxId = pay.trxId,
         trxResult = pay.trxType
     )
 
     private fun ResponseDirectPayment.DirectCancelPayment.toPaymentDetailInfo(
         directPaymentData: DirectPaymentData.Cancel
     ) = PaymentDetailData(
-        amount = refund!!.amount,
+        totalAmount = refund!!.amount,
+        taxAmount = null,
+        freeAmount = null,
+        supplyAmount = null,
+        serviceAmount = null,
         installment = directPaymentData.installment,
         trackId = refund!!.trackId,
         authDate = result.create,

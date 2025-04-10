@@ -1,6 +1,10 @@
 package com.example.domain.repository
 
+import com.example.domain.model.cardreader.CardReaderData
+import kotlinx.coroutines.flow.Flow
+
 interface DeviceRepository {
-    fun getDeviceInformation(): String?
-    fun setDeviceInformation(deviceInformation: String)
+    fun getDeviceInfo(): Flow<String>
+    fun getCurrentRegisteredDeviceInfo(): String
+    fun setDeviceInfo(deviceInformation: String)
 }

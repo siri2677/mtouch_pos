@@ -1,12 +1,12 @@
 package com.example.data.remote.apiservice
 
 
-import com.example.data.dto.request.RequestOffPayment
-import com.example.data.dto.request.RequestPaymentHistory
-import com.example.data.dto.request.RequestUser
-import com.example.data.dto.response.ResponseOffPayment
-import com.example.data.dto.response.ResponsePaymentHistory
-import com.example.data.dto.response.ResponseUser
+import com.example.data.remote.dto.request.RequestOffPayment
+import com.example.data.remote.dto.request.RequestPaymentHistory
+import com.example.data.remote.dto.request.RequestUser
+import com.example.data.remote.dto.response.ResponseOffPayment
+import com.example.data.remote.dto.response.ResponsePaymentHistory
+import com.example.data.remote.dto.response.ResponseUser
 import com.example.data.remote.DataFormat
 import retrofit2.Response
 import retrofit2.http.Body
@@ -70,7 +70,7 @@ interface TmsAPIService {
 
     @Headers("Content-Type: application/json")
     @POST("/v0/trx/statistics")
-    fun statistics(
+    suspend fun statistics(
         @Header("Authorization") token: String?,
         @Body body: DataFormat<RequestPaymentHistory.GetPaymentStatistics>
     ): Response<DataFormat<ResponsePaymentHistory.GetPaymentStatistics>>

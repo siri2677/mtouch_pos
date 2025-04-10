@@ -2,8 +2,10 @@ package com.example.mtouchpos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.domain.usecase.cardreader.FetchConnectedDeviceInfo
 import com.example.domain.usecase.directPayment.RequestDirectCancelPayment
 import com.example.domain.usecase.directPayment.RequestDirectPayment
+import com.example.domain.usecase.user.FetchConnectedUserInfo
 import com.example.mtouchpos.viewmodel.mapper.toApproveDirectPaymentData
 import com.example.mtouchpos.viewmodel.mapper.toCancelDirectPaymentData
 import com.example.mtouchpos.viewmodel.mapper.toCompletePaymentInfo
@@ -22,6 +24,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DirectPaymentVM @Inject constructor(
+    private val fetchConnectedUserInfo: FetchConnectedUserInfo,
     private val directPayment: RequestDirectPayment,
     private val directCancelPayment: RequestDirectCancelPayment
 ) : ViewModel() {
@@ -66,7 +69,7 @@ class DirectPaymentVM @Inject constructor(
             directPayment(
                 directPaymentViewInfo.toApproveDirectPaymentData()
             ).map { apiResult ->
-                apiResult.toUseCaseResult { it.toCompletePaymentInfo() }
+                apiResult.toUseCaseResult { it.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat) }
             }.collect {
                 _reactDirectPaymentInfo.emit(it)
             }
@@ -79,7 +82,7 @@ class DirectPaymentVM @Inject constructor(
             directCancelPayment(
                 directCancelPaymentInfo.toCancelDirectPaymentData()
             ).map { apiResult ->
-                apiResult.toUseCaseResult { it.toCompletePaymentInfo() }
+                apiResult.toUseCaseResult { it.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat) }
             }.collect {
                 _reactDirectPaymentInfo.emit(it)
             }
@@ -94,16 +97,12 @@ class DirectPaymentVM @Inject constructor(
         processDirectPayment(directPaymentInfo.value)
     }
 
-    fun requestDirectPayment(directPaymentViewInfo: DirectPaymentInfo) {
-        processDirectPayment(directPaymentViewInfo)
-    }
 
-    fun requestDirectCancelPayment(approvedPaymentType: ApprovedPaymentType) {
-        processDirectCancelPayment(approvedPaymentType.toDirectCancelPaymentInfo())
+    fun requestDirectCancelPayment(completePaymentViewInfo: ApprovedPaymentType.CompletePaymentViewInfo) {
+        processDirectCancelPayment(completePaymentViewInfo.toDirectCancelPaymentInfo())
     }
 
     fun requestDirectCancelPayment(directCancelPaymentInfo: DirectCancelPaymentInfo) {
         processDirectCancelPayment(directCancelPaymentInfo)
     }
-
 }

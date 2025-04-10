@@ -2,57 +2,71 @@ package com.example.mtouchpos.vo.info
 
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.vo.type.PurchaseType
+import com.google.gson.annotations.Expose
 import java.io.Serializable
 
 sealed class ApprovedPaymentType {
-    abstract val purchaseType: PurchaseType
-    abstract val amount: String
-    abstract val installment: String
-    abstract val trackId: String
-    abstract val authDate: String
-    abstract val authCode: String
-    abstract val trxId: String
-    abstract val cardNumber: String
-
     data class CompletePaymentViewInfo(
-        override val purchaseType: PurchaseType,
-        override val amount: String,
-        override val installment: String,
-        override val trackId: String,
-        override val authDate: String,
-        override val authCode: String,
-        override val trxId: String,
-        override val cardNumber: String
+        val purchaseType: PurchaseType,
+        val totalAmount: String,
+        val freeAmount: String,
+        val serviceAmount: String,
+        val installment: String,
+        val trackId: String?,
+        val authDate: String,
+        val authCode: String,
+        val trxId: String?,
+        val issuer: String,
+        val acquirer: String,
+        val cardNumber: String
     ): ApprovedPaymentType(), Serializable {
         fun toCancelPaymentInfo() = OfflinePaymentVM.OfflinePaymentInfo.Cancel(
-            amount = amount,
+            totalAmount = totalAmount,
             installment = installment,
             trackId = null,
             rootTrxId = trxId,
             authCode = authCode,
-            authDate = authDate.substring(2, 8)
+            authDate = authDate.substring(0, 6)
         )
+
+        fun getSupplyAmount(): String = (totalAmount.toInt() - (totalAmount.toInt() - freeAmount.toInt() / 11)).toString()
+
+        fun getTaxAmount(): String = (totalAmount.toInt() - freeAmount.toInt() / 11).toString()
     }
 
     data class PaymentHistoryViewInfo(
-        override val purchaseType: PurchaseType,
-        override val amount: String,
-        override val installment: String,
-        override val trackId: String,
-        override val authDate: String,
-        override val authCode: String,
-        override val trxId: String,
-        override val cardNumber: String,
-        val issuerName: String,
-        val rootRegDate: String? = null
+        @Expose val resultMsg: String,
+        val purchaseType: PurchaseType,
+        @Expose val amount: String,
+        @Expose val taxAmount: String,
+        @Expose val freeAmount: String,
+        @Expose val installment: String,
+        @Expose val van: String,
+        @Expose val vanId: String,
+        @Expose val vanTrxId: String,
+        @Expose val authCd: String,
+        @Expose val tmnId: String,
+        @Expose val mchtId: String,
+        @Expose val trxId: String,
+        @Expose val trackId: String,
+        @Expose val bin: String,
+        @Expose val cardType: String,
+        @Expose val issuer: String,
+        @Expose val number: String,
+        @Expose val regDay: String,
+        @Expose val regTime: String,
+        @Expose val brand: String,
+        @Expose val rfdId: String,
+        @Expose val rfdDay: String,
+        @Expose val rfdTime: String
     ): ApprovedPaymentType(), Serializable {
         fun toCancelPaymentInfo() = OfflinePaymentVM.OfflinePaymentInfo.Cancel(
-            amount = amount,
+            totalAmount = amount,
             installment = installment,
             trackId = null,
             rootTrxId = trxId,
-            authCode = authCode,
-            authDate = authDate.substring(2, 8)
+            authCode = authCd,
+            authDate = regDay.substring(2, 8)
         )
     }
 }

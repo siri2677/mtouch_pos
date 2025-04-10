@@ -1,7 +1,7 @@
 package com.example.data.remote.apiservice
 
-import com.example.data.dto.request.RequestDirectPayment
-import com.example.data.dto.response.ResponseDirectPayment
+import com.example.data.remote.dto.request.RequestDirectPayment
+import com.example.data.remote.dto.response.ResponseDirectPayment
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header

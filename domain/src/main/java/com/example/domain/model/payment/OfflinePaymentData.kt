@@ -15,7 +15,7 @@ sealed class OfflinePaymentData {
         override val amountData: AmountData,
         override val installment: String,
         override val trackId: String? = null,
-        val rootTrxId: String,
+        val rootTrxId: String?,
         val authCode: String,
         val authDate: String
     ) : OfflinePaymentData()

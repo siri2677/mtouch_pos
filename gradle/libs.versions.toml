@@ -2,11 +2,15 @@
 # android
 androidCompile = "android-34"
 androidGradle = "8.7.2"
-minSdk = "21"
+minSdk = "22"
 targetSdk = "34"
 versionCode = "1"
 versionName = "1.0"
 android-material = "1.5.0"
+
+#google
+google-services = "4.4.2"
+firebase-bom = "33.9.0"
 
 # kotlin
 kotlin = "2.0.0"
@@ -48,12 +52,19 @@ room = "2.5.0"
 inject = "1"
 rxAndroidBLE = "2.2.0"
 mik3y-usb = "3.5.1"
+tedPermission = "3.4.2"
+core = "1.12.0"
+desguaring-jdk = "1.1.5"
+zxing = "3.3.0"
 
 
 [plugins]
 # android
 android-application = { id = "com.android.application", version.ref = "androidGradle" }
 android-library = { id = "com.android.library", version.ref = "androidGradle" }
+
+# google
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 
 # kotlin
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -70,6 +81,10 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 [libraries]
 # android
 android-material = { module = "com.google.android.material:material", version.ref = "android-material" }
+
+# google
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
 
 # kotlin
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -125,6 +140,10 @@ compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "inject" }
 rxAndroidBLE = { module = "io.nrbtech.rxandroidble:rxandroidble", version.ref = "rxAndroidBLE" }
 mik3y-usb = { module = "com.github.mik3y:usb-serial-for-android", version.ref = "mik3y-usb" }
+tedPermission = { module = "io.github.ParkSangGwon:tedpermission-coroutine", version.ref = "tedPermission"}
+core = { group = "androidx.core", name = "core", version.ref = "core" }
+desugaring-jdk = { group = "com.android.tools", name="desugar_jdk_libs", version.ref="desguaring-jdk" }
+zxing = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 [bundles]
 retrofit = [

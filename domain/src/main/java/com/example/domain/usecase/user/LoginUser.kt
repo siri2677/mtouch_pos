@@ -12,7 +12,7 @@ class LoginUser(
     private val userRepository: UserRepository,
     private val savedUserInfo: SaveUserInfo
 ) {
-    suspend operator fun invoke(
+    operator fun invoke(
         userData: UserData
     ): Flow<ApiResult<UserDetailData>> = flow {
         userRepository.validateLoginInfo(userData).onEach {

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.paint
@@ -29,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.mtouchpos.R
 import com.example.mtouchpos.coordinator.DirectPaymentCoordinator
 import com.example.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.example.mtouchpos.print.CardTerminalPrintFactory
+import com.example.mtouchpos.print.CardTerminalPrintManager
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.view.ui.theme.TopNavigation
 import com.example.mtouchpos.view.util.ColumnKeyValueTextBox
@@ -36,6 +39,8 @@ import com.example.mtouchpos.view.util.RowSmallSizeTextBox
 import com.example.mtouchpos.viewmodel.DirectPaymentVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.vo.info.ApprovedPaymentType
+import com.example.mtouchpos.vo.info.PaymentProcessState
+import com.example.mtouchpos.vo.info.UserInfo
 import com.example.mtouchpos.vo.type.PurchaseType
 
 @Composable
@@ -43,12 +48,15 @@ fun CompletePaymentView(
     navController: NavController = rememberNavController(),
     offlinePaymentViewModel: OfflinePaymentVM,
     argument: String,
-    completePaymentViewInfo: ApprovedPaymentType.CompletePaymentViewInfo,
-    beforeNavGraph: String
+    complete: PaymentProcessState.Complete
 ) {
     val context = LocalContext.current as ComponentActivity
+    val cardTerminalPrintManager = CardTerminalPrintFactory().getCommunicateManager(
+        context = context,
+        userInfo = offlinePaymentViewModel.getConnectedUserInfo() ?: UserInfo(),
+        approvedPaymentType = complete.data,
+    )
 
-//    Log.w("beforeNavGraph", beforeNavGraph.toString())
     when (argument) {
         NavigationGraphState.DirectPaymentView.DirectPayment.name -> {
             val directPaymentViewModel = hiltViewModel<DirectPaymentVM>()
@@ -58,38 +66,29 @@ fun CompletePaymentView(
                     .collectAsStateWithLifecycle().value
             )
 
-            CompletePaymentView(navController, completePaymentViewInfo) {
-                directPaymentViewModel.requestDirectCancelPayment(completePaymentViewInfo)
+            CompletePaymentView(navController, cardTerminalPrintManager, complete.data) {
+                directPaymentViewModel.requestDirectCancelPayment(complete.data)
             }
         }
 
         NavigationGraphState.CreditPaymentView.CreditPayment.name -> {
-//            val offlinePaymentViewModel = hiltViewModel<OfflinePaymentViewModel>()
             val offlinePaymentCoordinator = OfflinePaymentCoordinator(
                 navController = navController,
                 offlinePaymentViewModel = offlinePaymentViewModel,
                 componentActivity = context,
                 route = argument
             )
-            val paymentProcessState = offlinePaymentViewModel.paymentProcessState
-                .collectAsStateWithLifecycle(OfflinePaymentVM.PaymentProcessState.Init).value
-
-//            offlinePaymentCoordinator.observeResultPaymentData(
-//                paymentProcessState = offlinePaymentViewModel.paymentProcessState
-//                    .collectAsStateWithLifecycle(OfflinePaymentViewModel.PaymentProcessState.Init).value,
-//                communicateCardTerminalManager = communicateCardTerminalManager
-//            )
 
             offlinePaymentCoordinator.CardTerminalNewIntent()
 
-            CompletePaymentView(navController, completePaymentViewInfo) {
-                offlinePaymentViewModel.updateOfflineCancelPaymentInfo(completePaymentViewInfo.toCancelPaymentInfo())
+            CompletePaymentView(navController, cardTerminalPrintManager, complete.data) {
+                offlinePaymentViewModel.updateOfflinePaymentInfo(complete.data.toCancelPaymentInfo())
                 offlinePaymentCoordinator.navigateToDeviceDialog()
             }
         }
 
-        NavigationGraphState.PaymentHistoryView.PaymentHistory.name -> {
-            CompletePaymentView(navController, completePaymentViewInfo)
+        NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name -> {
+            CompletePaymentView(navController, cardTerminalPrintManager, complete.data)
         }
     }
 }
@@ -97,6 +96,7 @@ fun CompletePaymentView(
 @Composable
 fun CompletePaymentView(
     navController: NavController,
+    cardTerminalPrintManager: CardTerminalPrintManager?,
     paymentDetailInfo: ApprovedPaymentType.CompletePaymentViewInfo,
     cancelPayment: () -> Unit = {}
 ) {
@@ -136,12 +136,12 @@ fun CompletePaymentView(
                     modifier = Modifier.padding(top = 10.dp, start = 30.dp, bottom = 40.dp)
                 ) {
                     listOf(
-                        "전표번호" to paymentDetailInfo.trackId,
+                        "전표번호" to paymentDetailInfo.trackId!!,
                         "카드번호" to paymentDetailInfo.cardNumber,
-                        "금액" to paymentDetailInfo.amount,
+                        "금액" to paymentDetailInfo.totalAmount,
                         "승인일자" to paymentDetailInfo.authDate,
                         "승인번호" to paymentDetailInfo.authCode,
-                        "거래번호" to paymentDetailInfo.trxId
+                        "거래번호" to paymentDetailInfo.trxId!!
                     ).forEach { (key, value) ->
                         ColumnKeyValueTextBox(
                             modifier = Modifier.padding(top = 20.dp),
@@ -169,7 +169,15 @@ fun CompletePaymentView(
                             modifier = Modifier
                                 .weight(1f)
                                 .background(colorResource(id = colorId))
-                                .clickable { if (value == "취소") cancelPayment() }
+                                .clickable {
+                                    when (value) {
+                                        "PRINT" -> { cardTerminalPrintManager?.invoke() }
+                                        "문자\n영수증" -> {}
+                                        "이미지\n영수증" -> {}
+                                        "취소" -> cancelPayment()
+                                        else -> {}
+                                    }
+                                }
                         )
                     }
                 }

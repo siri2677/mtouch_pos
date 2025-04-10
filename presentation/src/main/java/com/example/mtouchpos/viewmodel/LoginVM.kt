@@ -2,21 +2,28 @@ package com.example.mtouchpos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.domain.model.user.UserData
+import com.example.domain.model.user.UserDetailData
 import com.example.domain.usecase.user.DeleteUserInfo
 import com.example.domain.usecase.user.FetchConnectedUserInfo
 import com.example.domain.usecase.user.FetchSavedUserInfo
 import com.example.domain.usecase.user.LoginUser
 import com.example.mtouchpos.viewmodel.mapper.toUseCaseResult
 import com.example.mtouchpos.viewmodel.mapper.toUserData
+import com.example.mtouchpos.viewmodel.mapper.toUserInfo
+import com.example.mtouchpos.vo.info.UserInfo
 import com.example.mtouchpos.vo.type.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.map
 
 @HiltViewModel
 class LoginVM @Inject constructor(
@@ -25,12 +32,6 @@ class LoginVM @Inject constructor(
     private val fetchConnectedUserInfoUseCase: FetchConnectedUserInfo,
     private val loginUserUseCase: LoginUser
 ) : ViewModel(){
-    data class UserInfo (
-        val tmnId: String = "",
-        val serial: String = "",
-        val mchtId: String = ""
-    )
-
     data class UserDetailInfo(
         val tmnId: String,
         val serial: String,
@@ -42,6 +43,11 @@ class LoginVM @Inject constructor(
         val apiMaxInstall: String,
         val payKey: String
     )
+
+    private val _userInfo: StateFlow<List<UserDetailData>> = fetchSavedUserInfoUseCase()
+    val userInfo = _userInfo.map { userDetailData ->
+        userDetailData.map { it.toUserInfo() }
+    }
 
     private val _reactLogin = MutableSharedFlow<UseCaseResult<String>>()
     val reactLogin = _reactLogin.asSharedFlow()
@@ -66,9 +72,7 @@ class LoginVM @Inject constructor(
     fun fetchUserInfoList() {
         viewModelScope.launch {
             fetchSavedUserInfoUseCase().map { userDetailData ->
-                userDetailData.map {
-                    UserInfo(it.tmnId, it.serial, it.mchtId)
-                }
+                userDetailData.map { it.toUserInfo() }
             }.collect{ _loginInfoList.emit(it) }
         }
     }
@@ -91,21 +95,3 @@ class LoginVM @Inject constructor(
         )
     }
 }
-
-//    fun summary() {
-//        viewModelScope.launch {
-//            requestRemoteTmsRepositoryImpl(RequestOffPaymentModel.GetSummaryPaymentStatistics()).collect {
-//                when(it) {
-//                    is ApiResult.Error -> _responseFlowData.emit(ResponseFlowData.Error(it.message))
-//                    is ApiResult.Exception ->  _responseFlowData.emit(ResponseFlowData.Error(it.exception.message.toString()))
-//                    is ApiResult.Success -> (it.value as ResponseLoginModel.GetUserInformation).handleResponseModel(this@with)
-//                }
-//            }
-//        }
-//
-//        requestRemoteTmsRepositoryImpl(
-//            requestModel = RequestOffPaymentModel.GetSummaryPaymentStatistics(),
-//            responseModel = responseModel
-//        )
-////        handleResponseModel()
-//    }

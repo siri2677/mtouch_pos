@@ -112,7 +112,7 @@ fun OfflinePaymentView(
                     Row {
                         Text(
                             modifier = Modifier.padding(end = 5.dp),
-                            text = offlinePaymentInfo.totalAmount.toString()
+                            text = offlinePaymentInfo.totalAmount
                         )
                         Text(
                             modifier = Modifier.padding(end = 5.dp),
@@ -202,14 +202,14 @@ fun OfflinePaymentView(
                                 .height(60.dp)
                                 .background(color = colorResource(id = R.color.grey4))
                                 .clickable(onClick = {
-                                    val totalAmount = offlinePaymentInfo.totalAmount.toString().run {
+                                    val totalAmount = offlinePaymentInfo.totalAmount.run {
                                         when (item) {
                                             "delete" -> if (length > 1) removeSuffix(last().toString()) else "0"
                                             else -> if (this == "0") item else this + item
                                         }.toInt()
                                     }
                                     offlinePaymentViewModel.updateOfflinePaymentInfo(
-                                        offlinePaymentInfo.copy(totalAmount = totalAmount)
+                                        offlinePaymentInfo.copy(totalAmount = totalAmount.toString())
                                     )
                                 }),
                             verticalArrangement = Arrangement.Center,

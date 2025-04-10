@@ -22,25 +22,21 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun YearMonth.displayText(short: Boolean = false): String {
     return "${this.month.displayText(short = short)} ${this.year}"
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun Month.displayText(short: Boolean = true): String {
     val style = if (short) TextStyle.SHORT else TextStyle.FULL
     return getDisplayName(style, Locale.ENGLISH)
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun DayOfWeek.displayText(uppercase: Boolean = false): String {
     return getDisplayName(TextStyle.SHORT, Locale.ENGLISH).let { value ->
         if (uppercase) value.uppercase(Locale.ENGLISH) else value
     }
 }
 
-@SuppressLint("ModifierFactoryUnreferencedReceiver")
 fun Modifier.clickable(
     enabled: Boolean = true,
     showRipple: Boolean = true,
@@ -58,7 +54,6 @@ fun Modifier.clickable(
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 data class DateSelection(val startDate: LocalDate? = null, val endDate: LocalDate? = null) {
     val daysBetween by lazy(LazyThreadSafetyMode.NONE) {
         if (startDate == null || endDate == null) null else {
@@ -68,7 +63,6 @@ data class DateSelection(val startDate: LocalDate? = null, val endDate: LocalDat
 }
 
 object ContinuousSelectionHelper {
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getSelection(
         clickedDate: LocalDate,
         dateSelection: DateSelection,
@@ -87,7 +81,6 @@ object ContinuousSelectionHelper {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun isInDateBetweenSelection(
         inDate: LocalDate,
         startDate: LocalDate,
@@ -99,7 +92,6 @@ object ContinuousSelectionHelper {
         return firstDateInThisMonth in startDate..endDate && startDate != firstDateInThisMonth
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun isOutDateBetweenSelection(
         outDate: LocalDate,
         startDate: LocalDate,

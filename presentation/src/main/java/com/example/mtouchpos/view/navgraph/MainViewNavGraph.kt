@@ -3,29 +3,33 @@ package com.example.mtouchpos.view.navgraph
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptions
+import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.navigation
+import androidx.navigation.navArgument
 import com.example.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
 import com.example.mtouchpos.view.sharedViewModel
 import com.example.mtouchpos.view.ui.CalendarView
-import com.example.mtouchpos.view.ui.OfflinePaymentView
+import com.example.mtouchpos.view.ui.CardReaderConnectDialog
+import com.example.mtouchpos.view.ui.CardReaderSettingView
 import com.example.mtouchpos.view.ui.DirectPaymentView
-import com.example.mtouchpos.view.ui.LoginDialog
 import com.example.mtouchpos.view.ui.MainView
+import com.example.mtouchpos.view.ui.ManifestPermissionRequestView
+import com.example.mtouchpos.view.ui.OfflinePaymentView
 import com.example.mtouchpos.view.ui.PaymentHistoryDetailView
 import com.example.mtouchpos.view.ui.PaymentHistoryView
 import com.example.mtouchpos.view.ui.PgIdLoginDialog
 import com.example.mtouchpos.view.ui.RegisteredIdDialog
-import com.example.mtouchpos.view.ui.VanIdLoginDialog
-import com.example.mtouchpos.view.ui.BluetoothDevice
 import com.example.mtouchpos.view.ui.navigate
-import com.example.mtouchpos.view.ui.UsbDevice
+import com.example.mtouchpos.viewmodel.BluetoothCardReaderSettingVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.viewmodel.PaymentHistoryVM
+import com.example.mtouchpos.viewmodel.UsbCardReaderSettingVM
 import java.time.format.DateTimeFormatter
 
 class MainViewNavGraph(
@@ -36,14 +40,8 @@ class MainViewNavGraph(
         navGraphBuilder.composable(NavigationGraphState.HomeView.Home.name) {
             MainView(navController = navController)
         }
-        navGraphBuilder.dialog(NavigationGraphState.HomeView.Login.name) {
-            LoginDialog(navController = navController)
-        }
         navGraphBuilder.dialog(NavigationGraphState.HomeView.PgIdLogin.name) {
             PgIdLoginDialog(navController = navController)
-        }
-        navGraphBuilder.dialog(NavigationGraphState.HomeView.VanIdLogin.name) {
-            VanIdLoginDialog(navController = navController)
         }
         navGraphBuilder.dialog(NavigationGraphState.HomeView.RegisteredId.name) {
             RegisteredIdDialog(navController = navController)
@@ -72,13 +70,10 @@ class MainViewNavGraph(
             route = "directPaymentGraph"
         ) {
             itemListDialog()
-            errorDialog()
+            messageDialog()
             completePaymentPage(this)
             composable(NavigationGraphState.DirectPaymentView.DirectPayment.name) {
-                DirectPaymentView(
-                    navController = navController,
-
-                )
+                DirectPaymentView(navController = navController)
             }
         }
     }
@@ -88,28 +83,49 @@ class MainViewNavGraph(
             startDestination = NavigationGraphState.DeviceSettingView.Bluetooth.name,
             route = "DeviceConnectGraph"
         ) {
+            messageDialog()
             composable(NavigationGraphState.DeviceSettingView.Bluetooth.name) { backStackEntry ->
-                BluetoothDevice(navHostController = navController)
+                CardReaderSettingView(navController, hiltViewModel<BluetoothCardReaderSettingVM>())
             }
             composable(NavigationGraphState.DeviceSettingView.USB.name) {
-                UsbDevice(navHostController = navController)
+                CardReaderSettingView(navController, hiltViewModel<UsbCardReaderSettingVM>())
+            }
+            dialog(
+                route = "connectScreen/{listData}",
+                arguments = listOf(navArgument("listData") { type = NavType.StringType })
+            ) { backStackEntry ->
+                ManifestPermissionRequestView(
+                    navController = navController,
+                    permissionJson = backStackEntry.arguments?.getString("listData") ?: ""
+                )
+            }
+            dialog(NavigationGraphState.DeviceSettingView.BluetoothConnectDialog.name) {
+                CardReaderConnectDialog(
+                    navController,
+                    it.sharedViewModel<BluetoothCardReaderSettingVM>(navController)
+                )
+            }
+            dialog(NavigationGraphState.DeviceSettingView.USBConnectDialog.name) {
+                CardReaderConnectDialog(
+                    navController,
+                    it.sharedViewModel<UsbCardReaderSettingVM>(navController)
+                )
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     fun paymentHistoryGraph() {
         navGraphBuilder.navigation(
             startDestination = NavigationGraphState.PaymentHistoryView.PaymentHistory.name,
             route = "paymentHistoryGraph"
         ) {
-            completePaymentPage(this, NavigationGraphState.PaymentHistoryView.PaymentHistory.name)
-            paymentProcessDialog(this, NavigationGraphState.PaymentHistoryView.PaymentHistory.name)
-            errorDialog()
-            composable(NavigationGraphState.PaymentHistoryView.PaymentHistory.name) { backStackEntry ->
+            completePaymentPage(this, NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name)
+            paymentProcessDialog(this, NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name)
+            messageDialog()
+            composable(NavigationGraphState.PaymentHistoryView.PaymentHistory.name) {
                 PaymentHistoryView(
                     navController = navController,
-                    customPaymentPeriod = backStackEntry.getSerializableArgument(NavigationBundleKey.SEARCH_PERIOD)
+                    customPaymentPeriod = it.getSerializableArgument(NavigationBundleKey.SEARCH_PERIOD)
                 )
             }
             composable(NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name) {

@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application>
+        <service
+            android:name="com.example.data.service.BluetoothCardReaderService"
+            android:enabled="true"
+            android:foregroundServiceType="connectedDevice">
+        </service>
+        <service
+            android:name="com.example.data.service.UsbCardReaderService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+                <action android:name="android.hardware.usb.action.ACTION_USB_DEVICE_DETACHED" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

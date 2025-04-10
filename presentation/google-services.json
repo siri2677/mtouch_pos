@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "718351410755",
+    "project_id": "mtouchpos-f7107",
+    "storage_bucket": "mtouchpos-f7107.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718351410755:android:20de31adb64bb7c15a96f6",
+        "android_client_info": {
+          "package_name": "com.example.mtouch.pos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs-red4Oms-4bxuhlgEI7euZ5AObTu7zA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718351410755:android:1065ff4be9d875a15a96f6",
+        "android_client_info": {
+          "package_name": "com.example.mtouchpos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs-red4Oms-4bxuhlgEI7euZ5AObTu7zA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

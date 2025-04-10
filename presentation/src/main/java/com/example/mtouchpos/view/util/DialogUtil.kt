@@ -35,16 +35,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.example.mtouchpos.R
 import java.io.Serializable
 
 data class SelectDialog(
-    val title: String,
-    val list: List<String>,
+    val title: String = "알림",
+    val list: List<String> = ArrayList(),
     val initValue: String,
-    val onTextChange: (String) -> Unit
+    val onTextChange: (String) -> Unit = {}
 ): Serializable
 
 @Composable
@@ -123,24 +122,29 @@ fun ItemListDialog(
 }
 
 @Composable
-fun ErrorDialog(
-    message: String,
+fun MessageDialog(
+    message: SelectDialog,
     navController: NavController
 ) {
-    Dialog(onDismissRequest = { navController.popBackStack() }) {
-        ErrorDialogContent(message, navController)
+    Dialog(onDismissRequest = {
+        message.onTextChange?.let { it("test") }
+        navController.popBackStack()
+//        navController.popBackStack()
+    }) {
+        MessageDialogContent(message.initValue, navController, message.onTextChange)
     }
 }
 
 @Composable
-fun ErrorDialogContent(
+fun MessageDialogContent(
     message: String,
-    navController: NavController
+    navController: NavController,
+    checkButtonProcess: ((String) -> Unit)? = null
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     Column(
         modifier = Modifier
-            .width((LocalConfiguration.current.screenWidthDp * 0.7).dp)
+            .width((screenWidth * 0.7).dp)
             .height(220.dp)
             .background(colorResource(id = R.color.white)),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -171,7 +175,56 @@ fun ErrorDialogContent(
                 .padding(vertical = 10.dp)
                 .width((screenWidth * 0.5).dp)
                 .height(50.dp),
-            onClick = { navController.popBackStack() },
+            onClick = {
+                checkButtonProcess?.let { it("test") }
+                navController.popBackStack()
+            },
+            fontSize = 16.sp,
+            roundedCornerShapeSize = 0
+        )
+    }
+}
+
+@Composable
+fun MessageDialogContent(
+    message: String,
+    checkButtonProcess: () -> Unit
+) {
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    Column(
+        modifier = Modifier
+            .width((screenWidth * 0.9).dp)
+            .height(300.dp)
+            .background(colorResource(id = R.color.white)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            modifier = Modifier
+                .padding(top = 10.dp),
+            text = "알림"
+        )
+        Divider(
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .width((screenWidth * 0.5).dp),
+            color = Color.LightGray,
+            thickness = 0.8.dp
+        )
+        Text(
+            modifier = Modifier
+                .padding(top = 20.dp, bottom = 10.dp)
+                .fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            text = message,
+        )
+        GradientButton(
+            text = "확인",
+            modifier = Modifier
+                .padding(vertical = 10.dp)
+                .width((screenWidth * 0.5).dp)
+                .height(50.dp),
+            onClick = { checkButtonProcess() },
             fontSize = 16.sp,
             roundedCornerShapeSize = 0
         )

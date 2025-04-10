@@ -1,12 +1,14 @@
 package com.example.data.repositoryImpl
 
-import com.example.data.dto.request.RequestPaymentHistory
-import com.example.data.dto.response.ResponsePaymentHistory
+import com.example.data.remote.dto.request.RequestPaymentHistory
 import com.example.data.remote.DataFormat
 import com.example.data.remote.apiservice.TmsAPIService
+import com.example.data.remote.dto.response.ResponsePaymentHistory
+import com.example.data.remote.handleApiResult
 import com.example.domain.model.ApiResult
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.paymentHistory.DailyAndMonthlyPaymentStatisticData
+import com.example.domain.model.paymentHistory.PaymentHistoryData
 import com.example.domain.model.paymentHistory.PaymentStatisticData
 import com.example.domain.model.paymentHistory.PeriodData
 import com.example.domain.repository.PaymentHistoryRepository
@@ -18,7 +20,7 @@ class PaymentHistoryRepositoryImpl @Inject constructor(
     private val apiService: TmsAPIService,
     private val token: String
 ): PaymentHistoryRepository {
-    override suspend fun searchPaymentList(periodInfo: PeriodData): Flow<ApiResult<List<PaymentDetailData>>> = flow {
+    override suspend fun searchPaymentList(periodInfo: PeriodData): Flow<ApiResult<List<PaymentHistoryData>>> = flow {
         val response = apiService.list(
             token = token,
             body = DataFormat(periodInfo.toRequestGetPaymentListModel())
@@ -59,17 +61,30 @@ class PaymentHistoryRepositoryImpl @Inject constructor(
     )
 
     private fun List<ResponsePaymentHistory.PaymentContents>.toListPaymentDetailInfo() = map {
-        PaymentDetailData(
+        PaymentHistoryData(
+            rfdTime = it.rfdTime,
             amount = it.amount,
-            installment = it.installment,
-            authCode = it.authCd,
-            authDate = it.regDay,
-            issuerName = it.brand,
-            cardNumber = it.number,
+            van = it.van,
+            vanTrxId = it.vanTrxId,
+            authCd = it.authCd,
+            tmnId = it.tmnId,
             trackId = it.trackId,
+            bin = it.bin,
+            cardType = it.cardType,
             trxId = it.trxId,
-            trxResult = if(it.trxResult == "승인") "0200" else "0420",
-            rootRegDate = it.regDay + it.regTime
+            issuer = it.issuer,
+            regDay = it.regDay,
+            resultMsg = it.resultMsg,
+            number = it.number,
+            trxResult = it.trxResult,
+            regTime = it.regTime,
+            vanId = it.vanId,
+            _idx = it._idx,
+            installment = it.installment,
+            rfdDay = it.rfdDay,
+            mchtId = it.mchtId,
+            brand = it.brand,
+            rfdId = it.rfdId,
         )
     }
 

@@ -4,19 +4,19 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.data.internal.entity.UserInformationEntity
+import com.example.data.internal.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserInformationDAO {
     @Query("SELECT * FROM user_information WHERE tmnId = :tmnId")
-    fun getUserInformation(tmnId: String): UserInformationEntity
+    fun getUserInformation(tmnId: String): UserEntity
 
     @Query("SELECT * FROM user_information")
-    fun getAllUserInformation(): Flow<List<UserInformationEntity>>
+    fun getAllUserInformation(): Flow<List<UserEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertUserInformation(userInformationEntity: UserInformationEntity)
+    fun insertUserInformation(userInformationEntity: UserEntity)
 
     @Query("DELETE FROM user_information WHERE tmnId = :tmnId")
     fun deleteUserInformation(tmnId: String)

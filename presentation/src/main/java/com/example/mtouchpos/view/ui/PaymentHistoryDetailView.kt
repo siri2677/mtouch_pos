@@ -57,7 +57,7 @@ fun PaymentHistoryDetailView(
         navController = navController,
         offlinePaymentViewModel = offlinePaymentViewModel,
         componentActivity = context,
-        route = NavigationGraphState.PaymentHistoryView.PaymentHistory.name
+        route = NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name
     )
 
     offlinePaymentCoordinator.CardTerminalNewIntent()
@@ -81,7 +81,11 @@ fun PaymentHistoryDetailView(
                 .background(color = colorResource(id = R.color.grey7)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            LoginStatus(mainViewModel.fetchCurrentConnectedUserInfo()?.tmnId ?: "")
+            LoginStatus(
+                navController,
+                mainViewModel.fetchCurrentConnectedUserInfo()?.tmnId ?: ""
+            )
+
             Column(
                 modifier = Modifier
                     .width((screenWidth * 0.9).dp)
@@ -97,7 +101,7 @@ fun PaymentHistoryDetailView(
                 ) {
                     listOf(
                         "할부기간" to paymentHistoryInfo.installment,
-                        "카드번호" to paymentHistoryInfo.cardNumber
+                        "카드번호" to paymentHistoryInfo.number
                     ).map { (key, value) ->
                         ColumnKeyValueTextBox(
                             modifier = Modifier.weight(1f),
@@ -112,8 +116,8 @@ fun PaymentHistoryDetailView(
                     modifier = Modifier.padding(top = 20.dp, start = 35.dp)
                 ) {
                     listOf(
-                        "승인일자" to paymentHistoryInfo.authDate,
-                        "승인번호" to paymentHistoryInfo.authCode
+                        "승인일자" to paymentHistoryInfo.regDay,
+                        "승인번호" to paymentHistoryInfo.authCd
                     ).forEach { (key, value) ->
                         ColumnKeyValueTextBox(
                             modifier = Modifier.weight(1f),
@@ -143,7 +147,7 @@ fun PaymentHistoryDetailView(
                                 .background(colorResource(id = value))
                                 .clickable {
                                     if (key == "취소") {
-                                        offlinePaymentViewModel.updateOfflineCancelPaymentInfo(paymentHistoryInfo.toCancelPaymentInfo())
+                                        offlinePaymentViewModel.updateOfflinePaymentInfo(paymentHistoryInfo.toCancelPaymentInfo())
                                         offlinePaymentCoordinator.navigateToDeviceDialog()
                                     }
                                 },

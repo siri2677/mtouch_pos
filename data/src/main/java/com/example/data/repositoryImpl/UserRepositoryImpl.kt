@@ -1,12 +1,13 @@
 package com.example.data.repositoryImpl
 
 import android.content.SharedPreferences
-import com.example.data.dto.request.RequestUser
-import com.example.data.dto.response.ResponseUser
+import com.example.data.remote.dto.request.RequestUser
+import com.example.data.remote.dto.response.ResponseUser
 import com.example.data.internal.dao.UserInformationDAO
-import com.example.data.internal.entity.UserInformationEntity
+import com.example.data.internal.entity.UserEntity
 import com.example.data.remote.DataFormat
 import com.example.data.remote.apiservice.TmsAPIService
+import com.example.data.remote.handleApiResult
 import com.example.domain.model.ApiResult
 import com.example.domain.model.user.UserData
 import com.example.domain.model.user.UserDetailData
@@ -59,6 +60,11 @@ class UserRepositoryImpl @Inject constructor(
         tmnId = tmnId,
         serial = loginInfo.serial,
         mchtId = loginInfo.mchtId,
+        mchtName = name,
+        telNo = telNo,
+        ceoName = ceoName,
+        address = addr,
+        identity = identity,
         semiAuth = semiAuth,
         appDirect = appDirect,
         key = key,
@@ -67,10 +73,15 @@ class UserRepositoryImpl @Inject constructor(
         payKey = payKey
     )
 
-    private fun UserDetailData.toUserInformationEntity() = UserInformationEntity(
+    private fun UserDetailData.toUserInformationEntity() = UserEntity(
         tmnId = tmnId,
         serial = serial,
         mchtId = mchtId,
+        mchtName = mchtName,
+        telNo = telNo,
+        ceoName = ceoName,
+        address = address,
+        identity = identity,
         semiAuth = semiAuth,
         appDirect = appDirect,
         key = key,
@@ -79,10 +90,15 @@ class UserRepositoryImpl @Inject constructor(
         payKey = payKey
     )
 
-    private fun UserInformationEntity.toRequestGetUserInformationModel() = UserDetailData(
+    private fun UserEntity.toRequestGetUserInformationModel() = UserDetailData(
         tmnId = tmnId,
         serial = serial,
         mchtId = mchtId,
+        mchtName = mchtName,
+        telNo = telNo,
+        ceoName = ceoName,
+        address = address,
+        identity = identity,
         semiAuth = semiAuth,
         appDirect = appDirect,
         key = key,

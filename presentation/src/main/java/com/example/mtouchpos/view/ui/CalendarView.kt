@@ -59,7 +59,6 @@ private val primaryColor = Color.Black.copy(alpha = 0.9f)
 private val selectionColor = primaryColor
 private val continuousSelectionColor = Color.LightGray.copy(alpha = 0.3f)
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarView(
     close: () -> Unit = {},
@@ -128,7 +127,6 @@ fun CalendarView(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun Day(
     day: CalendarDay,
@@ -162,7 +160,6 @@ private fun Day(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun MonthHeader(calendarMonth: CalendarMonth) {
     Box(
@@ -179,7 +176,6 @@ private fun MonthHeader(calendarMonth: CalendarMonth) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun CalendarTop(
     modifier: Modifier = Modifier,
@@ -253,7 +249,6 @@ private fun CalendarTop(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun CalendarBottom(
     modifier: Modifier = Modifier,

@@ -1,10 +1,21 @@
 package com.example.domain.model.cardreader
 
+
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import kotlin.experimental.and
 
 class KsnetCardReaderRequestBuilder {
+    object PrinterCommands {
+        val ESC_FONT_COLOR_DEFAULT: ByteArray = byteArrayOf(27, 114, 0)
+        val FS_FONT_ALIGN: ByteArray = byteArrayOf(28, 33, 1, 27, 33, 1)
+        val ESC_ALIGN_LEFT: ByteArray = byteArrayOf(27, 97, 0)
+        val ESC_CANCEL_BOLD: ByteArray = byteArrayOf(27, 69, 0)
+        const val LF: Byte = 10
+    }
+
     private val yymmddhhmmss = getTime()!!.substring(0, 12)
     private val stx: Byte = 0x02
     private val etx: Byte = 0x03.toByte()
@@ -112,5 +123,47 @@ class KsnetCardReaderRequestBuilder {
         bArr[1] = i.toByte()
         bArr[0] = (i ushr 8).toByte()
         return bArr
+    }
+
+    fun printMode(): ByteArray {
+        val printModeCommand = ByteArray(6)
+        var idx = 0
+        printModeCommand[idx++] = 0x02
+        printModeCommand[idx++] = 0x00
+        printModeCommand[idx++] = 0x00
+        printModeCommand[idx++] = 0x10 // 프린터모드 Command
+        printModeCommand[idx++] = 0x03
+        val bLRC = LRC(printModeCommand, idx)
+        printModeCommand[idx] = bLRC.toByte() // LRC
+        return printModeCommand
+    }
+
+    fun resetPrint(): ByteArray {
+        val baos = ByteArrayOutputStream()
+        try {
+            baos.apply {
+                write(PrinterCommands.ESC_FONT_COLOR_DEFAULT)
+                write(PrinterCommands.FS_FONT_ALIGN)
+                write(PrinterCommands.ESC_ALIGN_LEFT)
+                write(PrinterCommands.ESC_CANCEL_BOLD)
+                write(PrinterCommands.LF.toInt())
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        try {
+            Thread.sleep(20)
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
+        return baos.toByteArray()
+    }
+
+    fun LRC(bytes: ByteArray, length: Int): Int {
+        var checksum = 0
+        for (i in 1 until length) {
+            checksum = checksum xor (bytes[i].toInt() and 0xFF)
+        }
+        return checksum
     }
 }

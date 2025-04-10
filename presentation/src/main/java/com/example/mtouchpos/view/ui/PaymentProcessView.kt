@@ -2,8 +2,8 @@ package com.example.mtouchpos.view.ui
 
 import android.content.Context
 import android.content.ContextWrapper
-import android.os.Handler
-import android.os.Looper
+import android.content.pm.PackageManager
+import android.hardware.usb.UsbManager
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -31,18 +31,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.os.bundleOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import com.example.mtouchpos.R
 import com.example.mtouchpos.coordinator.OfflinePaymentCoordinator
 import com.example.mtouchpos.view.ui.theme.MtouchPos
-import com.example.mtouchpos.view.util.ErrorDialogContent
-import com.example.mtouchpos.viewmodel.CardReaderConnectVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM.Companion.EVENT_FALLBACK
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM.Companion.INSERT_IC_CARD
 import com.example.mtouchpos.viewmodel.OfflinePaymentVM.Companion.PROCESS_PAYMENT
-import com.example.mtouchpos.managerImpl.factory.CardTerminalFactory
+import com.example.mtouchpos.intent.CardTerminalFactory
+import com.example.mtouchpos.view.navgraph.NavigationBundleKey
+import com.example.mtouchpos.view.navgraph.NavigationGraphState
+import com.example.mtouchpos.view.util.LoadingDialogContent
+import com.example.mtouchpos.view.util.MessageDialogContent
+import com.example.mtouchpos.intent.CardTerminalCommunicateManager
+import com.example.mtouchpos.vo.info.PaymentProcessState
+import com.example.mtouchpos.vo.type.DeviceType
 import kotlinx.coroutines.delay
 
 @Composable
@@ -73,15 +80,21 @@ fun PaymentProcessDialog(
         offlinePaymentViewModel = offlinePaymentViewModel,
         route = argument
     )
-    val communicateCardTerminalManager = CardTerminalFactory().getCommunicateManager(
+    val cardTerminalCommunicateManager = CardTerminalFactory().getCommunicateManager(
         context = componentActivity,
-        launcher = offlinePaymentCoordinator.CardTerminalActivityResult(),
+        launcher = offlinePaymentCoordinator.cardTerminalActivityResult(),
         callBack = offlinePaymentInfo.merchantUrl?.let { CardTerminalFactory.CallBack.External } ?: CardTerminalFactory.CallBack.Home
     )
 
-    LaunchedEffect(Unit) {
-        if(paymentProcessState is OfflinePaymentVM.PaymentProcessState.Init) {
-            offlinePaymentViewModel.requestOfflinePayment(communicateCardTerminalManager)
+    LaunchedEffect(paymentProcessState) {
+        if(paymentProcessState is PaymentProcessState.Init) {
+            permissionCheck(
+                context = componentActivity,
+                cardTerminalCommunicateManager = cardTerminalCommunicateManager,
+                merchantUrl = offlinePaymentInfo.merchantUrl,
+                offlinePaymentViewModel = offlinePaymentViewModel,
+                offlinePaymentCoordinator = offlinePaymentCoordinator,
+            )
         }
     }
 
@@ -97,79 +110,160 @@ fun PaymentProcessDialog(
             } ?: navController.popBackStack()
         }
     ) {
-        offlinePaymentCoordinator.PaymentResult(
-            paymentProcessState = paymentProcessState,
-            communicateCardTerminalManager = communicateCardTerminalManager,
-            merchantUrl = offlinePaymentInfo.merchantUrl
-        ) {
-            when(offlinePaymentViewModel.fetchConnectedDeviceInfo()) {
-                is CardReaderConnectVM.BluetoothDeviceInfo -> {
-                    BluetoothPaymentDialogContent(paymentProcessState)
-                }
+        when(paymentProcessState) {
+            PaymentProcessState.Loading, is PaymentProcessState.Approve -> LoadingDialogContent()
 
-                is CardReaderConnectVM.UsbDeviceInfo -> {
-                    UsbPaymentDialogContent(
-                        navController = navController,
-                        paymentProcessState = paymentProcessState,
-                        offlinePaymentViewModel = offlinePaymentViewModel
+            is PaymentProcessState.Error -> {
+                offlinePaymentInfo.merchantUrl?.let {
+                    offlinePaymentCoordinator.configureIntent(
+                        isSuccess = false,
+                        message = paymentProcessState.message,
+                        merchantUrl = it
                     )
-                }
-
-                else -> {
-                    ErrorDialogContent(
+                } ?: if (cardTerminalCommunicateManager == null) {
+                    MessageDialogContent(
                         navController = navController,
-                        message = "장치 등록 후 결제 진행 바시기 바랍니다."
+                        message = paymentProcessState.message
+                    )
+                } else {
+                    offlinePaymentCoordinator.navigateToErrorDialog(paymentProcessState.message)
+                }
+            }
+
+            is PaymentProcessState.Complete -> {
+                offlinePaymentInfo.merchantUrl?.let {
+                    offlinePaymentCoordinator.configureIntent(
+                        isSuccess = true,
+                        message = "성공",
+                        merchantUrl = it,
+                        paymentProcessState = paymentProcessState
+                    )
+                } ?: run {
+                    navController.navigate(
+                        route = "${NavigationGraphState.CommonView.CompletePayment.name}/${argument}",
+                        bundle = bundleOf(
+                            NavigationBundleKey.RESULT_DATA to paymentProcessState
+                        ),
+                        navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                            NavigationGraphState.HomeView.Home.name, false).build()
                     )
                 }
             }
+
+            is PaymentProcessState.CommunicateCardReader -> {
+                if(paymentProcessState is PaymentProcessState.CommunicateCardReader.Error) {
+                    offlinePaymentInfo.merchantUrl?.let {
+                        offlinePaymentCoordinator.configureIntent(
+                            isSuccess = false,
+                            message = paymentProcessState.message,
+                            merchantUrl = it
+                        )
+                    } ?: MessageDialogContent(
+                        navController = navController,
+                        message = paymentProcessState.message
+                    )
+                } else {
+                    BluetoothCommunicateContent(paymentProcessState)
+                }
+            }
+
+            else -> {}
+        }
+    }
+}
+
+fun permissionCheck(
+    context: ComponentActivity,
+    cardTerminalCommunicateManager: CardTerminalCommunicateManager?,
+    merchantUrl: String?,
+    offlinePaymentViewModel: OfflinePaymentVM,
+    offlinePaymentCoordinator: OfflinePaymentCoordinator
+) {
+    val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
+    var devices = usbManager.deviceList.values.toList()
+
+    when(val cardReader = offlinePaymentViewModel.getCurrentCardReaderData()) {
+        is DeviceType.Bluetooth -> if(getBluetoothPermissionsArray().all { context.checkPermission(it, 0, 0) == PackageManager.PERMISSION_GRANTED }) {
+            offlinePaymentViewModel.requestOfflinePayment(cardTerminalCommunicateManager)
+        } else {
+            merchantUrl?.let {
+                offlinePaymentCoordinator.configureIntent(
+                    isSuccess = false,
+                    message = "장치 권한 미허용",
+                    merchantUrl = it
+                )
+            } ?: offlinePaymentCoordinator.navigateToErrorDialog("장치 권한 미허용")
+        }
+
+        is DeviceType.Usb -> devices.firstOrNull { infoFormat(it.toString()) == infoFormat(cardReader.deviceInformation) }?.let {
+            if(usbManager.hasPermission(it)) {
+                offlinePaymentViewModel.requestOfflinePayment(cardTerminalCommunicateManager)
+            } else {
+                merchantUrl?.let {
+                    offlinePaymentCoordinator.configureIntent(
+                        isSuccess = false,
+                        message = "장치 권한 미허용",
+                        merchantUrl = it
+                    )
+                } ?: offlinePaymentCoordinator.navigateToErrorDialog("장치 권한 미허용")
+            }
+        }
+
+        null -> {
+            cardTerminalCommunicateManager?.let {
+                offlinePaymentViewModel.requestOfflinePayment(it)
+            } ?: merchantUrl?.let {
+                offlinePaymentCoordinator.configureIntent(
+                    isSuccess = false,
+                    message = "등록된 장치 없음",
+                    merchantUrl = it
+                )
+            } ?: offlinePaymentCoordinator.navigateToErrorDialog("등록된 장치 없음")
         }
     }
 }
 
 @Composable
-fun BluetoothPaymentDialogContent(paymentProcessState: OfflinePaymentVM.PaymentProcessState) {
+fun BluetoothCommunicateContent(paymentProcessState: PaymentProcessState.CommunicateCardReader) {
     when(paymentProcessState) {
-        is OfflinePaymentVM.PaymentProcessState.Fallback -> {
-            PaymentDialogLayout(
+        is PaymentProcessState.CommunicateCardReader.Fallback -> {
+            DeviceCommunicateContainer(
                 modifier = Modifier.background(colorResource(id = R.color.white)),
                 visibleProgressbar = true,
                 text = { Text(text = EVENT_FALLBACK) }
             )
         }
 
-        OfflinePaymentVM.PaymentProcessState.InsertIC -> {
-            PaymentDialogLayout(
+        PaymentProcessState.CommunicateCardReader.InsertIC -> {
+            DeviceCommunicateContainer(
                 modifier = Modifier.background(colorResource(id = R.color.white)),
                 visibleProgressbar = true,
                 text = { Text(text = INSERT_IC_CARD) }
             )
         }
 
-        OfflinePaymentVM.PaymentProcessState.ReadingIC -> {
-            PaymentDialogLayout(
+        PaymentProcessState.CommunicateCardReader.ReadingIC -> {
+            DeviceCommunicateContainer(
                 modifier = Modifier.background(colorResource(id = R.color.white)),
                 visibleProgressbar = true,
                 text = { Text(text = PROCESS_PAYMENT) }
             )
         }
 
-        is OfflinePaymentVM.PaymentProcessState.Retry -> {
-            if(paymentProcessState.count == 0) {
-                PaymentDialogLayout(
-                    modifier = Modifier.background(colorResource(id = R.color.white)),
-                    visibleProgressbar = true,
-                    text = { Text(text = "블루투스 리더기 연결 진행중입니다.") }
-                )
-            } else {
-                PaymentDialogLayout(
-                    modifier = Modifier.background(colorResource(id = R.color.white)),
-                    visibleProgressbar = true,
-                    text = {
-                        Text(text = "리더기 연결 재시도 중입니다")
-                        Text(text = "${paymentProcessState.count} / 5")
-                    }
-                )
-            }
+        is PaymentProcessState.CommunicateCardReader.Connecting -> {
+            DeviceCommunicateContainer(
+                modifier = Modifier.background(colorResource(id = R.color.white)),
+                visibleProgressbar = true,
+                text = {
+                    Text(
+                        text = if (paymentProcessState.retryCount == 0) {
+                            "리더기 연결 진행중입니다."
+                        } else {
+                            "리더기 연결 재시도 중입니다 ${paymentProcessState.retryCount}.."
+                        }
+                    )
+                }
+            )
         }
 
         else -> {}
@@ -177,14 +271,14 @@ fun BluetoothPaymentDialogContent(paymentProcessState: OfflinePaymentVM.PaymentP
 }
 
 @Composable
-fun UsbPaymentDialogContent(
+fun UsbCommunicateContent(
     navController: NavController,
     offlinePaymentViewModel: OfflinePaymentVM,
-    paymentProcessState: OfflinePaymentVM.PaymentProcessState
+    paymentProcessState: PaymentProcessState.CommunicateCardReader
 ) {
     when(paymentProcessState) {
-        is OfflinePaymentVM.PaymentProcessState.Fallback -> {
-            PaymentDialogLayout(
+        is PaymentProcessState.CommunicateCardReader.Fallback -> {
+            DeviceCommunicateContainer(
                 modifier = Modifier.paint(
                     painter = painterResource(id = R.drawable.pb2_3),
                     contentScale = ContentScale.FillBounds
@@ -192,7 +286,7 @@ fun UsbPaymentDialogContent(
             )
         }
 
-        OfflinePaymentVM.PaymentProcessState.InsertIC -> {
+        PaymentProcessState.CommunicateCardReader.InsertIC -> {
             var timer by remember { mutableIntStateOf(15) }
 
             LaunchedEffect(timer) {
@@ -206,7 +300,7 @@ fun UsbPaymentDialogContent(
                 }
             }
 
-            PaymentDialogLayout(
+            DeviceCommunicateContainer(
                 vertical = Arrangement.Bottom,
                 modifier = Modifier.paint(
                     painter = painterResource(id = R.drawable.pb2_4),
@@ -222,8 +316,8 @@ fun UsbPaymentDialogContent(
             )
         }
 
-        OfflinePaymentVM.PaymentProcessState.ReadingIC -> {
-            PaymentDialogLayout(
+        PaymentProcessState.CommunicateCardReader.ReadingIC -> {
+            DeviceCommunicateContainer(
                 modifier = Modifier.paint(
                     painter = painterResource(id = R.drawable.pb2_2),
                     contentScale = ContentScale.FillBounds
@@ -231,40 +325,26 @@ fun UsbPaymentDialogContent(
             )
         }
 
-        is OfflinePaymentVM.PaymentProcessState.Retry -> {
-            if(paymentProcessState.count == 0) {
-                PaymentDialogLayout(
-                    vertical = Arrangement.Bottom,
-                    modifier = Modifier.paint(
-                        painter = painterResource(id = R.drawable.pb4),
-                        contentScale = ContentScale.FillBounds
-                    ),
-                    visibleProgressbar = true,
-                    text = {
-                        Text(
-                            modifier = Modifier.padding(bottom = 15.dp),
-                            color = colorResource(R.color.white),
-                            text = "USB 리더기 연결 진행중입니다."
-                        )
-                    }
-                )
-            } else {
-                PaymentDialogLayout(
-                    vertical = Arrangement.Bottom,
-                    modifier = Modifier.paint(
-                        painter = painterResource(id = R.drawable.pb4),
-                        contentScale = ContentScale.FillBounds
-                    ),
-                    visibleProgressbar = true,
-                    text = {
-                        Text(
-                            modifier = Modifier.padding(bottom = 15.dp),
-                            color = colorResource(R.color.white),
-                            text = "리더기 연결 재시도 중입니다 ${paymentProcessState.count}.."
-                        )
-                    }
-                )
-            }
+        is PaymentProcessState.CommunicateCardReader.Connecting -> {
+            DeviceCommunicateContainer(
+                vertical = Arrangement.Bottom,
+                modifier = Modifier.paint(
+                    painter = painterResource(id = R.drawable.pb4),
+                    contentScale = ContentScale.FillBounds
+                ),
+                visibleProgressbar = true,
+                text = {
+                    Text(
+                        modifier = Modifier.padding(bottom = 15.dp),
+                        color = colorResource(R.color.white),
+                        text = if (paymentProcessState.retryCount == 0) {
+                            "USB 리더기 연결 진행중입니다."
+                        } else {
+                            "리더기 연결 재시도 중입니다 ${paymentProcessState.retryCount}.."
+                        }
+                    )
+                }
+            )
         }
 
         else -> {}
@@ -272,7 +352,7 @@ fun UsbPaymentDialogContent(
 }
 
 @Composable
-fun PaymentDialogLayout(
+fun DeviceCommunicateContainer(
     vertical: Arrangement.Vertical = Arrangement.Center,
     horizon: Alignment.Horizontal = Alignment.CenterHorizontally,
     modifier: Modifier,
@@ -290,7 +370,6 @@ fun PaymentDialogLayout(
     ) {
         if(visibleProgressbar) CircularProgressIndicator(modifier = Modifier.padding(bottom = 40.dp))
         text()
-
     }
 }
 
@@ -298,7 +377,7 @@ fun PaymentDialogLayout(
 @Composable
 fun GreetingPreview() {
     MtouchPos {
-        PaymentDialogLayout(
+        DeviceCommunicateContainer(
             modifier = Modifier.paint(
                 painter = painterResource(id = R.drawable.pb4),
                 contentScale = ContentScale.FillBounds

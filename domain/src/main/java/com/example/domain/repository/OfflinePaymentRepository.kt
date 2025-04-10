@@ -1,7 +1,7 @@
 package com.example.domain.repository
 
 import com.example.domain.model.ApiResult
-import com.example.domain.model.payment.PaymentProcessStatus
+import com.example.domain.model.cardreader.CardReaderStatus
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.payment.OfflinePaymentData
 import com.example.domain.model.payment.OfflinePaymentPushData
@@ -14,8 +14,8 @@ interface OfflinePaymentRepository {
     ): Flow<ApiResult<VanData>>
 
     suspend fun ksnetSocketCommunicate(
-        resultCommunicateData: PaymentProcessStatus.CompleteDeviceCommunication,
-        paymentInfo: OfflinePaymentData,
+        resultCommunicateData: CardReaderStatus.Communication.result,
+        offlinePaymentData: OfflinePaymentData,
         paymentVanInfo: VanData
     ): Flow<ApiResult<PaymentDetailData>>
 

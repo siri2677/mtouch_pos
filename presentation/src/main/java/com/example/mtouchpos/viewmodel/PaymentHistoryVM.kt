@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryList
 import com.example.domain.usecase.paymentHistory.FetchPaymentHistoryStatistics
+import com.example.domain.usecase.user.FetchConnectedUserInfo
 import com.example.mtouchpos.viewmodel.mapper.toPaymentHistoryInfo
 import com.example.mtouchpos.viewmodel.mapper.toPaymentStatisticInfo
 import com.example.mtouchpos.viewmodel.mapper.toPeriodData
@@ -25,12 +26,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PaymentHistoryVM @Inject constructor(
+    private val fetchConnectedUserInfo: FetchConnectedUserInfo,
     private val fetchPaymentHistoryListUseCase: FetchPaymentHistoryList,
     private val fetchPaymentHistoryStatisticsUseCase: FetchPaymentHistoryStatistics
 ) : ViewModel(), Serializable {
     data class PaymentStatisticInfo(
-        val amount: Int,
-        val count: Int
+        val amount: String,
+        val count: String
     )
 
     data class PeriodInfo(
@@ -69,35 +71,25 @@ class PaymentHistoryVM @Inject constructor(
             _paymentHistoryInfo.emit(UseCaseResult.Loading)
             fetchPaymentHistoryListUseCase(periodInfo.value.toPeriodData()).map { apiResult ->
                 apiResult.toUseCaseResult { list ->
-                    list.map { it.toPaymentHistoryInfo() }
+                    list.map { it.toPaymentHistoryInfo(fetchConnectedUserInfo()?.vat) }
                 }
             }.collect { _paymentHistoryInfo.emit(it) }
         }
     }
 
-    fun fetchPaymentStatistic(periodInfo: PeriodInfo) {
+    fun fetchPaymentStatistic() {
         viewModelScope.launch {
-            fetchPaymentHistoryStatisticsUseCase(periodInfo.toPeriodData()).map { apiResult ->
+            fetchPaymentHistoryStatisticsUseCase(periodInfo.value.toPeriodData()).map { apiResult ->
                 apiResult.toUseCaseResult { it.toPaymentStatisticInfo() }
             }.collect { _paymentStatisticInfo.emit(it) }
         }
     }
 
-//    fun initPaymentHistoryInfo() {
-//        viewModelScope.launch {
-//            _paymentHistoryInfo.resetReplayCache()
-//            _paymentHistoryInfo.emit(UseCaseResult.Init)
-//        }
-////        _paymentHistoryInfo.value = UseCaseResult.Init
-//    }
-
     fun updatePeriodInfoAndFetchPaymentList(days: Long) {
         _periodInfo.value = PeriodInfo.createPeriod(days, 0)
-        fetchPaymentList()
     }
 
     fun updatePeriodInfoAndFetchPaymentList(periodInfo: PeriodInfo) {
         _periodInfo.value = periodInfo
-        fetchPaymentList()
     }
 }

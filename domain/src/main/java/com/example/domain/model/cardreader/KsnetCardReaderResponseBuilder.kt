@@ -1,6 +1,5 @@
 package com.example.domain.model.cardreader
 
-import com.example.domain.model.payment.PaymentProcessStatus
 import java.nio.charset.StandardCharsets
 import kotlin.experimental.and
 import kotlin.experimental.xor
@@ -27,7 +26,7 @@ class KsnetCardReaderResponseBuilder {
         FALLBACK_BAD_OPER("07", "터미널(리더기) 오 동작");
     }
 
-    fun receiveData(data: ByteArray): PaymentProcessStatus {
+    fun receiveData(data: ByteArray): CardReaderStatus.Communication {
         if (receive(data) == 1) {
             val resultData = ByteArray(1024)
             val resultDataLength = receiveDataLength
@@ -36,14 +35,7 @@ class KsnetCardReaderResponseBuilder {
             when (getCommandID(resultData, resultDataLength)) {
                 0xD0.toByte() -> {
                     isFirstPayment = true
-                    return PaymentProcessStatus.CommunicateReader.InsertIC
-
-//                    afterProcess.emit(ProcessAfterSerialCommunicate.RequestCardInsert)
-
-
-//                    afterProcess.emit(emit
-//                        ProcessAfterSerialCommunicate.ProcessValue(
-//                            ProcessAfterSerialCommunicate.RequestCardInsert.name))
+                    return CardReaderStatus.Communication.InsertIC
                 }
 
                 0xD2.toByte() -> {
@@ -52,7 +44,6 @@ class KsnetCardReaderResponseBuilder {
                     var encCardNum16Len: Int //암호화된 카드번호 필드 길이
                     var noEncCardNumLen: Int //암호화하지 않은 카드번호 길이
                     var reqEMVDataLen: Int //EMV 요청 Data 길이
-                    var trackIILen: Int //Track2 Data 길이
                     var readerModelNum: ByteArray
                     var cardBin: ByteArray
                     var emvData: ByteArray
@@ -77,9 +68,7 @@ class KsnetCardReaderResponseBuilder {
                                 KsnetParsingByte.IDX_DATA.value + 5 + 16,
                                 1
                             ).toByteArray()[0] + 1
-//                            if (String(adminInfo.getPlayType()) == "D") { //데몬일 경우 식별정보 출력
-//                                addText("Deamon") // 데몬
-//                            }
+
                             //암호화 정보생성
                             val reqEncryptInfo = ByteArray(encInfoLen)
                             System.arraycopy(
@@ -89,7 +78,6 @@ class KsnetCardReaderResponseBuilder {
                                 0,
                                 reqEncryptInfo.size
                             )
-//                            hashReaderData["EncryptInfo"] = reqEncryptInfo
 
                             //EMV DATA
                             encCardNum16Len = byteToString(
@@ -104,29 +92,8 @@ class KsnetCardReaderResponseBuilder {
                                 1
                             ).toByteArray()[0] + 1 //암호화 하지 않은 카드번호 길이
                             val cardDataIdx: Int = KsnetParsingByte.IDX_DATA.value + "IC".length + tradeCnt.length + readerModelNum.size + encInfoLen //카드데이터 필드 인덱스
-//                            hashReaderData["tradeCnt"] = tradeCnt.toByteArray()
-//                            hashReaderData["readerModelNum"] = readerModelNum
-//                            hashReaderData["transType"] = "IC".toByteArray()
+
                             if (cardType == "IC") {
-//                                if (String(adminInfo.getReceiptNo()) == "") {//현금영수증 카드 승인일 경우  park 이경우에도 넘겨 주어야 합니다
-////                                        clearTempBuffer();
-////                                        Toast.makeText(PayResultActivity.this, "현금영수증 카드를 사용해주세요", Toast.LENGTH_LONG).show();
-////                                        finish();
-////                                        return;
-//                                    _HashReaderData.put("transType", "HK".toByteArray())
-//                                    addText("현금영수증카드 IC승인이 진행중입니다.")
-//                                } else {
-//                                    _HashReaderData.put("transType", "IC".toByteArray())
-//                                    addText("IC승인이 진행중입니다.")
-//                                }
-//                                if (!isCardCancel) {
-//                                    if (String(adminInfo.getReceiptNo()) == "") {
-//                                        SweetDialog(getString(R.string.reader_iccard_cash))
-//                                    } else {
-//                                        SweetDialog(getString(R.string.reader_iccard_approce))
-//                                    }
-//                                }
-//                                responseobj.setProcessingCd("1003")
                                 reqEMVDataLen = resultDataLength - (cardDataIdx + encCardNum16Len + noEncCardNumLen) - 2 //EMV DATA 길이
                                 cardBin = ByteArray(noEncCardNumLen - 2)
                                 System.arraycopy(
@@ -136,14 +103,7 @@ class KsnetCardReaderResponseBuilder {
                                     0,
                                     cardBin.size
                                 )
-//                                hashReaderData["Cardbin"] = cardBin
-//                                addText("ICardbin : " + Cardbin.length)
-//                                addText("ICardbin : " + String(Cardbin))
-//                                LOG.w("=========================================================")
-//                                AndroidUtils.printHex(Cardbin)
-//                                LOG.w("=========================================================")
 
-                                //수신 EMV데이터로 EMV 요청전문 생성
                                 emvData = ByteArray(reqEMVDataLen)
                                 System.arraycopy(
                                     resultData,
@@ -162,249 +122,25 @@ class KsnetCardReaderResponseBuilder {
                                     4
                                 )
                                 System.arraycopy(emvData, 0, reqEMVData, 4, emvData.size)
-//                                hashReaderData["reqEMVData"] = reqEMVData
-//                                hashReaderData["trackII"] = " ".toByteArray()
-//                                requestKsnetSocketCommunicateDTO.readerModelNum = readerModelNum
-//                                requestKsnetSocketCommunicateDTO.encryptInfo = reqEncryptInfo
-//                                requestKsnetSocketCommunicateDTO.reqEMVData = reqEMVData
-//                                requestKsnetSocketCommunicateDTO.cardNumber = String(cardBin, StandardCharsets.UTF_8)
 
-
-                                return PaymentProcessStatus.CompleteDeviceCommunication(
+                                return CardReaderStatus.Communication.result(
                                     readerModelNum = readerModelNum,
                                     encryptInfo = reqEncryptInfo,
                                     reqEMVData = reqEMVData,
                                     cardNumber = String(cardBin, StandardCharsets.UTF_8),
                                     trackII = trackII
                                 )
-//                                CoroutineScope(Dispatchers.IO).launch {
-//                                    FlowManager.deviceSerialCommunicate.emit(
-//                                        DeviceSerialCommunicate.RequestSocketCommunication(
-//                                            SerialInfo(
-//                                                readerModelNum = readerModelNum,
-//                                                encryptInfo = reqEncryptInfo,
-//                                                reqEMVData = reqEMVData,
-//                                                cardNumber = String(cardBin, StandardCharsets.UTF_8),
-//                                                trackII = trackII
-//                                            )
-//                                        )
-////                                        DeviceSerialCommunicate.RequestSocketCommunication(requestKsnetSocketCommunicateDTO)
-//                                    )
-//                                }
-//
-//                                val responseTelegram = ByteArray(2048)
-//                                val rtn: Int = Approval().request(
-//                                    "210.181.28.137",
-//                                    9562,
-//                                    5,
-//                                    makeRequestTelegram(
-//                                        ksnetSocketCommunicationDTO = requestKsnetSocketCommunicateDTO
-//                                    ),
-//                                    responseTelegram,
-//                                    16000
-//                                )
-//
-//                                KsnetUtils().reqDataPrint(
-//                                    makeRequestTelegram(
-//                                        ksnetSocketCommunicationDTO = requestKsnetSocketCommunicateDTO
-//                                    )
-//                                )
-//                                KsnetUtils().respGetHashData(responseTelegram)
-//
-//                                fun byteToString(srcBytes: ByteArray, startIdx: Int, len: Int): String {
-//                                    if (startIdx + len > srcBytes.size) {
-//                                        return "~~~"
-//                                    }
-//                                    val arrByte = ByteArray(len)
-//                                    System.arraycopy(srcBytes, startIdx, arrByte, 0, len)
-//                                    return try {
-//                                        String(arrByte, charset("EUC-KR"))
-//                                    } catch (e: Exception) {
-//                                        e.printStackTrace()
-//                                        return "X"
-//                                    }
-//                                }
-//
-//                                if(byteToString(responseTelegram, 40, 1) == "X") {
-//                                    Log.w("fail11", "responseTelegram")
-//                                }
-//                                if(byteToString(responseTelegram, 40, 1) == "O") {
-//                                    Log.w("success", "responseTelegram")
-//                                }
-//                                afterProcess.emit(ProcessAfterSerialCommunicate.RequestSocketCommunication(makeRequestTelegram(ksnetSocketCommunicationDTO)))
-
-//                                afterProcess.emit(
-//                                    ProcessAfterSerialCommunicate.ProcessValue(ProcessAfterSerialCommunicate.RequestSocketCommunication.name, cardType)
-//                                )
-//                                clearTempBuffer()
-//                                threadAdmission()
-
-//                                //50000만원 이하 무서명 거래
-//                                if (String(adminInfo.getTotalAmount()).toLong() >= 50000) {
-//                                    val i = Intent(
-//                                        this@PayResultActivity,
-//                                        PayCreditSign::class.java
-//                                    ) // card view
-//                                    i.putExtra("amount", String(adminInfo.getTotalAmount()))
-//                                    startActivityForResult(i, ACTIVITY_MENU_GET_SIGN)
-//                                } else {
-//                                    ThreadAdmission(_HashReaderData)
-//                                }
-                            } // IC CARD
+                            }
                         }
                     } else {
-//                        serialCommunicationInsetCardStatus = SerialCommunicationInsertCardStatus.D5
-//                        val data: ByteArray = EncMSRManager().makeFallBackCardReq(cardType, "99")
-//                        serialCommunicate?.sendData(data)
-//                        SerialCommunicationMessage.FallBackMessage.message += fallbackMessage(cardType)
-//                        afterProcess.emit(
-//                            ProcessAfterSerialCommunicate.ProcessValue(
-//                                ProcessAfterSerialCommunicate.RequestFallback.name, cardType))
-
                         val fallbackCode: FallbackCode? = FallbackCode.values().find { it.code == cardType }
 
-                        return PaymentProcessStatus.CommunicateReader.FallBack(
+                        return CardReaderStatus.Communication.FallBack(
                             description = fallbackCode?.description.let { it } ?: "",
                             code = fallbackCode?.code.let { it } ?: ""
                         )
-//                        CoroutineScope(Dispatchers.IO).launch {
-//                            FlowManager.deviceSerialCommunicate.emit(
-//                                DeviceSerialCommunicate.SerialCommunicationMessage.FallBackMessage().setData(cardType)
-//                            )
-//                        }
-//                        afterProcess.emit(ProcessAfterSerialCommunicate.RequestFallback(cardType))
                     }
-                    //IC우선거래가 아닌 일반 MS 거래시 거래진행
-//                            if (ICGubu.equals("MS")) {
-////                                    LOG.w("tag data","recvData: "+new String(resultData));
-////                                    LOG.w("tag data","recvData: "+new String(KsnetUtils.byteToString(resultData, IDX_DATA + 5 + 16 + encInfoLen + encCardNum16Len, noEncCardNumLen-1)));
-////                                    LOG.w("tag data","receiptNo: "+new String(adminInfo.getReceiptNo()) +" length: "+adminInfo.getReceiptNo().length+" value: "+adminInfo.getReceiptNo());
-//                                if (!isFallback &&
-//                                    (adminInfo.getReceiptNo().length !== 0
-//                                            && KsnetUtils.byteToString(
-//                                        resultData,
-//                                        IDX_DATA + 5 + 16 + encInfoLen + encCardNum16Len + noEncCardNumLen - 1,
-//                                        1
-//                                    ).equals("2") ||
-//                                            KsnetUtils.byteToString(
-//                                                resultData,
-//                                                IDX_DATA + 5 + 16 + encInfoLen + encCardNum16Len + noEncCardNumLen - 1,
-//                                                1
-//                                            ).equals("6"))
-//                                ) {
-//                                    SweetDialog(getString(R.string.reader_card_read_ic))
-//                                    isFirstCardNunResq = true
-//                                    isICFirstAct = true
-//                                    clearTerminalBuffer()
-//                                } else {
-//                                    SweetDialog("MS카드 승인이 진행중입니다")
-//                                    _HashReaderData.put("transType", "MS".toByteArray())
-//                                    if (String(adminInfo.getReceiptNo()) == "X") {
-//                                        SweetDialog("MS카드 승인이 진행중입니다")
-//                                        _HashReaderData.put("transType", "MS".toByteArray())
-//                                    } else {
-//                                        SweetDialog("현금영수증 승인이 진행중입니다")
-//                                        _HashReaderData.put("transType", "HK".toByteArray())
-//                                    }
-//                                }
-//                                if (!isICFirstAct) {
-//                                    trackIILen = KsnetUtils.byteToString(
-//                                        resultData,
-//                                        IDX_DATA + 5 + 16 + encInfoLen + encCardNum16Len + noEncCardNumLen,
-//                                        1
-//                                    ).toByteArray().get(0) as Int + 1
-//                                    trackII = ByteArray(trackIILen + 1)
-//                                    System.arraycopy(
-//                                        resultData,
-//                                        IDX_DATA + 5 + 16 + encInfoLen + encCardNum16Len + noEncCardNumLen,
-//                                        trackII,
-//                                        0,
-//                                        trackII.length
-//                                    )
-//                                    val arrTrackII: Array<String> =
-//                                        String(trackII).split("=".toRegex())
-//                                            .dropLastWhile { it.isEmpty() }
-//                                            .toTypedArray()
-//                                    _HashReaderData.put("trackII", trackII)
-//                                    if (String(_HashReaderData.get("transType")) == "HK" || String(
-//                                            _HashReaderData.get("transType")
-//                                        ) == "PC"
-//                                    ) {
-//                                        Cardbin = ByteArray(noEncCardNumLen - 3)
-//                                        //Cardbin = Utils.byteToSubByte(resultData, cardDataIdx + encCardNum16Len + 2, noEncCardNumLen - 3);
-//                                        System.arraycopy(
-//                                            resultData,
-//                                            cardDataIdx + encCardNum16Len + 2,
-//                                            Cardbin,
-//                                            0,
-//                                            Cardbin.length
-//                                        )
-//                                    } else {
-//                                        if (noEncCardNumLen < 4) {
-//                                            SweetDialog(getString(R.string.reader_card_read_fail2))
-//                                            clearTerminalBuffer()
-//                                            responseobj.setResultCd("-1")
-//                                            responseobj.setResultMsg(getString(R.string.reader_card_read_fail2))
-//                                            returnActivity(RESULT_CANCELED)
-//                                            return
-//                                        }
-//                                        Cardbin = ByteArray(noEncCardNumLen - 4)
-//                                        System.arraycopy(
-//                                            resultData,
-//                                            cardDataIdx + encCardNum16Len + 2,
-//                                            Cardbin,
-//                                            0,
-//                                            Cardbin.length
-//                                        )
-//                                    }
-//                                    try {
-//                                        if (String(Cardbin).contains("=")) {
-//                                            Cardbin = String(Cardbin).split("=".toRegex())
-//                                                .dropLastWhile { it.isEmpty() }
-//                                                .toTypedArray().get(0).toByteArray()
-//                                        }
-//                                        _HashReaderData.put("Cardbin", Cardbin)
-//                                    } catch (e: java.lang.Exception) {
-//                                        _HashReaderData.put("Cardbin", Cardbin)
-//                                    }
-//                                    _HashReaderData.put("reqEMVData", reqEMVData)
-//                                    addText("=========================================================")
-//                                    addText(
-//                                        "ICardbin" + Cardbin.length + " : " + String(Cardbin) + " : " + AndroidUtils.printHex(
-//                                            Cardbin
-//                                        )
-//                                    )
-//                                    addText("=========================================================")
-//
-//
-//                                    //50000만원 이하 무서명 거래
-//                                    isICFirstAct = false
-//                                    if (String(adminInfo.getTotalAmount()).toLong() >= 50000) {
-//                                        val i = Intent(
-//                                            this@PayResultActivity,
-//                                            PayCreditSign::class.java
-//                                        ) // card view
-//                                        //	Intent i = new Intent(activity, PayCreditSignCyrexPay.class);  // card view
-//                                        i.putExtra("amount", String(adminInfo.getTotalAmount()))
-//                                        startActivityForResult(i, ACTIVITY_MENU_GET_SIGN)
-//                                    } else {
-//                                        ThreadAdmission(_HashReaderData)
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-
                 }
-
-//                0xD3.toByte() -> {
-//                    if(byteToString(resultData, 4, 2) == "00") {
-//                        serialCommunicationResponse.value =
-//                            SerialCommunicationResponse(SerialCommunicationInsertCardStatus.D3.name)
-////                        clearTempBuffer()
-//                        Log.w("0xD3", "0xD3")
-//                    }
-//                }
 
                 0xD5.toByte() -> {
                     val tradeCnt: String
@@ -457,13 +193,6 @@ class KsnetCardReaderResponseBuilder {
                             hashReaderData["Cardbin"] = cardBin
                         }
 
-//                        addText("FB MSCardbin : " + Cardbin.length)
-//                        addText("FB MSCardbin : " + String(Cardbin))
-//                        LOG.w("=========================================================")
-//                        AndroidUtils.printHex(Cardbin)
-//                        LOG.w("=========================================================")
-//
-//                        SweetDialog("MSR 승인을 진행중입니다")
                         reqEMVDataLen =
                             resultDataLength - (encCardNum16Len + cardDataIdx2 + noEncCardNumLen) - 2
                         emvData = ByteArray(reqEMVDataLen)
@@ -486,20 +215,6 @@ class KsnetCardReaderResponseBuilder {
                         hashReaderData["transType"] = "FB".toByteArray()
                         hashReaderData["reqEMVData"] = reqEMVData
                         hashReaderData["readerModelNum"] = readerModelNum
-
-//                        ksnetSocketCommunicationDTO.readerModelNum = readerModelNum
-//                        ksnetSocketCommunicationDTO.encryptInfo = encInfoLen
-//                        ksnetSocketCommunicationDTO.emvData = reqEMVData
-//                        ksnetSocketCommunicationDTO.cardBin = String(cardBin, StandardCharsets.UTF_8)
-
-//                        CoroutineScope(Dispatchers.IO).launch {
-//                            SharedFlowManager.deviceSerialCommunicate.emit(
-//                                DeviceSerialCommunicate.RequestSocketCommunication(responseSerialCommunicateDTO)
-//                            )
-//                        }
-
-//                        clearTempBuffer()
-//                        threadAdmission()
                     }
                 }
 
@@ -507,48 +222,13 @@ class KsnetCardReaderResponseBuilder {
                     if(isFirstPayment) {
                         if ((byteToString(resultData, 4, 3)) == "INS") {
                             isFirstPayment = false
-//                            val data: ByteArray = EncMSRManager().makeCardNumSendReq(
-//                                "00000001004".toByteArray(), "10".toByteArray()
-//                            )
-//                            serialCommunicate?.sendData(data)
-//                            afterProcess.emit(
-//                                ProcessAfterSerialCommunicate.ProcessValue(
-//                                    ProcessAfterSerialCommunicate.RequestCardNumber.name))
-
-                            return PaymentProcessStatus.CommunicateReader.ReadingIC
-
-//                            CoroutineScope(Dispatchers.IO).launch {
-//                                FlowManager.deviceSerialCommunicate.emit(
-//                                    DeviceSerialCommunicate.SerialCommunicationMessage.PaymentProgressing()
-//                                )
-//                            }
-//                            afterProcess.emit(ProcessAfterSerialCommunicate.RequestCardNumber)
+                            return CardReaderStatus.Communication.ReadingIC
                         }
-//                            when(serialCommunicationInsetCardStatus) {
-//                                SerialCommunicationInsertCardStatus.D0 -> {
-//                                    serialCommunicationInsetCardStatus = null
-//                                    val data: ByteArray = EncMSRManager.makeCardNumSendReq(
-//                                        "000001004".toByteArray(), "10".toByteArray()
-//                                    )
-//                                    deviceSetting?.requestDeviceSerialCommunication(data)
-//                                    serialCommunicationMessage.value =
-//                                        Event(SerialCommunicationMessage.paymentProgressing.message)
-//                                }
-//                                SerialCommunicationInsertCardStatus.D5 -> {
-//                                    serialCommunicationInsetCardStatus = null
-//                                    serialCommunicationMessage.value =
-//                                        Event(SerialCommunicationMessage.paymentProgressing.message)
-//                                }
-//                                else -> { }
-//                            }
                     }
-//                    else if ((byteToString(resultData, 4, 3)) == "DEL") {
-//                        //                                isCardInsertResponseDEL.value = Event(CardReadingType.IC)
-//                    }
                 }
             }
         }
-        return PaymentProcessStatus.Init
+        return CardReaderStatus.Communication.Init
     }
 
     private fun receive(data: ByteArray): Int {
@@ -591,10 +271,6 @@ class KsnetCardReaderResponseBuilder {
             e.printStackTrace()
         }
         return ""
-    }
-
-    private fun byte2Int(src: Byte): Int {
-        return src.toInt() and 0xFF
     }
 
     private fun byteToInt(b: Byte): Int {

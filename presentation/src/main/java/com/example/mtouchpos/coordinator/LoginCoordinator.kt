@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.mtouchpos.view.navgraph.NavigationGraphState
 import com.example.mtouchpos.vo.type.UseCaseResult
 
@@ -12,7 +13,8 @@ class LoginCoordinator(override val navController: NavController): CommonCoordin
     private fun navigateToHome() {
         navController.navigate(
             route = NavigationGraphState.HomeView.Home.name,
-            navOptions = NavOptions.Builder().setRestoreState(true).build()
+            navOptions = NavOptions.Builder().setLaunchSingleTop(true).setPopUpTo(
+                NavigationGraphState.HomeView.Home.name, false).build()
         )
     }
 

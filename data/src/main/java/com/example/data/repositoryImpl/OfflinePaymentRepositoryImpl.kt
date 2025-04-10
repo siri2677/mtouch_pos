@@ -1,11 +1,13 @@
 package com.example.data.repositoryImpl
 
-import com.example.data.dto.request.RequestOffPayment
-import com.example.data.dto.response.ResponseOffPayment
+import com.example.data.remote.dto.request.RequestOffPayment
+import com.example.data.remote.dto.response.ResponseOffPayment
 import com.example.data.remote.DataFormat
 import com.example.data.remote.apiservice.TmsAPIService
+import com.example.data.remote.handleApiResult
+import com.example.data.remote.handleApiResultDetail
 import com.example.domain.model.ApiResult
-import com.example.domain.model.payment.PaymentProcessStatus
+import com.example.domain.model.cardreader.CardReaderStatus
 import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.payment.OfflinePaymentData
 import com.example.domain.model.payment.OfflinePaymentPushData
@@ -50,54 +52,54 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
                 token, DataFormat(offlinePaymentData.toRequestPaymentModel())
             )
             is OfflinePaymentData.Cancel -> apiService.crule(
-                token, DataFormat(offlinePaymentData.toRequestCancelPaymentModel(offlinePaymentData.rootTrxId))
+                token, DataFormat(offlinePaymentData.toRequestCancelPaymentModel(offlinePaymentData.rootTrxId!!))
             )
         }.let { emit(it.handleApiResult { response -> response.data.toPaymentVanInfo() }) }
     }.catch { e -> emit(ApiResult.Exception(e)) }
 
     override suspend fun ksnetSocketCommunicate(
-        resultCommunicateData: PaymentProcessStatus.CompleteDeviceCommunication,
+        resultCommunicateData: CardReaderStatus.Communication.result,
         offlinePaymentData: OfflinePaymentData,
         paymentVanInfo: VanData,
     ): Flow<ApiResult<PaymentDetailData>> = flow {
-        fun VanData.mappingKsnetSocketCommunicateModel(
-            resultCommunicateData: PaymentProcessStatus.CompleteDeviceCommunication,
-            offlinePaymentData: OfflinePaymentData
-        ) = RequestOffPayment.KsnetSocketCommunicate(
+        fun mappingKsnetSocketCommunicateModel() = RequestOffPayment.KsnetSocketCommunicate(
             RequestOffPayment.KsnetSocketCommunicateTms(
                 toRequestKsnetSocketCommunicateDataModel(
-                    cardNumber = resultCommunicateData.cardNumber,
                     offlinePaymentData = offlinePaymentData,
+                    cardNumber = resultCommunicateData.cardNumber,
                     paymentVanInfo = paymentVanInfo
                 ),
                 toRequestKsnetSocketCommunicateSocketModel(
+                    resultCommunicateData = resultCommunicateData,
                     offlinePaymentData = offlinePaymentData,
-                    responseSerialData = resultCommunicateData
+                    paymentVanInfo = paymentVanInfo
                 )
             )
         )
 
         fun ResponseOffPayment.KsnetSocketCommunicate.toPaymentDetailInfo(
-            trackId: String,
+            trackId: String?,
             installment: String
         ) = PaymentDetailData(
-            amount = resultData!!.totalAmount,
+            totalAmount = resultData!!.totalAmount,
+            taxAmount = resultData.taxAmount,
+            freeAmount = resultData.freeAmount,
+            supplyAmount = resultData.supplyAmount,
+            serviceAmount = resultData.serviceAmount,
             installment = installment,
-            authCode = resultData!!.authNum,
-            authDate = resultData!!.authDate,
-            issuerName = resultData!!.issuerName,
-            cardNumber = resultData!!.cardNum,
+            authCode = resultData.authNum,
+            authDate = resultData.authDate,
+            issuerName = resultData.issuerName,
+            purchaseName = resultData.purchaseName,
+            cardNumber = resultData.cardNum,
             trackId = trackId,
-            trxId = trxId!!,
-            trxResult = resultData!!.telegramType
+            trxId = trxId,
+            trxResult = resultData.telegramType
         )
 
         apiService.socketKsnet(
             token,
-            paymentVanInfo.mappingKsnetSocketCommunicateModel(
-                resultCommunicateData = resultCommunicateData,
-                offlinePaymentData = offlinePaymentData
-            )
+            mappingKsnetSocketCommunicateModel()
         ).handleApiResultDetail {
             if(it.data.result == "오류") {
                 ApiResult.Error(it.data.resultMsg!!)
@@ -127,10 +129,14 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         )
 
         fun ResponseOffPayment.PushResultData.toPaymentDetailData(trxId: String) = PaymentDetailData(
-            amount = amount,
+            totalAmount = amount,
+            taxAmount = null,
+            freeAmount = null,
+            supplyAmount = null,
+            serviceAmount = null,
             installment = installment,
             authCode = authCode,
-            authDate = authDate,
+            authDate = authDate.substring(2),
             trackId = trackId,
             trxId = trxId,
             trxResult = trxResult,
@@ -154,26 +160,27 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         emit(ApiResult.Exception(e))
     }
 
-    private fun VanData.toRequestKsnetSocketCommunicateDataModel(
+    private fun toRequestKsnetSocketCommunicateDataModel(
         cardNumber: String,
         offlinePaymentData: OfflinePaymentData,
         paymentVanInfo: VanData
     ) = RequestOffPayment.KsnetSocketCommunicateData(
-        van = van,
-        vanId = vanId,
+        van = paymentVanInfo.van,
+        vanId = paymentVanInfo.vanId,
         trackId = paymentVanInfo.vanTrackId,
         trxId = when(offlinePaymentData) {
             is OfflinePaymentData.Approve -> null
             is OfflinePaymentData.Cancel -> offlinePaymentData.rootTrxId
         },
         walletSettle = "N",
-        vanPayment = "false",
+        vanPayment = if(paymentVanInfo.van == null) "true" else "false",
         cardNumber = cardNumber
     )
 
-    private fun VanData.toRequestKsnetSocketCommunicateSocketModel(
+    private fun toRequestKsnetSocketCommunicateSocketModel(
         offlinePaymentData: OfflinePaymentData,
-        responseSerialData: PaymentProcessStatus.CompleteDeviceCommunication
+        resultCommunicateData: CardReaderStatus.Communication.result,
+        paymentVanInfo: VanData
     ) = RequestOffPayment.KsnetSocketCommunicateSocket(
         transType = "IC".toByteArray(),
         swModelNumber = "######MTOUCH1101".toByteArray(),
@@ -186,7 +193,7 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
             is OfflinePaymentData.Approve -> "0200"
             is OfflinePaymentData.Cancel -> "0420"
         }.toByteArray(),
-        dptId = dptId.toByteArray(),
+        dptId = paymentVanInfo.dptId.toByteArray(),
         payType = offlinePaymentData.installment.toByteArray(),
         totalAmount = offlinePaymentData.amountData.totalAmount.toAmountByteArray(),
         amount = offlinePaymentData.amountData.totalAmount.setSupplyAmount(),
@@ -194,10 +201,10 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         taxAmount = (offlinePaymentData.amountData.totalAmount - offlinePaymentData.amountData.freeAmount).setTaxAmount(),
         freeAmount = offlinePaymentData.amountData.freeAmount.toAmountByteArray(),
         signTran = offlinePaymentData.amountData.totalAmount.setSignTran(),
-        readerModelNum = responseSerialData.readerModelNum,
-        encryptInfo = responseSerialData.encryptInfo,
-        reqEMVData = responseSerialData.reqEMVData,
-        trackII = responseSerialData.trackII,
+        readerModelNum = resultCommunicateData.readerModelNum,
+        encryptInfo = resultCommunicateData.encryptInfo,
+        reqEMVData = resultCommunicateData.reqEMVData,
+        trackII = resultCommunicateData.trackII,
         rootAuthCode = when(offlinePaymentData) {
             is OfflinePaymentData.Approve -> null
             is OfflinePaymentData.Cancel -> offlinePaymentData.authCode.toByteArray()

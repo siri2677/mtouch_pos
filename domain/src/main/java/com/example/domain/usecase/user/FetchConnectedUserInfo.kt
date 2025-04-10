@@ -4,9 +4,7 @@ import com.example.domain.model.user.UserDetailData
 import com.example.domain.repository.UserRepository
 import com.google.gson.Gson
 
-class FetchConnectedUserInfo(
-    private val userRepository: UserRepository
-) {
+class FetchConnectedUserInfo(private val userRepository: UserRepository) {
     operator fun invoke(): UserDetailData? = try {
         Gson().fromJson(
             userRepository.getCurrentLoginUserInformation(),

@@ -3,25 +3,23 @@ package com.example.mtouchpos.view.navgraph
 sealed interface NavigationGraphState {
     enum class HomeView: NavigationGraphState {
         Home,
-        Login,
         PgIdLogin,
-        VanIdLogin,
         RegisteredId
     }
     enum class CommonView: NavigationGraphState {
         ItemListDialog,
-        ErrorDialog,
+        MessageDialog,
         CompletePayment
     }
     enum class CreditPaymentView: NavigationGraphState {
         CreditPayment,
-        PaymentProcessDialog,
-        BluetoothDialog,
-        UsbDialog
+        PaymentProcessDialog
     }
     enum class DeviceSettingView: NavigationGraphState {
         Bluetooth,
-        USB
+        USB,
+        BluetoothConnectDialog,
+        USBConnectDialog
     }
     enum class DirectPaymentView: NavigationGraphState {
         DirectPayment
