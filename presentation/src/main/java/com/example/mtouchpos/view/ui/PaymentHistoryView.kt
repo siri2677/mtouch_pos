@@ -171,9 +171,7 @@ fun PaymentHistoryView(
                         text = buttonData.text,
                         clickEvent = buttonData.onClickAction,
                         isSelected = selectedIndex == index,
-                        isFirst = index,
-                        onTap = { selectedIndex = index },
-                        paymentHistoryViewModel = paymentHistoryViewModel
+                        onTap = { selectedIndex = index }
                     )
                 }
             }
@@ -270,9 +268,7 @@ fun DateSelectButton(
     text: String,
     clickEvent: () -> Unit,
     isSelected: Boolean,
-    isFirst: Int,
     onTap: () -> Unit,
-    paymentHistoryViewModel: PaymentHistoryVM
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val borderColor = colorResource(id = if (isSelected) R.color.black else R.color.grey4)
@@ -284,7 +280,6 @@ fun DateSelectButton(
         },
         modifier = Modifier
             .width((screenWidth * 0.24).dp),
-//            .offset(x = (isFirst * (-1)).dp),
         shape = RectangleShape,
         border = BorderStroke(1.dp, borderColor)
     ) {

@@ -19,5 +19,6 @@ data class UserEntity(
     val key: String,
     val vat: String,
     val apiMaxInstall: String,
-    val payKey: String
+    val payKey: String,
+    val van: String
 )

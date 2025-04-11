@@ -39,42 +39,6 @@ sealed interface ResponseOffPayment {
         val trxId: String?
     ): ResponseOffPayment
 
-//    data class KsnetSocketCommunicateResultData(
-//        val result: String,
-//        val telegramType: String,
-//        val enterpriseInfo: String,
-//        val readerModelNum: String,
-//        val vanTrxId: String,
-//        val point1: String,
-//        val point2: String,
-//        val point3: String,
-//        val installment: String,
-//        val message1: String,
-//        val message2: String,
-//        val notice1: String,
-//        val notice2: String,
-//        val ksnetCode: String,
-//        val cardType: String,
-//        val paymentType: String,
-//        val posEntryMode: String,
-//        val swModelNum: String,
-//        val serialNum: String,
-//        val cardNum: String,
-//        val merchantID: String,
-//        val balance: String,
-//        val authNum: String,
-//        val authDate: String,
-//        val issuerName: String,
-//        val issuerCode: String,
-//        val purchaseName: String,
-//        val purchaseCode: String,
-//        val totalAmount: String,
-//        val taxAmount: String,
-//        val freeAmount: String,
-//        val supplyAmount: String,
-//        val serviceAmount: String,
-//    )
-
     data class KsnetSocketCommunicateResultData(
         @SerializedName("Status") val result: String,
         @SerializedName("TelegramType") val telegramType: String,

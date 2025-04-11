@@ -4,7 +4,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import com.example.data.service.BluetoothCardReaderService
 import com.example.data.service.CardReaderResponse
 import com.example.domain.repository.CardReaderCommunicateRepository
@@ -34,6 +36,7 @@ class BluetoothCardReaderRepositoryImpl(private val context: Context) : CardRead
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun disConnect() {
         bluetoothService?.run { disConnect() }
     }
@@ -42,7 +45,7 @@ class BluetoothCardReaderRepositoryImpl(private val context: Context) : CardRead
         bluetoothService?.run { stopRetry() }
     }
 
-    override fun sendData(byteArray: ByteArray) {
-        bluetoothService?.run { sendData(byteArray) }
+    override fun sendData(byteArray: ByteArray, isPrint: Boolean) {
+        bluetoothService?.run { sendData(byteArray, isPrint) }
     }
 }

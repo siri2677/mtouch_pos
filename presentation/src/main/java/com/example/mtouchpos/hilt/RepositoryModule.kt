@@ -98,7 +98,7 @@ object RepositoryModule {
             override fun connect(deviceInfo: String) {}
             override fun disConnect() {}
             override fun stopRetry() {}
-            override fun sendData(byteArray: ByteArray) {}
+            override fun sendData(byteArray: ByteArray, isPrint: Boolean) {}
         }
 
         return when(fetchConnectedDeviceInfo.getCurrentCardReaderData()) {

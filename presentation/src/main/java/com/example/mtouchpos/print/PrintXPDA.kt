@@ -19,7 +19,6 @@ import kotlin.String
 import kotlin.let
 
 class PrintXPDA(
-    private val context: Context,
     private val userInfo: UserInfo,
     private val approvedPaymentType: ApprovedPaymentType
 ): CardTerminalPrintManager, Serializable {
@@ -48,228 +47,230 @@ class PrintXPDA(
     }
 
     override fun invoke() {
-        try {
-            // 라인 추가시 마다 라인카운드 값은 1씩 증가됨.
-            printerInfo.printLineCount = 0
+        Thread {
+            try {
+                // 라인 추가시 마다 라인카운드 값은 1씩 증가됨.
+                printerInfo.printLineCount = 0
 
 //            val mPosPrintStateInfo = PosPrinter.getPrintStateInfo(0)
-            posPrinter.cleanCache()  // 프린터 메모리 클리어
-            val param = posPrinter.parameters  // 설정값 가져오기
+                posPrinter.cleanCache()  // 프린터 메모리 클리어
+                val param = posPrinter.parameters  // 설정값 가져오기
 
-            param.apply {
-                fontSize = 24  // 라인당 42 칼럼 문자
-                printGray = 2000
-                fontEffet = 0  // Font Effect 없음
-                lineSpace = 5
+                param.apply {
+                    fontSize = 24  // 라인당 42 칼럼 문자
+                    printGray = 2000
+                    fontEffet = 0  // Font Effect 없음
+                    lineSpace = 5
 
-                val fontFile = File("/system/fonts/XPDA-A42CGulim.ttf")
-                fontName = if (!fontFile.exists()) {
-                    "${getExternalStorageDirectory()}/fonts/XPDA-A42CGulim.ttf"
-                } else {
-                    "/system/fonts/XPDA-A42CGulim.ttf"
+                    val fontFile = File("/system/fonts/XPDA-A42CGulim.ttf")
+                    fontName = if (!fontFile.exists()) {
+                        "${getExternalStorageDirectory()}/fonts/XPDA-A42CGulim.ttf"
+                    } else {
+                        "/system/fonts/XPDA-A42CGulim.ttf"
+                    }
                 }
-            }
-            printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
-            posPrinter.parameters = param
+                printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
+                posPrinter.parameters = param
 
-            if (!addPrintLine("- - - - - - - - - - - - - - - - - - - - - ")) return
+                if (!addPrintLine("- - - - - - - - - - - - - - - - - - - - - ")) return@Thread
 
-            var sPrint1 = "가 맹 점 명:"
-            var sPrint2 = userInfo.mchtName
-            var sPrintLine = printLine(
-                listOf(
-                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                var sPrint1 = "가 맹 점 명:"
+                var sPrint2 = userInfo.mchtName
+                var sPrintLine = printLine(
+                    listOf(
+                        format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                        format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                    )
                 )
-            )
-            if (!addPrintLine(sPrintLine)) return
+                if (!addPrintLine(sPrintLine)) return@Thread
 
-            sPrint1 = "대 표 자 명:"
-            sPrint2 = userInfo.ceoName
-            sPrintLine = printLine(
-                listOf(
-                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                sPrint1 = "대 표 자 명:"
+                sPrint2 = userInfo.ceoName
+                sPrintLine = printLine(
+                    listOf(
+                        format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                        format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                    )
                 )
-            )
-            if (!addPrintLine(sPrintLine)) return
+                if (!addPrintLine(sPrintLine)) return@Thread
 
-            sPrint1 = "사업자 번호: "
-            sPrint2 = userInfo.identity
-            sPrintLine = printLine(
-                listOf(
-                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                sPrint1 = "사업자 번호: "
+                sPrint2 = userInfo.identity
+                sPrintLine = printLine(
+                    listOf(
+                        format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                        format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                    )
                 )
-            )
-            if (!addPrintLine(sPrintLine)) return
+                if (!addPrintLine(sPrintLine)) return@Thread
 
-            sPrint1 = "전 화 번 호: "
-            sPrint2 = userInfo.telNo
-            sPrintLine = printLine(
-                listOf(
-                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                sPrint1 = "전 화 번 호: "
+                sPrint2 = userInfo.telNo
+                sPrintLine = printLine(
+                    listOf(
+                        format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                        format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                    )
                 )
-            )
-            if (!addPrintLine(sPrintLine)) return
+                if (!addPrintLine(sPrintLine)) return@Thread
 
-            sPrint1 = "주 소: "
-            sPrint2 = userInfo.address
-            sPrintLine = printLine(
-                listOf(
-                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                sPrint1 = "주 소: "
+                sPrint2 = userInfo.address
+                sPrintLine = printLine(
+                    listOf(
+                        format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                        format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                    )
                 )
-            )
-            if (!addPrintLine(sPrintLine)) return
+                if (!addPrintLine(sPrintLine)) return@Thread
 
-            if (!addPrintLine("- - - - - - - - - - - - - - - - - - - - - ")) return
+                if (!addPrintLine("- - - - - - - - - - - - - - - - - - - - - ")) return@Thread
 
-            param.apply {
-                fontSize = 23
-                fontFlags = 0
-                printAlign = 1
-            }
-            printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
-            posPrinter.parameters = param
-
-            when(approvedPaymentType) {
-                is ApprovedPaymentType.CompletePaymentViewInfo -> {
-                    if (!addPrintLine("** 신용${if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "취소" else "승인"}정보 **")) return
-                    if (!addNewLine(1)) return
-
-                    param.apply {
-                        fontSize = 24
-                        fontEffet = 0
-                        printAlign = 0
-                    }
-                    printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
-                    posPrinter.parameters = param
-
-                    sPrint1 = "거래 일시: "
-                    sPrint2 = approvedPaymentType.authDate
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    sPrint1 = "승인 번호: "
-                    sPrint2 = approvedPaymentType.authCode
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    if (approvedPaymentType.acquirer.isNotEmpty()) {
-                        sPrint1 = "카드종류: "
-                        sPrint2 = approvedPaymentType.acquirer
-                        sPrintLine = printLine(
-                            listOf(
-                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                            )
-                        )
-                        if (!addPrintLine(sPrintLine)) return
-                    }
-
-                    if (approvedPaymentType.issuer.isNotEmpty()) {
-                        sPrint1 = "카드발급사: "
-                        sPrint2 = approvedPaymentType.issuer
-                        sPrintLine = printLine(
-                            listOf(
-                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                            )
-                        )
-                        if (!addPrintLine(sPrintLine)) return
-                    }
-
-                    if (!addPrintLine(sPrintLine)) return
-
-                    var maskCardNum = approvedPaymentType.cardNumber.padEnd(16, '*')
-                    sPrint1 = "카드 번호: "
-                    sPrint2 = "${maskCardNum.substring(0, 4)}-${maskCardNum.substring(4, 8)}-${maskCardNum.substring(8, 12)}-${maskCardNum.substring(12)}"
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    sPrint1 = "결제 방법: "
-                    sPrint2 = if (approvedPaymentType.installment.toInt() == 0) "일시불" else "${approvedPaymentType.installment} 개월"
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    if (!addPrintLine("==========================================")) return
-
-                    sPrint1 = "공 급 가: "
-                    sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.getSupplyAmount() + " 원"
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    sPrint1 = "부 가 세: "
-                    sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.getTaxAmount() + " 원"
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
-                    if (!addPrintLine(sPrintLine)) return
-
-                    if (approvedPaymentType.serviceAmount.toInt() > 0) {
-                        sPrint1 = "봉 사 료: "
-                        sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.serviceAmount + " 원"
-                        sPrintLine = printLine(
-                            listOf(
-                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                            )
-                        )
-                        if (!addPrintLine(sPrintLine)) return
-                    }
-
-                    sPrint1 = "승인 금액: "
-                    sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.totalAmount + " 원"
-                    sPrintLine = printLine(
-                        listOf(
-                            format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
-                            format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
-                        )
-                    )
+                param.apply {
+                    fontSize = 23
+                    fontFlags = 0
+                    printAlign = 1
                 }
-                is ApprovedPaymentType.PaymentHistoryViewInfo -> TODO()
+                printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
+                posPrinter.parameters = param
+
+                when(approvedPaymentType) {
+                    is ApprovedPaymentType.CompletePaymentViewInfo -> {
+                        if (!addPrintLine("** 신용${if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "취소" else "승인"}정보 **")) return@Thread
+                        if (!addNewLine(1)) return@Thread
+
+                        param.apply {
+                            fontSize = 24
+                            fontEffet = 0
+                            printAlign = 0
+                        }
+                        printerInfo.colPerLine = printerInfo.MAX_COLUMN_42
+                        posPrinter.parameters = param
+
+                        sPrint1 = "거래 일시: "
+                        sPrint2 = approvedPaymentType.authDate
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        sPrint1 = "승인 번호: "
+                        sPrint2 = approvedPaymentType.authCode
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        if (approvedPaymentType.acquirer.isNotEmpty()) {
+                            sPrint1 = "카드종류: "
+                            sPrint2 = approvedPaymentType.acquirer
+                            sPrintLine = printLine(
+                                listOf(
+                                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                                )
+                            )
+                            if (!addPrintLine(sPrintLine)) return@Thread
+                        }
+
+                        if (approvedPaymentType.issuer.isNotEmpty()) {
+                            sPrint1 = "카드발급사: "
+                            sPrint2 = approvedPaymentType.issuer
+                            sPrintLine = printLine(
+                                listOf(
+                                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                                )
+                            )
+                            if (!addPrintLine(sPrintLine)) return@Thread
+                        }
+
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        var maskCardNum = approvedPaymentType.cardNumber.padEnd(16, '*')
+                        sPrint1 = "카드 번호: "
+                        sPrint2 = "${maskCardNum.substring(0, 4)}-${maskCardNum.substring(4, 8)}-${maskCardNum.substring(8, 12)}-${maskCardNum.substring(12)}"
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        sPrint1 = "결제 방법: "
+                        sPrint2 = if (approvedPaymentType.installment.toInt() == 0) "일시불" else "${approvedPaymentType.installment} 개월"
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        if (!addPrintLine("==========================================")) return@Thread
+
+                        sPrint1 = "공 급 가: "
+                        sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.getSupplyAmount() + " 원"
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        sPrint1 = "부 가 세: "
+                        sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.getTaxAmount() + " 원"
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                        if (!addPrintLine(sPrintLine)) return@Thread
+
+                        if (approvedPaymentType.serviceAmount.toInt() > 0) {
+                            sPrint1 = "봉 사 료: "
+                            sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.serviceAmount + " 원"
+                            sPrintLine = printLine(
+                                listOf(
+                                    format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                    format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                                )
+                            )
+                            if (!addPrintLine(sPrintLine)) return@Thread
+                        }
+
+                        sPrint1 = "승인 금액: "
+                        sPrint2 = (if (approvedPaymentType.purchaseType == PurchaseType.REFUND) "- " else "") + approvedPaymentType.totalAmount + " 원"
+                        sPrintLine = printLine(
+                            listOf(
+                                format(sPrint1, 15, " ", DataFormat.ALIGN_LEFT),
+                                format(sPrint2, 27, " ", DataFormat.ALIGN_RIGHT)
+                            )
+                        )
+                    }
+                    is ApprovedPaymentType.PaymentHistoryViewInfo -> TODO()
+                }
+
+
+                if (!addPrintLine(sPrintLine)) return@Thread
+                if (!addPrintLine("==========================================")) return@Thread
+                if (!addNewLine(3)) return@Thread
+
+                printTextToCurCache()
+
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-
-
-            if (!addPrintLine(sPrintLine)) return
-            if (!addPrintLine("==========================================")) return
-            if (!addNewLine(3)) return
-
-            printTextToCurCache()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        }.start()
     }
 
     private fun addNewLine(nNewLineCnt: Int): Boolean {

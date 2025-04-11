@@ -13,7 +13,7 @@ class CardTerminalPrintFactory {
     ): CardTerminalPrintManager? = when {
         Build.MODEL.contains("Q2") -> PrintQ2(context, userInfo, approvedPaymentType)
         Build.MODEL.contains("PM500") -> PrintPM500(context, userInfo, approvedPaymentType)
-        Build.MODEL.contains("XPDA") -> PrintXPDA(context, userInfo, approvedPaymentType)
+        Build.MODEL.contains("XPDA") -> PrintXPDA(userInfo, approvedPaymentType)
         else -> null
     }
 }

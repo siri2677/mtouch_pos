@@ -11,11 +11,13 @@ sealed class ApprovedPaymentType {
         val totalAmount: String,
         val freeAmount: String,
         val serviceAmount: String,
+        val remainAmount: String?,
         val installment: String,
         val trackId: String?,
         val authDate: String,
         val authCode: String,
         val trxId: String?,
+        val cardType: String?,
         val issuer: String,
         val acquirer: String,
         val cardNumber: String

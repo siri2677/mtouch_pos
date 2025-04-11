@@ -66,7 +66,7 @@ fun CompletePaymentView(
                     .collectAsStateWithLifecycle().value
             )
 
-            CompletePaymentView(navController, cardTerminalPrintManager, complete.data) {
+            CompletePaymentView(navController, offlinePaymentViewModel, cardTerminalPrintManager, complete.data) {
                 directPaymentViewModel.requestDirectCancelPayment(complete.data)
             }
         }
@@ -81,14 +81,14 @@ fun CompletePaymentView(
 
             offlinePaymentCoordinator.CardTerminalNewIntent()
 
-            CompletePaymentView(navController, cardTerminalPrintManager, complete.data) {
+            CompletePaymentView(navController, offlinePaymentViewModel, cardTerminalPrintManager, complete.data) {
                 offlinePaymentViewModel.updateOfflinePaymentInfo(complete.data.toCancelPaymentInfo())
                 offlinePaymentCoordinator.navigateToDeviceDialog()
             }
         }
 
         NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name -> {
-            CompletePaymentView(navController, cardTerminalPrintManager, complete.data)
+            CompletePaymentView(navController, offlinePaymentViewModel, cardTerminalPrintManager, complete.data)
         }
     }
 }
@@ -96,6 +96,7 @@ fun CompletePaymentView(
 @Composable
 fun CompletePaymentView(
     navController: NavController,
+    offlinePaymentViewModel: OfflinePaymentVM,
     cardTerminalPrintManager: CardTerminalPrintManager?,
     paymentDetailInfo: ApprovedPaymentType.CompletePaymentViewInfo,
     cancelPayment: () -> Unit = {}
@@ -133,7 +134,7 @@ fun CompletePaymentView(
                     )
             ) {
                 Column(
-                    modifier = Modifier.padding(top = 10.dp, start = 30.dp, bottom = 40.dp)
+                    modifier = Modifier.padding(top = 10.dp, start = 30.dp, bottom = 30.dp)
                 ) {
                     listOf(
                         "전표번호" to paymentDetailInfo.trackId!!,
@@ -144,7 +145,7 @@ fun CompletePaymentView(
                         "거래번호" to paymentDetailInfo.trxId!!
                     ).forEach { (key, value) ->
                         ColumnKeyValueTextBox(
-                            modifier = Modifier.padding(top = 20.dp),
+                            modifier = Modifier.padding(top = 10.dp),
                             key = key,
                             value = value
                         )
@@ -153,7 +154,7 @@ fun CompletePaymentView(
 
                 Row(
                     modifier = Modifier
-                        .padding(start = 10.dp, end = 20.dp, bottom = 50.dp)
+                        .padding(start = 10.dp, end = 20.dp, bottom = 10.dp)
                 ) {
                     mutableListOf(
                         "PRINT" to R.color.teal_700,
@@ -171,7 +172,7 @@ fun CompletePaymentView(
                                 .background(colorResource(id = colorId))
                                 .clickable {
                                     when (value) {
-                                        "PRINT" -> { cardTerminalPrintManager?.invoke() }
+                                        "PRINT" -> { cardTerminalPrintManager?.invoke() ?: offlinePaymentViewModel.print(paymentDetailInfo) }
                                         "문자\n영수증" -> {}
                                         "이미지\n영수증" -> {}
                                         "취소" -> cancelPayment()

@@ -11,6 +11,7 @@ data class UserDetailData (
     val identity: String,
     val semiAuth: String,
     val appDirect: String,
+    val van: String,
     val key: String,
     val vat: String,
     val apiMaxInstall: String,

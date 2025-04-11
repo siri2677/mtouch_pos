@@ -103,7 +103,9 @@ class OfflinePaymentCoordinator(
                     authCode = result.data?.data?.getQueryParameter("approval_no")!!.trim(),
                     issuer = result.data?.data?.getQueryParameter("issuer_name")!!.trim(),
                     acquirer = result.data?.data?.getQueryParameter("acquirer_name")!!.trim(),
-                    cardNumber = result.data?.data?.getQueryParameter("card_no")!!
+                    cardNumber = result.data?.data?.getQueryParameter("card_no")!!,
+                    cardType = null,
+                    remainAmount = null
                 )
             } else null
         )
@@ -140,7 +142,9 @@ class OfflinePaymentCoordinator(
                         authCode = intent.data?.getQueryParameter("confmNo")!!,
                         issuer = intent.data?.getQueryParameter("issuCmpnyNm")!!,
                         acquirer = intent.data?.getQueryParameter("puchasCmpnyNm")!!,
-                        cardNumber = intent.data?.getQueryParameter("cardNo")!!.replace("-", "")
+                        cardNumber = intent.data?.getQueryParameter("cardNo")!!.replace("-", ""),
+                        cardType = null,
+                        remainAmount = null,
                     )
                 } else null
             )
@@ -161,7 +165,9 @@ class OfflinePaymentCoordinator(
                         authCode = intent.data?.getQueryParameter("approvalNo")!!,
                         issuer = intent.data?.getQueryParameter("issuerName")!!,
                         acquirer = intent.data?.getQueryParameter("acquirerName")!!,
-                        cardNumber = intent.data?.getQueryParameter("cardNo")!!.replace("-", "")
+                        cardNumber = intent.data?.getQueryParameter("cardNo")!!.replace("-", ""),
+                        cardType = null,
+                        remainAmount = null,
                     )
                 } else null
             )

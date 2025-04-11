@@ -20,6 +20,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.example.domain.model.cardreader.CardReaderStatus
 import kotlinx.coroutines.CoroutineScope
@@ -178,6 +179,7 @@ class BluetoothCardReaderService(): Service() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     @SuppressLint("MissingPermission")
     fun disConnect() {
         if(::bluetoothGatt.isInitialized) {
@@ -195,19 +197,48 @@ class BluetoothCardReaderService(): Service() {
     }
 
     @SuppressLint("MissingPermission")
-    fun sendData(byteArray: ByteArray) {
+    fun sendData(byteArray: ByteArray, isPrint: Boolean = false) {
         writeData = byteArray
+        Log.w("sendData", byteArray.toString())
         findCharacteristic(
             bluetoothGatt,
             CHARACTERISTIC_WRITE_STRING
         )?.also {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                bluetoothGatt.writeCharacteristic(it, byteArray, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+            if(isPrint) {
+                for (i in 0..(byteArray.size / 20)) {
+                    val subPacket = if (i == byteArray.size / 20) {
+                        byteToSubByte(byteArray, i * 20, byteArray.size - (20 * i))
+                    } else {
+                        byteToSubByte(byteArray, i * 20, 20)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        bluetoothGatt.writeCharacteristic(it, subPacket, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                    } else {
+                        it.value = subPacket
+                        bluetoothGatt.writeCharacteristic(it)
+                    }
+
+                    Thread.sleep(10)
+                }
             } else {
-                it.value = byteArray
-                bluetoothGatt.writeCharacteristic(it)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    bluetoothGatt.writeCharacteristic(it, byteArray, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                } else {
+                    it.value = byteArray
+                    bluetoothGatt.writeCharacteristic(it)
+                }
             }
         }
+    }
+
+    fun byteToSubByte(buf: ByteArray, start: Int, length: Int): ByteArray {
+        val _buf = ByteArray(length)
+        if (start + length > buf.size) {
+            return _buf
+        }
+        System.arraycopy(buf, start, _buf, 0, length)
+        return _buf
     }
 
     private fun <T> MutableSharedFlow<T>.emitWithInCoroutine(cardReaderStatus: T) {

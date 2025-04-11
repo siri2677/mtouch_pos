@@ -59,7 +59,7 @@ class PrintQ2(
                     htmlText += "카드  종류: ${it.issuer}<br>"
                     htmlText += "카드발급사: ${it.acquirer}<br>"
                     htmlText += "카드  번호: ${it.cardNumber}<br>"
-                    htmlText += "결제  방법: ${if(it.installment == "0") "일시불" else "${it.installment} 개월"}<br>"
+                    htmlText += "결제  방법: ${if(it.installment.toInt() == 0) "일시불" else "${it.installment} 개월"}<br>"
                     htmlText += "</span>"
 
                     htmlText += drawEqualLine()

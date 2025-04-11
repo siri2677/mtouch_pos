@@ -70,7 +70,8 @@ class UserRepositoryImpl @Inject constructor(
         key = key,
         vat = vat,
         apiMaxInstall = apiMaxInstall,
-        payKey = payKey
+        payKey = payKey,
+        van = van,
     )
 
     private fun UserDetailData.toUserInformationEntity() = UserEntity(
@@ -87,7 +88,8 @@ class UserRepositoryImpl @Inject constructor(
         key = key,
         vat = vat,
         apiMaxInstall = apiMaxInstall,
-        payKey = payKey
+        payKey = payKey,
+        van = van
     )
 
     private fun UserEntity.toRequestGetUserInformationModel() = UserDetailData(
@@ -104,6 +106,7 @@ class UserRepositoryImpl @Inject constructor(
         key = key,
         vat = vat,
         apiMaxInstall = apiMaxInstall,
-        payKey = payKey
+        payKey = payKey,
+        van = van
     )
 }

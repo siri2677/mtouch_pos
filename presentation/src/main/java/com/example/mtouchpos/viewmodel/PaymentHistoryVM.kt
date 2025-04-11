@@ -79,6 +79,7 @@ class PaymentHistoryVM @Inject constructor(
 
     fun fetchPaymentStatistic() {
         viewModelScope.launch {
+            _paymentStatisticInfo.emit(UseCaseResult.Loading)
             fetchPaymentHistoryStatisticsUseCase(periodInfo.value.toPeriodData()).map { apiResult ->
                 apiResult.toUseCaseResult { it.toPaymentStatisticInfo() }
             }.collect { _paymentStatisticInfo.emit(it) }

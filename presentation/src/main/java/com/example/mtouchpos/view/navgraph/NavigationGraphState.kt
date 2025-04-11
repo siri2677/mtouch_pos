@@ -27,6 +27,7 @@ sealed interface NavigationGraphState {
     enum class PaymentHistoryView: NavigationGraphState {
         PaymentHistory,
         PaymentHistoryDetail,
+        PaymentStatistic,
         Calendar
     }
 }

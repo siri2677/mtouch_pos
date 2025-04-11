@@ -23,6 +23,7 @@ import com.example.mtouchpos.view.ui.ManifestPermissionRequestView
 import com.example.mtouchpos.view.ui.OfflinePaymentView
 import com.example.mtouchpos.view.ui.PaymentHistoryDetailView
 import com.example.mtouchpos.view.ui.PaymentHistoryView
+import com.example.mtouchpos.view.ui.PaymentStatisticsView
 import com.example.mtouchpos.view.ui.PgIdLoginDialog
 import com.example.mtouchpos.view.ui.RegisteredIdDialog
 import com.example.mtouchpos.view.ui.navigate
@@ -133,6 +134,12 @@ class MainViewNavGraph(
                     navController = navController,
                     offlinePaymentViewModel = it.sharedViewModel<OfflinePaymentVM>(navController),
                     paymentHistoryInfo = it.getSerializableArgument(RESPONSE_GET_PAYMENT_LIST)!!
+                )
+            }
+            composable(NavigationGraphState.PaymentHistoryView.PaymentStatistic.name) {
+                PaymentStatisticsView(
+                    navController = navController,
+                    customPaymentPeriod = it.getSerializableArgument(NavigationBundleKey.SEARCH_PERIOD)
                 )
             }
             composable(NavigationGraphState.PaymentHistoryView.Calendar.name) {

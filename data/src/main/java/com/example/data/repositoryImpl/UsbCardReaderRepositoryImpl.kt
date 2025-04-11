@@ -43,7 +43,7 @@ class UsbCardReaderRepositoryImpl(private val context: Context) : CardReaderComm
         usbService?.run { stopRetry() }
     }
 
-    override fun sendData(byteArray: ByteArray) {
+    override fun sendData(byteArray: ByteArray, isPrint: Boolean) {
         usbService?.run { sendData(byteArray) }
     }
 }

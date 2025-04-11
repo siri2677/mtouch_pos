@@ -125,7 +125,9 @@ class DirectPaymentRepositoryImpl @Inject constructor(
         authDate = result.create,
         authCode = pay.authCd!!,
         trxId = pay.trxId,
-        trxResult = pay.trxType
+        cardType = null,
+        remainAmount = null,
+        trxResult = pay.trxType,
     )
 
     private fun ResponseDirectPayment.DirectCancelPayment.toPaymentDetailInfo(
@@ -142,6 +144,8 @@ class DirectPaymentRepositoryImpl @Inject constructor(
         authCode = refund!!.authCd!!,
         trxId = refund!!.trxId!!,
         trxResult = refund.trxType,
+        cardType = null,
+        remainAmount = null,
         cardNumber = directPaymentData.cardNumber
     )
 }

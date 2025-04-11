@@ -24,36 +24,6 @@ import dagger.hilt.android.scopes.ViewModelScoped
 @Module
 @InstallIn(ViewModelComponent::class)
 object OfflinePaymentUseCaseModule {
-    private val gsonBuilder = GsonBuilder().registerTypeAdapterFactory(
-        RuntimeTypeAdapterFactory.of(CardReaderData::class.java, "type")
-            .registerSubtype(CardReaderData.Bluetooth::class.java)
-            .registerSubtype(CardReaderData.Usb::class.java)
-    )
-
-    @Provides
-    @ViewModelScoped
-    fun provideFetchConnectedDeviceInfoUseCase(
-        deviceRepository: DeviceRepository
-    ): FetchConnectedDeviceInfo = FetchConnectedDeviceInfo(
-        deviceInfoAdapterFactoryGson = gsonBuilder.create(),
-        deviceRepository = deviceRepository,
-    )
-
-    @Provides
-    @ViewModelScoped
-    fun provideDeleteDeviceInfoUseCase(
-        deviceRepository: DeviceRepository
-    ): DeleteDeviceInfo = DeleteDeviceInfo(deviceRepository = deviceRepository)
-
-    @Provides
-    @ViewModelScoped
-    fun provideUpdateConnectedDeviceInfoUseCase(
-        deviceRepository: DeviceRepository
-    ): UpdateConnectedDeviceInfo = UpdateConnectedDeviceInfo(
-        deviceInfoAdapterFactoryGson = gsonBuilder.create(),
-        deviceRepository = deviceRepository
-    )
-
     @Provides
     @ViewModelScoped
     fun provideOfflinePaymentUseCase(
@@ -68,39 +38,8 @@ object OfflinePaymentUseCaseModule {
 
     @Provides
     @ViewModelScoped
-    fun provideDeviceCommunicateUseCase(
-        cardReaderCommunicateRepository: CardReaderCommunicateRepository,
-    ): CommunicateKsnetCardReader = CommunicateKsnetCardReader(
-        cardReaderCommunicateRepository = cardReaderCommunicateRepository,
-        ksnetCardReaderResponseBuilder = KsnetCardReaderResponseBuilder(),
-        ksnetCardReaderRequestBuilder = KsnetCardReaderRequestBuilder()
-    )
-
-    @Provides
-    @ViewModelScoped
-    fun provideConnectTestCardReaderUseCase(
-        cardReaderCommunicateRepository: CardReaderCommunicateRepository
-    ): ConnectCardReader = ConnectCardReader(
-        cardReaderCommunicateRepository = cardReaderCommunicateRepository,
-        ksnetCardReaderRequestBuilder = KsnetCardReaderRequestBuilder()
-    )
-
-    @Provides
-    @ViewModelScoped
     fun provideSocketCommunicateVanUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
     ): KsnetSocketCommunicate = KsnetSocketCommunicate(offlinePaymentRepository)
 
-
-//    @Provides
-//    @ViewModelScoped
-//    fun provideConnectBluetooth(
-//        @ApplicationContext context: Context
-//    ): ConnectBluetooth = ConnectBluetooth(context)
-//
-//    @Provides
-//    @ViewModelScoped
-//    fun provideConnectUsb(
-//        @ApplicationContext context: Context
-//    ): ConnectUsb = ConnectUsb(context)
 }

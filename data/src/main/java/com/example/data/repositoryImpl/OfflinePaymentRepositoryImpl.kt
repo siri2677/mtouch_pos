@@ -94,7 +94,9 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
             cardNumber = resultData.cardNum,
             trackId = trackId,
             trxId = trxId,
-            trxResult = resultData.telegramType
+            trxResult = resultData.telegramType,
+            cardType = resultData.cardType,
+            remainAmount = null
         )
 
         apiService.socketKsnet(
@@ -141,7 +143,9 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
             trxId = trxId,
             trxResult = trxResult,
             cardNumber = cardNumber,
-            issuerName = issuerName
+            issuerName = issuerName,
+            cardType = null,
+            remainAmount = null
         )
 
         apiService.push(

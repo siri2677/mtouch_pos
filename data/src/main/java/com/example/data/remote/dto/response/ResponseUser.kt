@@ -12,6 +12,7 @@ sealed interface ResponseUser {
         @SerializedName("Authorization") val authorization: String,
         val semiAuth: String,
         val identity: String,
+        val van: String,
         val accntHolder: String,
         val appDirect: String,
         val ceoName: String,

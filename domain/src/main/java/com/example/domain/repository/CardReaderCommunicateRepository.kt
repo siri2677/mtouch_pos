@@ -9,5 +9,5 @@ interface CardReaderCommunicateRepository {
     fun connect(deviceInfo: String)
     fun disConnect()
     fun stopRetry()
-    fun sendData(byteArray: ByteArray)
+    fun sendData(byteArray: ByteArray, isPrint: Boolean = false)
 }

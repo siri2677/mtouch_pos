@@ -203,12 +203,12 @@ fun GridMenu(clickEvent: (String) -> Unit) {
     )
 
     val mainGridItems = listOf(
-        MainGridItem(text = "신용결제", navigationGraphState = NavigationGraphState.CreditPaymentView.CreditPayment),
-        MainGridItem(text = "수기결제", navigationGraphState = NavigationGraphState.DirectPaymentView.DirectPayment),
-        MainGridItem(text = "장치관리", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
-        MainGridItem(text = "현금영수증", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
-        MainGridItem(text = "거래내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory),
-        MainGridItem(text = "집계내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory)
+        MainGridItem(imageRes = R.drawable.card_payment, text = "신용결제", navigationGraphState = NavigationGraphState.CreditPaymentView.CreditPayment),
+        MainGridItem(imageRes = R.drawable.card_sugi, text = "수기결제", navigationGraphState = NavigationGraphState.DirectPaymentView.DirectPayment),
+        MainGridItem(imageRes = R.drawable.device_srtting, text = "장치관리", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
+        MainGridItem(imageRes = R.drawable.card_cash, text = "현금영수증", navigationGraphState = NavigationGraphState.DeviceSettingView.Bluetooth),
+        MainGridItem(imageRes = R.drawable.history, text = "거래내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentHistory),
+        MainGridItem(imageRes = R.drawable.history_statistic, text = "집계내역", navigationGraphState = NavigationGraphState.PaymentHistoryView.PaymentStatistic)
     )
 
     mainGridItems.forEachIndexed { index, mainGridItem ->
@@ -222,8 +222,16 @@ fun GridMenu(clickEvent: (String) -> Unit) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(painter = painterResource(mainGridItem.imageRes), contentDescription = null)
-            Text(text = mainGridItem.text, fontSize = 12.sp)
+            Image(
+                modifier = Modifier.width(60.dp)
+                    .height(60.dp),
+                painter = painterResource(mainGridItem.imageRes),
+                contentDescription = null
+            )
+            Text(
+                text = mainGridItem.text,
+                fontSize = 12.sp
+            )
         }
     }
 }

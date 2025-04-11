@@ -32,7 +32,9 @@ fun PaymentDetailData.toCompletePaymentInfo(vat: String?) = ApprovedPaymentType.
     trxId = trxId,
     cardNumber = cardNumber,
     issuer = issuerName ?: "",
-    acquirer = purchaseName ?: ""
+    acquirer = purchaseName ?: "",
+    cardType = cardType,
+    remainAmount = remainAmount
 )
 
 fun PaymentHistoryData.toPaymentHistoryInfo(vat: String?) = ApprovedPaymentType.PaymentHistoryViewInfo(

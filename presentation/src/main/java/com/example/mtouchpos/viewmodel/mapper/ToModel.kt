@@ -3,6 +3,7 @@ package com.example.mtouchpos.viewmodel.mapper
 import com.example.domain.model.payment.AmountData
 import com.example.domain.model.payment.DirectPaymentData
 import com.example.domain.model.payment.OfflinePaymentData
+import com.example.domain.model.payment.PaymentDetailData
 import com.example.domain.model.paymentHistory.PeriodData
 import com.example.domain.model.user.UserData
 import com.example.mtouchpos.viewmodel.DirectPaymentVM
@@ -11,6 +12,8 @@ import com.example.mtouchpos.viewmodel.OfflinePaymentVM
 import com.example.mtouchpos.viewmodel.PaymentHistoryVM
 import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.info.UserInfo
+import com.example.mtouchpos.vo.type.PurchaseType
+import kotlin.String
 
 fun DirectPaymentVM.DirectPaymentInfo.toApproveDirectPaymentData() = DirectPaymentData.Approve(
     totalAmount = amount.toInt(),
@@ -72,4 +75,23 @@ fun ApprovedPaymentType.CompletePaymentViewInfo.toDirectCancelPaymentInfo() = Di
     amount = totalAmount,
     trackId = trackId!!,
     trxId = trxId!!,
+)
+
+fun ApprovedPaymentType.CompletePaymentViewInfo.toPaymentDetailData() = PaymentDetailData(
+    totalAmount = totalAmount,
+    taxAmount = getTaxAmount(),
+    freeAmount = freeAmount,
+    supplyAmount = getSupplyAmount(),
+    serviceAmount = serviceAmount,
+    installment = installment,
+    authCode = authCode,
+    authDate = authDate,
+    trackId = trackId,
+    trxId = trxId,
+    trxResult = if(purchaseType == PurchaseType.APPROVE) "0200" else "0420",
+    cardNumber = cardNumber,
+    issuerName = issuer,
+    purchaseName = acquirer,
+    cardType = cardType,
+    remainAmount = remainAmount
 )

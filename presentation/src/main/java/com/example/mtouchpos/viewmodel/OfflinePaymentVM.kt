@@ -11,6 +11,7 @@ import com.example.domain.model.payment.VanData
 import com.example.domain.model.user.UserDetailData
 import com.example.domain.usecase.cardreader.CommunicateKsnetCardReader
 import com.example.domain.usecase.cardreader.FetchConnectedDeviceInfo
+import com.example.domain.usecase.cardreader.PrintCompletedTransaction
 import com.example.domain.usecase.offlinePayment.KsnetSocketCommunicate
 import com.example.domain.usecase.offlinePayment.PushOfflinePayment
 import com.example.domain.usecase.offlinePayment.RequestOfflinePayment
@@ -20,16 +21,19 @@ import com.example.mtouchpos.intent.CardTerminalCommunicateManager
 import com.example.mtouchpos.viewmodel.mapper.toApprovePaymentData
 import com.example.mtouchpos.viewmodel.mapper.toCancelPaymentData
 import com.example.mtouchpos.viewmodel.mapper.toCompletePaymentInfo
+import com.example.mtouchpos.viewmodel.mapper.toPaymentDetailData
 import com.example.mtouchpos.viewmodel.mapper.toUserInfo
 import com.example.mtouchpos.vo.info.ApprovedPaymentType
 import com.example.mtouchpos.vo.info.PaymentProcessState
 import com.example.mtouchpos.vo.type.DeviceType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -44,7 +48,8 @@ class OfflinePaymentVM @Inject constructor(
     private val requestOfflinePaymentUseCase: RequestOfflinePayment,
     private val communicateKsnetCardReader: CommunicateKsnetCardReader,
     private val socketCommunicateVan: KsnetSocketCommunicate,
-    private val pushOfflinePaymentUseCase: PushOfflinePayment
+    private val pushOfflinePaymentUseCase: PushOfflinePayment,
+    private val printCompletedTransaction: PrintCompletedTransaction
 ) : ViewModel(), Serializable {
     companion object {
         const val INSERT_IC_CARD = "카드를 IC 슬롯에 넣어 주세요"
@@ -276,6 +281,16 @@ class OfflinePaymentVM @Inject constructor(
                         else offlinePaymentInfo.totalAmount.toInt() - offlinePaymentInfo.serviceAmount,
                 )
             }
+        }
+    }
+
+    fun print(completePaymentViewInfo: ApprovedPaymentType.CompletePaymentViewInfo) {
+        viewModelScope.launch {
+            printCompletedTransaction(
+                deviceInformation = fetchConnectedDeviceInfoUseCase.getCurrentCardReaderData().deviceInformation,
+                userDetailData = fetchConnectedUserInfo()!!,
+                paymentDetailData = completePaymentViewInfo.toPaymentDetailData()
+            ).collect {}
         }
     }
 }
