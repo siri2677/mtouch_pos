@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.mtouchpos">
+    package="com.kwonps.mtouchpos">
 
     <uses-feature android:name="android.hardware.usb.host" />
 
@@ -44,14 +44,18 @@
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <uses-permission-sdk-23 android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission-sdk-23 android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".MyApp"
+        android:name="com.kwonps.mtouchpos.MyApp"
         android:allowBackup="true"
         android:icon="@drawable/icon"
         android:label="@string/app_name"
@@ -59,7 +63,7 @@
         android:theme="@style/Theme.CleanArchitech_text_0506"
         tools:targetApi="34">
         <activity
-            android:name=".view.MainActivity"
+            android:name="com.kwonps.mtouchpos.view.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:taskAffinity=":default"
@@ -92,7 +96,7 @@
         </activity>
 
         <activity
-            android:name=".view.ExternalActivity"
+            android:name="com.kwonps.mtouchpos.view.ExternalActivity"
             android:configChanges="orientation|keyboardHidden"
             android:exported="true"
             android:launchMode="singleTask"

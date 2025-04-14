@@ -4,12 +4,12 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application>
         <service
-            android:name="com.example.data.service.BluetoothCardReaderService"
+            android:name="com.kwonps.data.service.BluetoothCardReaderService"
             android:enabled="true"
             android:foregroundServiceType="connectedDevice">
         </service>
         <service
-            android:name="com.example.data.service.UsbCardReaderService"
+            android:name="com.kwonps.data.service.UsbCardReaderService"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />

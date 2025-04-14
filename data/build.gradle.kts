@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.data"
+    namespace = "com.kwonps.data"
     compileSdkVersion = rootProject.libs.versions.androidCompile.get()
     defaultConfig {
         minSdk = rootProject.libs.versions.minSdk.get().toInt()

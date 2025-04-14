@@ -9,9 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.mtouchpos"
+    namespace = "com.kwonps.mtouchpos"
     compileSdkVersion = rootProject.libs.versions.androidCompile.get()
     defaultConfig {
+        versionCode = 100
+        versionName = "1.0.0"
         minSdk = rootProject.libs.versions.minSdk.get().toInt()
         targetSdk = rootProject.libs.versions.targetSdk.get().toInt()
         versionCode = rootProject.libs.versions.versionCode.get().toInt()
@@ -23,7 +25,7 @@ android {
                 force("androidx.emoji2:emoji2:1.3.0")
             }
         }
-        applicationId = "com.example.mtouchpos"
+        applicationId = "com.kwonps.mtouchpos"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {

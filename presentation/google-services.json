@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:718351410755:android:20de31adb64bb7c15a96f6",
         "android_client_info": {
-          "package_name": "com.example.mtouch.pos"
+          "package_name": "com.kwonps.mtouch.pos"
         }
       },
       "oauth_client": [],
@@ -28,7 +28,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:718351410755:android:1065ff4be9d875a15a96f6",
         "android_client_info": {
-          "package_name": "com.example.mtouchpos"
+          "package_name": "com.kwonps.mtouchpos"
         }
       },
       "oauth_client": [],
