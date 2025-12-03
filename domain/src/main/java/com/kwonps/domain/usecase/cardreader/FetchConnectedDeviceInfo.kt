@@ -1,30 +1,25 @@
 package com.kwonps.domain.usecase.cardreader
 
-import com.kwonps.domain.repository.DeviceRepository
+import com.kwonps.domain.adapter.JsonAdapter
+import com.kwonps.domain.dispatcher.CoroutineDispatcherProvider
 import com.kwonps.domain.model.cardreader.CardReaderData
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
+import com.kwonps.domain.repository.DeviceRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
 class FetchConnectedDeviceInfo(
-    private val deviceInfoAdapterFactoryGson: Gson,
-    private val deviceRepository: DeviceRepository
+    private val jsonAdapter: JsonAdapter,
+    private val deviceRepository: DeviceRepository,
+    private val dispatcherProvider: CoroutineDispatcherProvider
 ) {
-    operator fun invoke(): StateFlow<CardReaderData> =
+    operator fun invoke(): Flow<CardReaderData> =
         deviceRepository.getDeviceInfo().map {
-            deviceInfoAdapterFactoryGson.fromJson<CardReaderData>(
-                it,
-                object : TypeToken<CardReaderData>() {}.type
-            ) ?: CardReaderData.Init()
-        }.stateIn(CoroutineScope(Dispatchers.Main), SharingStarted.Lazily, CardReaderData.Init())
+            jsonAdapter.fromJson(it, CardReaderData::class.java) ?: CardReaderData.Init()
+        }.flowOn(dispatcherProvider.default)
 
-    fun getCurrentCardReaderData() = deviceInfoAdapterFactoryGson.fromJson<CardReaderData>(
+    fun getCurrentCardReaderData() = jsonAdapter.fromJson(
         deviceRepository.getCurrentRegisteredDeviceInfo(),
-        object : TypeToken<CardReaderData>() {}.type
+        CardReaderData::class.java
     ) ?: CardReaderData.Init()
 }

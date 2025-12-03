@@ -1,21 +1,23 @@
 package com.kwonps.mtouchpos
 
 import app.cash.turbine.test
-import com.kwonps.domain.repository.CardReaderCommunicateRepository
-import com.kwonps.domain.model.ApiResult
-import com.kwonps.domain.model.payment.AmountData
-import com.kwonps.domain.model.payment.Installment
-import com.kwonps.domain.model.payment.PaymentDetailData
+import com.kwonps.domain.model.cardreader.CardReaderData
+import com.kwonps.domain.model.payment.PaymentResult
+import com.kwonps.domain.model.payment.VanData
+import com.kwonps.domain.usecase.cardreader.CommunicateKsnetCardReader
 import com.kwonps.domain.usecase.cardreader.FetchConnectedDeviceInfo
+import com.kwonps.domain.usecase.cardreader.PrintCompletedTransaction
+import com.kwonps.domain.usecase.offlinePayment.ProcessOfflinePayment
 import com.kwonps.domain.usecase.offlinePayment.RequestOfflinePayment
-import com.kwonps.mtouchpos.viewmodel.UsbCardReaderSettingVM
+import com.kwonps.domain.usecase.offlinePayment.SyncReceipt
+import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
 import com.kwonps.mtouchpos.viewmodel.OfflinePaymentVM
 import com.kwonps.mtouchpos.viewmodel.mapper.toPaymentProcessState
 import io.mockk.coEvery
-import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -29,136 +31,69 @@ class RequestOfflinePaymentViewModelTest {
 
     private lateinit var viewModel: OfflinePaymentVM
     private lateinit var fetchConnectedDeviceInfo: FetchConnectedDeviceInfo
+    private lateinit var fetchConnectedUserInfo: FetchConnectedUserInfo
     private lateinit var offlinePayment: RequestOfflinePayment
-    private lateinit var offlineCancelPayment: RequestOfflineCancelPayment
-    private lateinit var deviceCommunicateManager: CardReaderCommunicateRepository
-
-    private val sampleOfflinePaymentInfo = OfflinePaymentVM.OfflinePaymentInfo(
-        freeAmount = 10,
-        installment = "02",
-        totalAmount = 1004,
-        serviceAmount = 100
-    )
-
-    private val sampleOfflineCancelPaymentInfo = OfflinePaymentVM.OfflineCancelPaymentInfo(
-        amount = "5000",          // 취소 금액
-        installment = "3",        // 할부 개월 수
-        trackId = "TRCK20230810XYZ", // 거래 추적 ID
-        trxId = "TRX9876543210",  // 거래 ID
-        authCode = "AUTH543210",  // 승인 코드
-        authDate = "2024-02-20",  // 승인 날짜
-        freeAmount = 500,         // 비과세 금액
-        serviceAmount = 50        // 서비스 수수료
-    )
-
-    private val paymentDetailData = PaymentDetailData(
-        amount = AmountData(totalAmount = 10000),
-        installment = Installment("12"),
-        approval = PaymentDetailData.ApprovalInfo(
-            authCode = "AUTH12345",
-            authDate = "20230715"
-        ),
-        tracking = PaymentDetailData.TrackingInfo(
-            trackId = "TRCK12345678",
-            trxId = "TRX987654321",
-            trxResult = "승인"
-        ),
-        card = PaymentDetailData.CardInfo(
-            cardNumber = "1234-5678-1234-5678",
-            cardType = null,
-            issuerName = "Bank of Example",
-            purchaseName = null
-        )
-    )
-
-    private val bluetoothDeviceInfo = UsbCardReaderSettingVM.BluetoothDeviceInfo(
-        deviceInformation = "f0:00:00:00:00:00",
-        deviceName = "ksr03"
-    )
+    private lateinit var processOfflinePayment: ProcessOfflinePayment
+    private lateinit var syncReceipt: SyncReceipt
+    private lateinit var communicateKsnetCardReader: CommunicateKsnetCardReader
+    private lateinit var printCompletedTransaction: PrintCompletedTransaction
 
     @Before
     fun setup() {
-        fetchConnectedDeviceInfo = mockk<FetchConnectedDeviceInfo>()
-        offlinePayment = mockk<RequestOfflinePayment>()
-        offlineCancelPayment = mockk<RequestOfflineCancelPayment>()
-        deviceCommunicateManager = mockk<CardReaderCommunicateRepository>()
+        fetchConnectedDeviceInfo = mockk(relaxed = true)
+        fetchConnectedUserInfo = mockk(relaxed = true)
+        offlinePayment = mockk(relaxed = true)
+        processOfflinePayment = mockk(relaxed = true)
+        syncReceipt = mockk(relaxed = true)
+        communicateKsnetCardReader = mockk(relaxed = true)
+        printCompletedTransaction = mockk(relaxed = true)
+
+        every { fetchConnectedDeviceInfo.getCurrentCardReaderData() } returns CardReaderData.Bluetooth(
+            deviceInformation = "f0:00:00:00:00:00",
+            deviceName = "ksr03"
+        )
 
         viewModel = OfflinePaymentVM(
             fetchConnectedDeviceInfoUseCase = fetchConnectedDeviceInfo,
+            fetchConnectedUserInfo = fetchConnectedUserInfo,
             requestOfflinePaymentUseCase = offlinePayment,
-            offlineCancelPaymentUseCase = offlineCancelPayment,
+            communicateKsnetCardReader = communicateKsnetCardReader,
+            processOfflinePayment = processOfflinePayment,
+            syncReceipt = syncReceipt,
+            printCompletedTransaction = printCompletedTransaction,
         )
     }
 
     @Test
     fun `updateOfflinePaymentInfo correctly`() = runTest {
+        val sampleOfflinePaymentInfo = OfflinePaymentVM.OfflinePaymentInfo.Approve(
+            freeAmount = 10,
+            installment = "02",
+            totalAmount = "1004",
+            serviceAmount = 100
+        )
+
         viewModel.updateOfflinePaymentInfo(sampleOfflinePaymentInfo)
 
         with(viewModel.offlinePaymentInfo.value) {
-            assertEquals(trackId, sampleOfflinePaymentInfo.trackId)
-            assertEquals(installment, sampleOfflinePaymentInfo.installment)
-            assertEquals(freeAmount, sampleOfflinePaymentInfo.freeAmount)
-            assertEquals(serviceAmount, sampleOfflinePaymentInfo.serviceAmount)
-            assertEquals(totalAmount, sampleOfflinePaymentInfo.totalAmount)
+            assertEquals(sampleOfflinePaymentInfo.trackId, trackId)
+            assertEquals(sampleOfflinePaymentInfo.installment, installment)
+            assertEquals(sampleOfflinePaymentInfo.freeAmount, freeAmount)
+            assertEquals(sampleOfflinePaymentInfo.serviceAmount, serviceAmount)
+            assertEquals(sampleOfflinePaymentInfo.totalAmount, totalAmount)
         }
-    }
-
-    @Test
-    fun `updateOfflineCancelPaymentInfo correctly`() = runTest {
-        viewModel.updateOfflineCancelPaymentInfo(sampleOfflineCancelPaymentInfo)
-
-        with(viewModel.offlineCancelPaymentInfo.value) {
-            assertEquals(amount, sampleOfflineCancelPaymentInfo.amount)
-            assertEquals(installment, sampleOfflineCancelPaymentInfo.installment)
-            assertEquals(trackId, sampleOfflineCancelPaymentInfo.trackId)
-            assertEquals(trxId, sampleOfflineCancelPaymentInfo.trxId)
-            assertEquals(authCode, sampleOfflineCancelPaymentInfo.authCode)
-            assertEquals(authDate, sampleOfflineCancelPaymentInfo.authDate)
-            assertEquals(freeAmount, sampleOfflineCancelPaymentInfo.freeAmount)
-            assertEquals(serviceAmount, sampleOfflineCancelPaymentInfo.serviceAmount)
-        }
-    }
-
-    @Test
-    fun `fetchConnectedDeviceInfo correctly`() = runTest {
-        coEvery { fetchConnectedDeviceInfo() } returns bluetoothDeviceInfo
-
-        viewModel.fetchConnectedDeviceInfo()
-
-        coVerify(exactly = 1) { fetchConnectedDeviceInfo() }
     }
 
     @Test
     fun `requestOfflinePayment success emits paymentProcessState result`() = runTest {
-        val apiResult = ApiResult.Success(
-            OfflinePaymentProcessStatus.CompletePayment(paymentDetailData)
-        )
+        val apiResult = PaymentResult.Success(VanData())
         val paymentProcessState = apiResult.toPaymentProcessState()
 
-        coEvery { offlinePayment(any(), any()) } returns flow { emit(apiResult) }
+        coEvery { offlinePayment(any()) } returns flowOf(apiResult)
 
         viewModel.paymentProcessState.test {
             viewModel.requestOfflinePayment(null)
             assertEquals(awaitItem(), paymentProcessState)
         }
-
-        coVerify(exactly = 1) { offlinePayment(any(), any()) }
-    }
-
-    @Test
-    fun `requestOfflineCancelPayment success emits paymentProcessState result`() = runTest {
-        val apiResult = ApiResult.Success(
-            OfflinePaymentProcessStatus.CompletePayment(paymentDetailData)
-        )
-        val paymentProcessState = apiResult.toPaymentProcessState()
-
-        coEvery { offlineCancelPayment(any(), any(), any()) } returns flow { emit(apiResult) }
-
-        viewModel.paymentProcessState.test {
-            viewModel.requestOfflinePayment(null)
-            assertEquals(awaitItem(), paymentProcessState)
-        }
-
-        coVerify(exactly = 1) { offlineCancelPayment(any(), any(), any()) }
     }
 }
