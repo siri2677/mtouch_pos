@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -35,15 +36,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.window.Dialog
 import com.kwonps.mtouchpos.R
 import com.kwonps.mtouchpos.coordinator.DirectPaymentCoordinator
 import com.kwonps.mtouchpos.view.navgraph.NavigationBundleKey
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
 import com.kwonps.mtouchpos.view.ui.theme.TopNavigation
 import com.kwonps.mtouchpos.view.util.GradientButton
+import com.kwonps.mtouchpos.view.util.LoadingDialogContent
+import com.kwonps.mtouchpos.view.util.MessageDialogContent
 import com.kwonps.mtouchpos.view.util.SelectDialog
 import com.kwonps.mtouchpos.viewmodel.DirectPaymentVM
+import com.kwonps.mtouchpos.viewmodel.DirectPaymentVM.DirectPaymentState
+import com.kwonps.mtouchpos.viewmodel.DirectPaymentVM.DirectPaymentUiEvent
 import com.kwonps.mtouchpos.viewmodel.LoginVM
+import kotlinx.coroutines.flow.collectLatest
 import java.util.Calendar
 
 @Composable
@@ -68,12 +75,17 @@ fun DirectPaymentView(
 
     val currentConnectedUserInfo = mainActivityViewModel.fetchCurrentConnectedUserInfo()
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val directPaymentViewInfo = directPaymentViewModel.directPaymentInfo.collectAsStateWithLifecycle().value
+    val uiState = directPaymentViewModel.uiState.collectAsStateWithLifecycle().value
+    val directPaymentViewInfo = uiState.directPaymentInfo
 
-    DirectPaymentCoordinator(navController).observeResultPaymentData(
-        directPaymentViewModel.reactDirectPaymentInfo
-            .collectAsStateWithLifecycle().value
-    )
+    LaunchedEffect(Unit) {
+        directPaymentViewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is DirectPaymentUiEvent.NavigateToComplete -> DirectPaymentCoordinator(navController)
+                    .navigateToCompletePaymentView(event.data)
+            }
+        }
+    }
 
     Scaffold(
         topBar = { TopNavigation("수기 결제", navController) }
@@ -215,6 +227,15 @@ fun DirectPaymentView(
                 )
             }
         }
+    }
+
+    when (val paymentState = uiState.paymentState) {
+        DirectPaymentState.Loading -> Dialog(onDismissRequest = {}) { LoadingDialogContent() }
+        is DirectPaymentState.Failed -> Dialog(onDismissRequest = { directPaymentViewModel.dismissDialog() }) {
+            MessageDialogContent(paymentState.message) { directPaymentViewModel.dismissDialog() }
+        }
+
+        else -> Unit
     }
 }
 

@@ -13,9 +13,12 @@ import com.kwonps.mtouchpos.viewmodel.mapper.toUseCaseResult
 import com.kwonps.mtouchpos.vo.info.ApprovedPaymentType
 import com.kwonps.mtouchpos.vo.type.UseCaseResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
@@ -51,49 +54,65 @@ class DirectPaymentVM @Inject constructor(
         val trxId: String = "",
     )
 
-    private val _reactDirectPaymentInfo =
-        MutableStateFlow<UseCaseResult<ApprovedPaymentType.CompletePaymentViewInfo>>(UseCaseResult.Init)
-    val reactDirectPaymentInfo = _reactDirectPaymentInfo.asStateFlow()
+    data class DirectPaymentUiState(
+        val directPaymentInfo: DirectPaymentInfo = DirectPaymentInfo(),
+        val directCancelPaymentInfo: DirectCancelPaymentInfo = DirectCancelPaymentInfo(),
+        val paymentState: DirectPaymentState = DirectPaymentState.Idle
+    )
 
-    private val _directPaymentInfo = MutableStateFlow(DirectPaymentInfo())
-    val directPaymentInfo = _directPaymentInfo.asStateFlow()
+    sealed interface DirectPaymentState {
+        object Idle : DirectPaymentState
+        object Loading : DirectPaymentState
+        data class Completed(val data: ApprovedPaymentType.CompletePaymentViewInfo) : DirectPaymentState
+        data class Failed(val message: String) : DirectPaymentState
+    }
 
-    private val _directCancelPaymentInfo = MutableStateFlow(DirectCancelPaymentInfo())
-    val directCancelPaymentInfo = _directCancelPaymentInfo.asStateFlow()
+    sealed interface DirectPaymentUiEvent {
+        data class NavigateToComplete(val data: ApprovedPaymentType.CompletePaymentViewInfo) : DirectPaymentUiEvent
+    }
 
+    private val _uiState = MutableStateFlow(DirectPaymentUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val _uiEvent = MutableSharedFlow<DirectPaymentUiEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
+    private fun updatePaymentState(paymentState: DirectPaymentState) {
+        _uiState.update { it.copy(paymentState = paymentState) }
+    }
 
     private fun processDirectPayment(directPaymentViewInfo: DirectPaymentInfo) {
         viewModelScope.launch {
-            _reactDirectPaymentInfo.value = UseCaseResult.Loading
+            updatePaymentState(DirectPaymentState.Loading)
             directPayment(
-                directPaymentViewInfo.toApproveDirectPaymentData()
+                directPaymentViewInfo.toApproveDirectPaymentData(),
             ).map { apiResult ->
                 apiResult.toUseCaseResult { it.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat) }
             }.collect {
-                _reactDirectPaymentInfo.emit(it)
+                reducePaymentResult(it)
             }
         }
     }
 
     private fun processDirectCancelPayment(directCancelPaymentInfo: DirectCancelPaymentInfo) {
         viewModelScope.launch {
-            _reactDirectPaymentInfo.value = UseCaseResult.Loading
+            updatePaymentState(DirectPaymentState.Loading)
             directCancelPayment(
-                directCancelPaymentInfo.toCancelDirectPaymentData()
+                directCancelPaymentInfo.toCancelDirectPaymentData(),
             ).map { apiResult ->
                 apiResult.toUseCaseResult { it.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat) }
             }.collect {
-                _reactDirectPaymentInfo.emit(it)
+                reducePaymentResult(it)
             }
         }
     }
 
     fun updateDirectPaymentInfo(directPaymentViewInfo: DirectPaymentInfo) {
-        _directPaymentInfo.value = directPaymentViewInfo
+        _uiState.update { it.copy(directPaymentInfo = directPaymentViewInfo) }
     }
 
     fun requestDirectPayment() {
-        processDirectPayment(directPaymentInfo.value)
+        processDirectPayment(uiState.value.directPaymentInfo)
     }
 
 
@@ -103,5 +122,26 @@ class DirectPaymentVM @Inject constructor(
 
     fun requestDirectCancelPayment(directCancelPaymentInfo: DirectCancelPaymentInfo) {
         processDirectCancelPayment(directCancelPaymentInfo)
+    }
+
+    fun dismissDialog() {
+        updatePaymentState(DirectPaymentState.Idle)
+    }
+
+    private suspend fun reducePaymentResult(result: UseCaseResult<ApprovedPaymentType.CompletePaymentViewInfo>) {
+        when (result) {
+            is UseCaseResult.Success -> {
+                updatePaymentState(DirectPaymentState.Completed(result.value))
+                _uiEvent.emit(DirectPaymentUiEvent.NavigateToComplete(result.value))
+            }
+
+            is UseCaseResult.Error -> updatePaymentState(DirectPaymentState.Failed(result.message))
+            is UseCaseResult.Exception -> updatePaymentState(
+                DirectPaymentState.Failed(result.exception.message ?: "결제 중 오류가 발생했습니다.")
+            )
+
+            is UseCaseResult.Loading -> updatePaymentState(DirectPaymentState.Loading)
+            else -> updatePaymentState(DirectPaymentState.Idle)
+        }
     }
 }
