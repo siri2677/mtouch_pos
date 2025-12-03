@@ -1,4 +1,4 @@
-package com.kwonps.mtouchpos.hilt
+package com.kwonps.data.di
 
 import android.content.Context
 import com.kwonps.data.internal.DatabaseHelper
@@ -12,13 +12,13 @@ import com.kwonps.data.repositoryImpl.UsbCardReaderRepositoryImpl
 import com.kwonps.data.repositoryImpl.UserRepositoryImpl
 import com.kwonps.domain.model.cardreader.CardReaderData
 import com.kwonps.domain.model.cardreader.CardReaderStatus
+import com.kwonps.domain.repository.CardReaderCommunicateRepository
 import com.kwonps.domain.repository.DeviceRepository
 import com.kwonps.domain.repository.DirectPaymentRepository
 import com.kwonps.domain.repository.OfflinePaymentRepository
 import com.kwonps.domain.repository.PaymentHistoryRepository
 import com.kwonps.domain.repository.UserRepository
 import com.kwonps.domain.usecase.cardreader.FetchConnectedDeviceInfo
-import com.kwonps.domain.repository.CardReaderCommunicateRepository
 import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
 import dagger.Module
 import dagger.Provides
@@ -27,7 +27,6 @@ import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.scopes.ViewModelScoped
 import kotlinx.coroutines.flow.MutableSharedFlow
-
 
 @Module
 @InstallIn(ViewModelComponent::class)
