@@ -1,7 +1,7 @@
 package com.kwonps.data.di
 
-import com.kwonps.data.common.serialization.RuntimeTypeAdapterFactory
-import com.kwonps.domain.model.cardreader.CardReaderData
+import com.kwonps.domain.adapter.JsonAdapter
+import com.kwonps.domain.dispatcher.CoroutineDispatcherProvider
 import com.kwonps.domain.model.cardreader.KsnetCardReaderRequestBuilder
 import com.kwonps.domain.model.cardreader.KsnetCardReaderResponseBuilder
 import com.kwonps.domain.repository.CardReaderCommunicateRepository
@@ -12,7 +12,6 @@ import com.kwonps.domain.usecase.cardreader.DeleteDeviceInfo
 import com.kwonps.domain.usecase.cardreader.FetchConnectedDeviceInfo
 import com.kwonps.domain.usecase.cardreader.PrintCompletedTransaction
 import com.kwonps.domain.usecase.cardreader.UpdateConnectedDeviceInfo
-import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,19 +21,16 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object CardReaderUseCaseModule {
-    private val gsonBuilder = GsonBuilder().registerTypeAdapterFactory(
-        RuntimeTypeAdapterFactory.of(CardReaderData::class.java, "type")
-            .registerSubtype(CardReaderData.Bluetooth::class.java)
-            .registerSubtype(CardReaderData.Usb::class.java)
-    )
-
     @Provides
     @Singleton
     fun provideFetchConnectedDeviceInfoUseCase(
-        deviceRepository: DeviceRepository
+        jsonAdapter: JsonAdapter,
+        deviceRepository: DeviceRepository,
+        dispatcherProvider: CoroutineDispatcherProvider,
     ): FetchConnectedDeviceInfo = FetchConnectedDeviceInfo(
-        deviceInfoAdapterFactoryGson = gsonBuilder.create(),
+        jsonAdapter = jsonAdapter,
         deviceRepository = deviceRepository,
+        dispatcherProvider = dispatcherProvider,
     )
 
     @Provides
@@ -46,9 +42,10 @@ object CardReaderUseCaseModule {
     @Provides
     @Singleton
     fun provideUpdateConnectedDeviceInfoUseCase(
+        jsonAdapter: JsonAdapter,
         deviceRepository: DeviceRepository
     ): UpdateConnectedDeviceInfo = UpdateConnectedDeviceInfo(
-        deviceInfoAdapterFactoryGson = gsonBuilder.create(),
+        jsonAdapter = jsonAdapter,
         deviceRepository = deviceRepository
     )
 
@@ -79,5 +76,4 @@ object CardReaderUseCaseModule {
         cardReaderCommunicateRepository = cardReaderCommunicateRepository,
         ksnetCardReaderRequestBuilder = KsnetCardReaderRequestBuilder()
     )
-
 }

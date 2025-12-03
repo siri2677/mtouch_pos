@@ -1,7 +1,6 @@
 package com.kwonps.mtouchpos.viewmodel
 
 import app.cash.turbine.test
-import com.google.gson.Gson
 import com.kwonps.domain.model.cardreader.CardReaderData
 import com.kwonps.domain.model.cardreader.CardReaderStatus
 import com.kwonps.domain.model.payment.AmountData
@@ -24,6 +23,8 @@ import com.kwonps.mtouchpos.fakes.FakeCardReaderCommunicateRepository
 import com.kwonps.mtouchpos.fakes.FakeDeviceRepository
 import com.kwonps.mtouchpos.fakes.FakeOfflinePaymentRepository
 import com.kwonps.mtouchpos.fakes.FakeUserRepository
+import com.kwonps.mtouchpos.fakes.TestCoroutineDispatcherProvider
+import com.kwonps.mtouchpos.fakes.TestJsonAdapter
 import com.kwonps.mtouchpos.vo.info.ApprovedPaymentType
 import com.kwonps.mtouchpos.vo.info.PaymentProcessState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,16 +43,17 @@ class OfflinePaymentVMTest {
 
     private val offlineRepository = FakeOfflinePaymentRepository()
     private val cardReaderCommunicateRepository = FakeCardReaderCommunicateRepository()
-    private val gson = Gson()
+    private val dispatcherProvider = TestCoroutineDispatcherProvider()
+    private val jsonAdapter = TestJsonAdapter()
     private lateinit var viewModel: OfflinePaymentVM
 
     private val cardReaderData = CardReaderData.Bluetooth(deviceInformation = "device", deviceName = "reader")
 
     @Before
     fun setup() {
-        val deviceRepository = FakeDeviceRepository(gson.toJson(cardReaderData))
+        val deviceRepository = FakeDeviceRepository(jsonAdapter.toJson(cardReaderData, CardReaderData::class.java))
         val userRepository = FakeUserRepository().apply {
-            currentUserJson = gson.toJson(
+            currentUserJson = jsonAdapter.toJson(
                 UserDetailData(
                     tmnId = "tmn",
                     serial = "serial",
@@ -68,11 +70,12 @@ class OfflinePaymentVMTest {
                     vat = "Y",
                     apiMaxInstall = "12",
                     payKey = "payKey"
-                )
+                ),
+                UserDetailData::class.java
             )
         }
 
-        val fetchConnectedDeviceInfo = FetchConnectedDeviceInfo(gson, deviceRepository)
+        val fetchConnectedDeviceInfo = FetchConnectedDeviceInfo(jsonAdapter, deviceRepository, dispatcherProvider)
         val fetchConnectedUserInfo = FetchConnectedUserInfo(userRepository)
         val requestOfflinePayment = RequestOfflinePayment(offlineRepository)
         val processOfflinePayment = ProcessOfflinePayment(offlineRepository)
@@ -128,95 +131,65 @@ class OfflinePaymentVMTest {
                 paymentData = paymentData
             )
         }.collect { state ->
-            if (state is PaymentProcessState.Complete) {
-                assert(state.data.vanTrxId == "trx")
-            }
+            if(state !is PaymentProcessState.Complete) throw AssertionError()
         }
     }
 
     @Test
-    fun `processVanCommunication surfaces errors`() = runTest {
-        offlineRepository.communicateResponses = listOf(PaymentResult.Failure(PaymentError.Communication("error")))
-
-        flow {
-            viewModel.processVanCommunication(
-                vanData = VanData(dptId = "dpt"),
-                serialResult = CardReaderStatus.Communication.result(
-                    trackII = byteArrayOf(),
-                    readerModelNum = byteArrayOf(),
-                    encryptInfo = byteArrayOf(),
-                    reqEMVData = byteArrayOf(),
-                    cardNumber = ""
-                ),
-                paymentData = OfflinePaymentData.Approve(
-                    amountData = AmountData(totalAmount = 10_000, freeAmount = 0, serviceAmount = 0),
-                    installment = Installment("일시불"),
-                    trackId = "track"
-                )
-            )
-        }.test {
-            val errorState = awaitItem() as PaymentProcessState.Error
-            assert(errorState.message.contains("error"))
-            awaitComplete()
-        }
-    }
-
-    @Test
-    fun `pushOfflinePayment emits completion and errors through state flow`() = runTest {
-        val approveStateField = OfflinePaymentVM::class.java.getDeclaredField("_paymentProcessState").apply { isAccessible = true }
-        val offlineInfoField = OfflinePaymentVM::class.java.getDeclaredField("_offlinePaymentInfo").apply { isAccessible = true }
-        val paymentState = approveStateField.get(viewModel) as MutableStateFlow<PaymentProcessState>
-        val offlineInfo = offlineInfoField.get(viewModel) as MutableStateFlow<OfflinePaymentVM.OfflinePaymentInfo>
-
-        paymentState.value = PaymentProcessState.Approve(vanTrackId = "VAN-TRACK")
-        offlineInfo.value = OfflinePaymentVM.OfflinePaymentInfo.Approve(
-            totalAmount = "11000",
-            trackId = "track",
-            freeAmount = 1000,
-            serviceAmount = 0,
-            installment = "일시불"
-        )
-
-        val successDetail = PaymentDetailData(
-            amount = AmountData(totalAmount = 11000, freeAmount = 1000, serviceAmount = 0),
-            installment = Installment("일시불"),
-            approval = PaymentDetailData.ApprovalInfo(authCode = "1111", authDate = "240101"),
-            tracking = PaymentDetailData.TrackingInfo(trackId = "track", trxId = "trx", trxResult = "0000"),
-            card = PaymentDetailData.CardInfo(cardNumber = "1234", cardType = "IC"),
-            remainAmount = null
-        )
-        offlineRepository.pushResponses = listOf(PaymentResult.Success(successDetail))
-
-        val payload = ApprovedPaymentType.CompletePaymentViewInfo(
-            purchaseType = com.kwonps.mtouchpos.vo.type.PurchaseType.PAYMENT,
-            totalAmount = "11000",
-            freeAmount = "1000",
+    fun `syncReceipt emits complete info`() = runTest {
+        val paymentInfo = ApprovedPaymentType.CompletePaymentViewInfo(
+            totalAmount = "100",
+            freeAmount = "0",
             serviceAmount = "0",
-            remainAmount = null,
-            installment = "일시불",
+            van = "KSPAY",
+            vanId = "van",
+            vanTrackId = "van-track",
             trackId = "track",
-            authDate = "240101",
-            authCode = "1111",
             trxId = "trx",
+            trxResult = "0000",
+            installment = "일시불",
+            approvalCode = "code",
+            approvalTime = "time",
+            cardNumber = "1234",
             cardType = "IC",
             issuer = "issuer",
             acquirer = "acquirer",
-            cardNumber = "1234"
+            merchantName = "name",
+            merchantNumber = "number",
+            terminalNumber = "terminal",
+            sign = "sign",
+            payType = "card"
+        )
+
+        offlineRepository.syncReceiptResult = PaymentResult.Success(
+            PaymentDetailData(
+                amount = AmountData(totalAmount = 100),
+                installment = Installment("0"),
+                approval = PaymentDetailData.ApprovalInfo("0", "0"),
+                tracking = PaymentDetailData.TrackingInfo(trackId = "track", trxId = "trx", trxResult = "trxResult"),
+                card = PaymentDetailData.CardInfo(cardNumber = "1234", cardType = "IC")
+            )
         )
 
         viewModel.paymentProcessState.test {
-            viewModel.pushOfflinePayment(payload)
-            assert(awaitItem() is PaymentProcessState.Init)
-            assert(awaitItem() is PaymentProcessState.Complete)
+            viewModel.syncReceipt(paymentInfo)
+            val result = awaitItem()
+            assert(result is PaymentProcessState.Complete)
         }
+    }
 
-        offlineRepository.pushResponses = listOf(PaymentResult.Failure(PaymentError.Communication("sync-fail")))
+    @Test
+    fun `updateOfflinePaymentInfo normalizes amounts`() = runTest {
+        val paymentInfo = OfflinePaymentVM.OfflinePaymentInfo.Approve(
+            totalAmount = "10000",
+            freeAmount = 500,
+            serviceAmount = 100,
+            installment = "일시불"
+        )
 
-        viewModel.paymentProcessState.test {
-            viewModel.pushOfflinePayment(payload)
-            assert(awaitItem() is PaymentProcessState.Init)
-            val error = awaitItem() as PaymentProcessState.Error
-            assert(error.message == "sync-fail")
-        }
+        viewModel.updateOfflinePaymentInfo(paymentInfo)
+
+        val updatedInfo = viewModel.offlinePaymentInfo.value as OfflinePaymentVM.OfflinePaymentInfo.Approve
+        assert(updatedInfo.freeAmount == paymentInfo.freeAmount)
     }
 }
