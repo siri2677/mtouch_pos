@@ -6,6 +6,7 @@ import com.kwonps.data.remote.handleApiResult
 import com.kwonps.data.source.user.UserLocalDataSource
 import com.kwonps.data.source.user.UserRemoteDataSource
 import com.kwonps.domain.model.ApiResult
+import com.kwonps.domain.model.user.CachedUserInformation
 import com.kwonps.domain.model.user.UserData
 import com.kwonps.domain.model.user.UserDetailData
 import com.kwonps.domain.repository.UserRepository
@@ -24,7 +25,9 @@ class UserRepositoryImpl @Inject constructor(
     private val mapper: UserMapper,
     private val flowCallDecorator: FlowCallDecorator,
 ) : UserRepository {
-    override fun getCurrentLoginUserInformation(): String? = localDataSource.getCurrentLoginUserInformation()
+    override fun getCurrentLoginUserInformation(): CachedUserInformation =
+        localDataSource.getCurrentLoginUserInformation()?.let(CachedUserInformation::Raw)
+            ?: CachedUserInformation.Empty
 
     override fun setCurrentLoginUserInformation(responseLoginModelString: String) {
         localDataSource.setCurrentLoginUserInformation(responseLoginModelString)

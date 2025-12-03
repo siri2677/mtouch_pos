@@ -18,6 +18,7 @@ import com.kwonps.domain.usecase.offlinePayment.ProcessOfflinePayment
 import com.kwonps.domain.usecase.offlinePayment.RequestOfflinePayment
 import com.kwonps.domain.usecase.offlinePayment.SyncReceipt
 import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
+import com.kwonps.data.parser.GsonUserDetailParser
 import com.kwonps.mtouchpos.MainDispatcherRule
 import com.kwonps.mtouchpos.fakes.FakeCardReaderCommunicateRepository
 import com.kwonps.mtouchpos.fakes.FakeDeviceRepository
@@ -76,7 +77,7 @@ class OfflinePaymentVMTest {
         }
 
         val fetchConnectedDeviceInfo = FetchConnectedDeviceInfo(jsonAdapter, deviceRepository, dispatcherProvider)
-        val fetchConnectedUserInfo = FetchConnectedUserInfo(userRepository)
+        val fetchConnectedUserInfo = FetchConnectedUserInfo(userRepository, GsonUserDetailParser())
         val requestOfflinePayment = RequestOfflinePayment(offlineRepository)
         val processOfflinePayment = ProcessOfflinePayment(offlineRepository)
         val syncReceipt = SyncReceipt(offlineRepository)

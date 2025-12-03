@@ -1,12 +1,13 @@
 package com.kwonps.domain.repository
 
 import com.kwonps.domain.model.ApiResult
+import com.kwonps.domain.model.user.CachedUserInformation
 import com.kwonps.domain.model.user.UserData
 import com.kwonps.domain.model.user.UserDetailData
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
-    fun getCurrentLoginUserInformation(): String?
+    fun getCurrentLoginUserInformation(): CachedUserInformation
     fun setCurrentLoginUserInformation(responseLoginModelString: String)
     fun insertUserInformation(userInfo: UserDetailData)
     fun getAllUserInformation(): Flow<List<UserDetailData>>

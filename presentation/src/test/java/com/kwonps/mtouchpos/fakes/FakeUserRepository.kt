@@ -1,6 +1,7 @@
 package com.kwonps.mtouchpos.fakes
 
 import com.kwonps.domain.model.ApiResult
+import com.kwonps.domain.model.user.CachedUserInformation
 import com.kwonps.domain.model.user.UserData
 import com.kwonps.domain.model.user.UserDetailData
 import com.kwonps.domain.repository.UserRepository
@@ -10,7 +11,8 @@ import kotlinx.coroutines.flow.flowOf
 class FakeUserRepository : UserRepository {
     var currentUserJson: String? = null
 
-    override fun getCurrentLoginUserInformation(): String? = currentUserJson
+    override fun getCurrentLoginUserInformation(): CachedUserInformation =
+        currentUserJson?.let(CachedUserInformation::Raw) ?: CachedUserInformation.Empty
 
     override fun setCurrentLoginUserInformation(responseLoginModelString: String) {
         currentUserJson = responseLoginModelString
