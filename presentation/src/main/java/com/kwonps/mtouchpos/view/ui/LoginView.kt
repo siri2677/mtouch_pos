@@ -37,7 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.LoginCoordinator
+import com.kwonps.mtouchpos.navigation.rememberLoginRouter
 import com.kwonps.mtouchpos.view.util.GradientButton
 import com.kwonps.mtouchpos.viewmodel.LoginVM
 import com.kwonps.mtouchpos.vo.info.UserInfo
@@ -55,10 +55,11 @@ fun PgIdLoginDialog(
     )
 
     val context = LocalContext.current
+    val loginRouter = rememberLoginRouter(navController)
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val loginInfo = loginViewModel.loginInfo.collectAsStateWithLifecycle().value
 
-    LoginCoordinator(navController).ObserveResultLogin(
+    loginRouter.observeResultLogin(
         context = context,
         reactLogin = loginViewModel.reactLogin
             .collectAsStateWithLifecycle(UseCaseResult.Init).value
@@ -124,13 +125,14 @@ fun RegisteredIdDialog(
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current
+    val loginRouter = rememberLoginRouter(navController)
 
     val reactLogin = loginViewModel.reactLogin.collectAsStateWithLifecycle(UseCaseResult.Init).value
     val userInfo = loginViewModel.userInfo.collectAsStateWithLifecycle(emptyList()).value
     val loginInfo = loginViewModel.loginInfo.collectAsStateWithLifecycle().value
     var selectedIndex by remember { mutableIntStateOf(-2) }
 
-    LoginCoordinator(navController).ObserveResultLogin(
+    loginRouter.observeResultLogin(
         context = context,
         reactLogin = reactLogin
     )

@@ -35,7 +35,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.kwonps.mtouchpos.navigation.OfflinePaymentRouter
+import com.kwonps.mtouchpos.navigation.rememberOfflinePaymentRouter
 import com.kwonps.mtouchpos.viewmodel.OfflinePaymentVM
 import com.kwonps.mtouchpos.viewmodel.OfflinePaymentVM.Companion.EVENT_FALLBACK
 import com.kwonps.mtouchpos.viewmodel.OfflinePaymentVM.Companion.INSERT_IC_CARD
@@ -72,7 +73,7 @@ fun PaymentProcessDialog(
     val paymentProcessState = offlinePaymentViewModel.paymentProcessState
         .collectAsStateWithLifecycle().value
     val componentActivity = findComponentActivity(LocalContext.current)
-    val offlinePaymentCoordinator = OfflinePaymentCoordinator(
+    val offlinePaymentCoordinator = rememberOfflinePaymentRouter(
         navController = navController,
         componentActivity = componentActivity,
         offlinePaymentViewModel = offlinePaymentViewModel,
@@ -175,7 +176,7 @@ fun permissionCheck(
     cardTerminalCommunicateManager: CardTerminalCommunicateManager?,
     merchantUrl: String?,
     offlinePaymentViewModel: OfflinePaymentVM,
-    offlinePaymentCoordinator: OfflinePaymentCoordinator
+    offlinePaymentCoordinator: OfflinePaymentRouter
 ) {
     val usbManager = context.getSystemService(Context.USB_SERVICE) as UsbManager
     var devices = usbManager.deviceList.values.toList()

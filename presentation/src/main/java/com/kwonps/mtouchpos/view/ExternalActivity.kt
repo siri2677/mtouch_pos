@@ -19,7 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import com.kwonps.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.kwonps.mtouchpos.navigation.OfflinePaymentRouter
 import com.kwonps.mtouchpos.view.ExternalActivity.Action
 import com.kwonps.mtouchpos.view.ExternalActivity.OfflinePaymentAction
 import com.kwonps.mtouchpos.view.navgraph.CommonViewNavGraph
@@ -208,14 +208,14 @@ fun PaymentView(
     offlinePaymentViewModel: OfflinePaymentVM
 ) {
     val context = LocalContext.current as ComponentActivity
-    val offlinePaymentCoordinator = OfflinePaymentCoordinator(
+    val offlinePaymentCoordinator = OfflinePaymentRouter(
         navController = navController,
         componentActivity = context,
         offlinePaymentViewModel = offlinePaymentViewModel,
         route = route.value
     )
 
-    offlinePaymentCoordinator.CardTerminalNewIntent()
+    offlinePaymentCoordinator.cardTerminalNewIntent()
 
     LaunchedEffect(Unit) {
         val offlinePaymentInfo = when(route) {
