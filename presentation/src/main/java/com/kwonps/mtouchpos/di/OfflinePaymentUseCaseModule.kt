@@ -1,4 +1,4 @@
-package com.kwonps.data.di
+package com.kwonps.mtouchpos.di
 
 import com.kwonps.domain.repository.OfflinePaymentRepository
 import com.kwonps.domain.usecase.offlinePayment.ProcessOfflinePayment
@@ -7,26 +7,26 @@ import com.kwonps.domain.usecase.offlinePayment.SyncReceipt
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(ActivityRetainedComponent::class)
 object OfflinePaymentUseCaseModule {
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideProcessOfflinePaymentUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
     ): ProcessOfflinePayment = ProcessOfflinePayment(offlinePaymentRepository)
 
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideRequestOfflinePaymentUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
     ): RequestOfflinePayment = RequestOfflinePayment(offlinePaymentRepository)
 
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideSyncReceiptUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
     ): SyncReceipt = SyncReceipt(offlinePaymentRepository)

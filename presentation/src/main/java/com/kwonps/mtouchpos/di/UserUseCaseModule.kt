@@ -1,4 +1,4 @@
-package com.kwonps.data.di
+package com.kwonps.mtouchpos.di
 
 import com.kwonps.domain.repository.UserRepository
 import com.kwonps.domain.usecase.user.DeleteUserInfo
@@ -9,32 +9,32 @@ import com.kwonps.domain.usecase.user.SaveUserInfo
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object UserUseCaseModule {
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDeleteUserInfo(
         userRepository: UserRepository
     ): DeleteUserInfo = DeleteUserInfo(userRepository)
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideFetchConnectedUserInfo(
         userRepository: UserRepository
     ): FetchConnectedUserInfo = FetchConnectedUserInfo(userRepository)
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideFetchSavedUserInfo(
         userRepository: UserRepository
     ): FetchSavedUserInfo = FetchSavedUserInfo(userRepository)
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideLoginUser(
         userRepository: UserRepository
     ): LoginUser = LoginUser(userRepository, SaveUserInfo(userRepository))

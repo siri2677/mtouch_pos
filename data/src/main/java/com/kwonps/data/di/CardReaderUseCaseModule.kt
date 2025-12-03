@@ -16,11 +16,11 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object CardReaderUseCaseModule {
     private val gsonBuilder = GsonBuilder().registerTypeAdapterFactory(
         RuntimeTypeAdapterFactory.of(CardReaderData::class.java, "type")
@@ -29,7 +29,7 @@ object CardReaderUseCaseModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideFetchConnectedDeviceInfoUseCase(
         deviceRepository: DeviceRepository
     ): FetchConnectedDeviceInfo = FetchConnectedDeviceInfo(
@@ -38,13 +38,13 @@ object CardReaderUseCaseModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDeleteDeviceInfoUseCase(
         deviceRepository: DeviceRepository
     ): DeleteDeviceInfo = DeleteDeviceInfo(deviceRepository = deviceRepository)
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideUpdateConnectedDeviceInfoUseCase(
         deviceRepository: DeviceRepository
     ): UpdateConnectedDeviceInfo = UpdateConnectedDeviceInfo(
@@ -53,7 +53,7 @@ object CardReaderUseCaseModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDeviceCommunicateUseCase(
         cardReaderCommunicateRepository: CardReaderCommunicateRepository
     ): CommunicateKsnetCardReader = CommunicateKsnetCardReader(
@@ -63,7 +63,7 @@ object CardReaderUseCaseModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideConnectCardReaderUseCase(
         cardReaderCommunicateRepository: CardReaderCommunicateRepository
     ): ConnectCardReader = ConnectCardReader(
@@ -72,7 +72,7 @@ object CardReaderUseCaseModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun providePrintCompletedTransaction(
         cardReaderCommunicateRepository: CardReaderCommunicateRepository
     ): PrintCompletedTransaction = PrintCompletedTransaction(

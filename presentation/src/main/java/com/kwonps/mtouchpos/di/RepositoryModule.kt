@@ -1,4 +1,4 @@
-package com.kwonps.data.di
+package com.kwonps.mtouchpos.di
 
 import android.content.Context
 import com.kwonps.data.common.dispatcher.DefaultDispatcherProvider
@@ -35,32 +35,32 @@ import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.MutableSharedFlow
+import javax.inject.Singleton
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(SingletonComponent::class)
 object RepositoryModule {
     private const val USER_INFORMATION = "userInformation"
     private const val SVC_TMS_URL = "https://svctms.mtouch.com"
     private const val SVC_API_URL = "https://svcapi.mtouch.com"
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDispatcherProvider(): DispatcherProvider = DefaultDispatcherProvider()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideRepositoryLogger(): RepositoryLogger = RepositoryLogger()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideRetryPolicy(): RetryPolicy = RetryPolicy()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideFlowCallDecorator(
         repositoryLogger: RepositoryLogger,
         retryPolicy: RetryPolicy,
@@ -68,19 +68,19 @@ object RepositoryModule {
     ): FlowCallDecorator = FlowCallDecorator(repositoryLogger, retryPolicy, dispatcherProvider)
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun providePaymentHistoryMapper(): PaymentHistoryMapper = PaymentHistoryMapper()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDirectPaymentMapper(): DirectPaymentMapper = DirectPaymentMapper()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideUserMapper(): UserMapper = UserMapper()
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideUserRemoteDataSource(
         dispatcherProvider: DispatcherProvider
     ): UserRemoteDataSource = UserRemoteDataSource(
@@ -89,7 +89,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideUserLocalDataSource(
         @ApplicationContext context: Context
     ): UserLocalDataSource = UserLocalDataSource(
@@ -99,7 +99,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideUserRepository(
         userRemoteDataSource: UserRemoteDataSource,
         userLocalDataSource: UserLocalDataSource,
@@ -113,7 +113,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideOfflinePaymentRepository(
         fetchConnectedUserInfo: FetchConnectedUserInfo
     ): OfflinePaymentRepository = OfflinePaymentRepositoryImpl(
@@ -122,13 +122,13 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDeviceRepository(
         @ApplicationContext context: Context
     ): DeviceRepository = DeviceRepositoryImpl(DatabaseHelper.getInstance(context).deviceInfoDao())
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDirectPaymentRemoteDataSource(
         dispatcherProvider: DispatcherProvider,
         fetchConnectedUserInfo: FetchConnectedUserInfo
@@ -139,7 +139,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDirectPaymentRepository(
         remoteDataSource: DirectPaymentRemoteDataSource,
         directPaymentMapper: DirectPaymentMapper,
@@ -151,7 +151,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun providePaymentHistoryRemoteDataSource(
         dispatcherProvider: DispatcherProvider,
         fetchConnectedUserInfo: FetchConnectedUserInfo,
@@ -164,7 +164,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun providePaymentHistoryRepository(
         paymentHistoryRemoteDataSource: PaymentHistoryRemoteDataSource,
         paymentHistoryMapper: PaymentHistoryMapper,
@@ -176,7 +176,7 @@ object RepositoryModule {
     )
 
     @Provides
-    @ViewModelScoped
+    @Singleton
     fun provideDeviceCommunicateManager(
         @ApplicationContext context: Context,
         fetchConnectedDeviceInfo: FetchConnectedDeviceInfo
