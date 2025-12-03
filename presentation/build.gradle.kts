@@ -90,7 +90,5 @@ dependencies {
     implementation(rootProject.libs.hilt)
 
     implementation(rootProject.libs.kotlinx.serialization.json)
-    implementation(rootProject.libs.errorprone)
-
     coreLibraryDesugaring(libs.desugaring.jdk)
 }

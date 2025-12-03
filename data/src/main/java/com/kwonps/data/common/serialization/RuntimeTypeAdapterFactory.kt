@@ -1,4 +1,4 @@
-package com.kwonps.mtouchpos.hilt
+package com.kwonps.data.common.serialization
 
 import com.google.gson.Gson
 import com.google.gson.JsonElement
@@ -37,7 +37,6 @@ class RuntimeTypeAdapterFactory<T> private constructor(
      * Ensures that this factory will handle not just the given `baseType`, but any subtype of
      * that type.
      */
-    @com.google.errorprone.annotations.CanIgnoreReturnValue
     fun recognizeSubtypes(): RuntimeTypeAdapterFactory<T> {
         this.recognizeSubtypes = true
         return this
@@ -49,7 +48,6 @@ class RuntimeTypeAdapterFactory<T> private constructor(
      * @throws IllegalArgumentException if either `type` or `label` have already been
      * registered on this type adapter.
      */
-    @com.google.errorprone.annotations.CanIgnoreReturnValue
     fun registerSubtype(type: Class<out T>?, label: String?): RuntimeTypeAdapterFactory<T> {
         if (type == null || label == null) {
             throw NullPointerException()
@@ -69,7 +67,6 @@ class RuntimeTypeAdapterFactory<T> private constructor(
      * @throws IllegalArgumentException if either `type` or its simple name have already been
      * registered on this type adapter.
      */
-    @com.google.errorprone.annotations.CanIgnoreReturnValue
     fun registerSubtype(type: Class<out T>): RuntimeTypeAdapterFactory<T> {
         return registerSubtype(type, type.simpleName)
     }

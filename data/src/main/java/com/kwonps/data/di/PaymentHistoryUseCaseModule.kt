@@ -1,4 +1,4 @@
-package com.kwonps.mtouchpos.hilt
+package com.kwonps.data.di
 
 import com.kwonps.domain.repository.PaymentHistoryRepository
 import com.kwonps.domain.usecase.paymentHistory.CheckDirectPayment

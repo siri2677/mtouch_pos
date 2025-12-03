@@ -1,5 +1,6 @@
-package com.kwonps.mtouchpos.hilt
+package com.kwonps.data.di
 
+import com.kwonps.data.common.serialization.RuntimeTypeAdapterFactory
 import com.kwonps.domain.model.cardreader.CardReaderData
 import com.kwonps.domain.model.cardreader.KsnetCardReaderRequestBuilder
 import com.kwonps.domain.model.cardreader.KsnetCardReaderResponseBuilder
