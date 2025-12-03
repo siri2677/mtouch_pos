@@ -10,6 +10,7 @@ import com.kwonps.data.internal.DatabaseHelper
 import com.kwonps.data.mapper.DirectPaymentMapper
 import com.kwonps.data.mapper.PaymentHistoryMapper
 import com.kwonps.data.mapper.UserMapper
+import com.kwonps.data.parser.GsonUserDetailParser
 import com.kwonps.data.remote.RetrofitBuilder
 import com.kwonps.data.repositoryImpl.BluetoothCardReaderRepositoryImpl
 import com.kwonps.data.repositoryImpl.DeviceRepositoryImpl
@@ -24,6 +25,7 @@ import com.kwonps.data.source.user.UserLocalDataSource
 import com.kwonps.data.source.user.UserRemoteDataSource
 import com.kwonps.domain.model.cardreader.CardReaderData
 import com.kwonps.domain.model.cardreader.CardReaderStatus
+import com.kwonps.domain.parser.UserDetailParser
 import com.kwonps.domain.repository.CardReaderCommunicateRepository
 import com.kwonps.domain.repository.DeviceRepository
 import com.kwonps.domain.repository.DirectPaymentRepository
@@ -78,6 +80,10 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideUserMapper(): UserMapper = UserMapper()
+
+    @Provides
+    @Singleton
+    fun provideUserDetailParser(): UserDetailParser = GsonUserDetailParser()
 
     @Provides
     @Singleton

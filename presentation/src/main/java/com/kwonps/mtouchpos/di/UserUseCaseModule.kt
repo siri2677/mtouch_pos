@@ -1,5 +1,6 @@
 package com.kwonps.mtouchpos.di
 
+import com.kwonps.domain.parser.UserDetailParser
 import com.kwonps.domain.repository.UserRepository
 import com.kwonps.domain.usecase.user.DeleteUserInfo
 import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
@@ -24,8 +25,9 @@ object UserUseCaseModule {
     @Provides
     @Singleton
     fun provideFetchConnectedUserInfo(
-        userRepository: UserRepository
-    ): FetchConnectedUserInfo = FetchConnectedUserInfo(userRepository)
+        userRepository: UserRepository,
+        userDetailParser: UserDetailParser
+    ): FetchConnectedUserInfo = FetchConnectedUserInfo(userRepository, userDetailParser)
 
     @Provides
     @Singleton
