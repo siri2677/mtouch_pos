@@ -1,4 +1,4 @@
-package com.kwonps.mtouchpos.hilt
+package com.kwonps.data.di
 
 import com.kwonps.domain.repository.UserRepository
 import com.kwonps.domain.usecase.user.DeleteUserInfo

@@ -46,7 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.PaymentHistoryCoordinator
+import com.kwonps.mtouchpos.navigation.rememberPaymentHistoryRouter
 import com.kwonps.mtouchpos.view.navgraph.NavigationBundleKey.Companion.RESPONSE_GET_PAYMENT_LIST
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
 import com.kwonps.mtouchpos.view.ui.theme.TopNavigation
@@ -107,6 +107,7 @@ fun PaymentHistoryView(
 
     val paymentPeriod = paymentHistoryViewModel.periodInfo.collectAsStateWithLifecycle().value
     val paymentHistoryInfo = paymentHistoryViewModel.paymentHistoryInfo.collectAsStateWithLifecycle(UseCaseResult.Init).value
+    val paymentHistoryRouter = rememberPaymentHistoryRouter(navController)
     val buttons = paymentHistoryViewModel.run {
         listOf(
             ButtonData("오늘") {
@@ -129,7 +130,7 @@ fun PaymentHistoryView(
 
     var selectedIndex by rememberSaveable { mutableIntStateOf(-1) }
 
-    PaymentHistoryCoordinator(navController).observePaymentHistoryInfoList(paymentHistoryInfo)
+    paymentHistoryRouter.observePaymentHistoryInfoList(paymentHistoryInfo)
 
     LaunchedEffect(Unit) {
         delay(1)

@@ -26,8 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.DirectPaymentCoordinator
-import com.kwonps.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.kwonps.mtouchpos.navigation.rememberDirectPaymentRouter
+import com.kwonps.mtouchpos.navigation.rememberOfflinePaymentRouter
 import com.kwonps.mtouchpos.print.CardTerminalPrintFactory
 import com.kwonps.mtouchpos.print.CardTerminalPrintManager
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
@@ -58,10 +58,10 @@ fun CompletePaymentView(
     when (argument) {
         NavigationGraphState.DirectPaymentView.DirectPayment.name -> {
             val directPaymentViewModel = hiltViewModel<DirectPaymentVM>()
+            val directPaymentRouter = rememberDirectPaymentRouter(navController)
 
-            DirectPaymentCoordinator(navController).observeResultPaymentData(
-                directPaymentViewModel.reactDirectPaymentInfo
-                    .collectAsStateWithLifecycle().value
+            directPaymentRouter.observeResultPaymentData(
+                directPaymentViewModel.reactDirectPaymentInfo.collectAsStateWithLifecycle().value
             )
 
             CompletePaymentView(navController, offlinePaymentViewModel, cardTerminalPrintManager, complete.data) {
@@ -70,14 +70,14 @@ fun CompletePaymentView(
         }
 
         NavigationGraphState.CreditPaymentView.CreditPayment.name -> {
-            val offlinePaymentCoordinator = OfflinePaymentCoordinator(
+            val offlinePaymentCoordinator = rememberOfflinePaymentRouter(
                 navController = navController,
                 offlinePaymentViewModel = offlinePaymentViewModel,
                 componentActivity = context,
                 route = argument
             )
 
-            offlinePaymentCoordinator.CardTerminalNewIntent()
+            offlinePaymentCoordinator.cardTerminalNewIntent()
 
             CompletePaymentView(navController, offlinePaymentViewModel, cardTerminalPrintManager, complete.data) {
                 offlinePaymentViewModel.updateOfflinePaymentInfo(complete.data.toCancelPaymentInfo())
