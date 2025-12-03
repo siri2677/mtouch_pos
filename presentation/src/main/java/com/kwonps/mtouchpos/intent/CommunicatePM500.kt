@@ -23,11 +23,11 @@ class CommunicatePM500(
                 is OfflinePaymentData.Approve -> "F1"
                 is OfflinePaymentData.Cancel -> "F2"
             },
-            amount = paymentInfo.amountData.getSupplyAmount().toString(),
+            amount = paymentInfo.amountData.supplyAmount.toString(),
             fee = paymentInfo.amountData.serviceAmount.toString(),
-            surtax = paymentInfo.amountData.getVat().toString(),
+            surtax = paymentInfo.amountData.vatAmount.toString(),
             tax_free = paymentInfo.amountData.freeAmount.toString(),
-            installment = paymentInfo.installment,
+            installment = paymentInfo.installment.value,
             org_approval_date = if (paymentInfo is OfflinePaymentData.Cancel) paymentInfo.authDate else "",
             org_approval_no = if (paymentInfo is OfflinePaymentData.Cancel) paymentInfo.authCode else "",
             catId = dptId

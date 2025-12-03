@@ -1,25 +1,25 @@
 package com.kwonps.domain.repository
 
-import com.kwonps.domain.model.ApiResult
 import com.kwonps.domain.model.cardreader.CardReaderStatus
 import com.kwonps.domain.model.payment.PaymentDetailData
+import com.kwonps.domain.model.payment.PaymentResult
 import com.kwonps.domain.model.payment.OfflinePaymentData
 import com.kwonps.domain.model.payment.OfflinePaymentPushData
 import com.kwonps.domain.model.payment.VanData
 import kotlinx.coroutines.flow.Flow
 
 interface OfflinePaymentRepository {
-    suspend operator fun invoke(
+    suspend fun requestPayment(
         offlinePaymentData: OfflinePaymentData
-    ): Flow<ApiResult<VanData>>
+    ): Flow<PaymentResult<VanData>>
 
-    suspend fun ksnetSocketCommunicate(
+    suspend fun communicateWithVan(
         resultCommunicateData: CardReaderStatus.Communication.result,
         offlinePaymentData: OfflinePaymentData,
         paymentVanInfo: VanData
-    ): Flow<ApiResult<PaymentDetailData>>
+    ): Flow<PaymentResult<PaymentDetailData>>
 
-    suspend fun push(
+    suspend fun pushReceipt(
         offlinePaymentPushData: OfflinePaymentPushData
-    ): Flow<ApiResult<PaymentDetailData>>
+    ): Flow<PaymentResult<PaymentDetailData>>
 }

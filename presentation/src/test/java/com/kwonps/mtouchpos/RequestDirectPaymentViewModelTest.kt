@@ -2,6 +2,8 @@ package com.kwonps.mtouchpos
 
 import app.cash.turbine.test
 import com.kwonps.domain.model.ApiResult
+import com.kwonps.domain.model.payment.AmountData
+import com.kwonps.domain.model.payment.Installment
 import com.kwonps.domain.model.payment.PaymentDetailData
 import com.kwonps.domain.usecase.directPayment.RequestDirectCancelPayment
 import com.kwonps.domain.usecase.directPayment.RequestDirectPayment
@@ -60,15 +62,23 @@ class RequestDirectPaymentViewModelTest {
     )
 
     private val paymentDetailData = PaymentDetailData(
-        amount = "10000",
-        installment = "12",
-        trackId = "TRCK12345678",
-        cardNumber = "1234-5678-1234-5678",
-        issuerName = "Bank of Example",
-        trxResult = "승인",
-        authDate = "20230715",
-        authCode = "AUTH12345",
-        trxId = "TRX987654321"
+        amount = AmountData(totalAmount = 10000),
+        installment = Installment("12"),
+        approval = PaymentDetailData.ApprovalInfo(
+            authCode = "AUTH12345",
+            authDate = "20230715"
+        ),
+        tracking = PaymentDetailData.TrackingInfo(
+            trackId = "TRCK12345678",
+            trxId = "TRX987654321",
+            trxResult = "승인"
+        ),
+        card = PaymentDetailData.CardInfo(
+            cardNumber = "1234-5678-1234-5678",
+            cardType = null,
+            issuerName = "Bank of Example",
+            purchaseName = null
+        )
     )
 
     @Before
