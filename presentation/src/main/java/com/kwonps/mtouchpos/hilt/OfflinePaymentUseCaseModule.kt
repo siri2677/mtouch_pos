@@ -1,9 +1,9 @@
 package com.kwonps.mtouchpos.hilt
 
 import com.kwonps.domain.repository.OfflinePaymentRepository
-import com.kwonps.domain.usecase.offlinePayment.KsnetSocketCommunicate
-import com.kwonps.domain.usecase.offlinePayment.PushOfflinePayment
+import com.kwonps.domain.usecase.offlinePayment.ProcessOfflinePayment
 import com.kwonps.domain.usecase.offlinePayment.RequestOfflinePayment
+import com.kwonps.domain.usecase.offlinePayment.SyncReceipt
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,20 +15,20 @@ import dagger.hilt.android.scopes.ViewModelScoped
 object OfflinePaymentUseCaseModule {
     @Provides
     @ViewModelScoped
-    fun provideOfflinePaymentUseCase(
+    fun provideProcessOfflinePaymentUseCase(
+        offlinePaymentRepository: OfflinePaymentRepository
+    ): ProcessOfflinePayment = ProcessOfflinePayment(offlinePaymentRepository)
+
+    @Provides
+    @ViewModelScoped
+    fun provideRequestOfflinePaymentUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
     ): RequestOfflinePayment = RequestOfflinePayment(offlinePaymentRepository)
 
     @Provides
     @ViewModelScoped
-    fun providePushOfflinePaymentUseCase(
+    fun provideSyncReceiptUseCase(
         offlinePaymentRepository: OfflinePaymentRepository
-    ): PushOfflinePayment = PushOfflinePayment(offlinePaymentRepository)
-
-    @Provides
-    @ViewModelScoped
-    fun provideSocketCommunicateVanUseCase(
-        offlinePaymentRepository: OfflinePaymentRepository
-    ): KsnetSocketCommunicate = KsnetSocketCommunicate(offlinePaymentRepository)
+    ): SyncReceipt = SyncReceipt(offlinePaymentRepository)
 
 }

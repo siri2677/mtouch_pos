@@ -20,7 +20,7 @@ class CommunicateXPDA(
         ITWellScheme(
             tid = dptId,
             inputAmount = paymentInfo.amountData.totalAmount.toString(),
-            inputMonth = paymentInfo.installment,
+            inputMonth = paymentInfo.installment.value,
             returnUrl = callBack.url,
             inputApprovalNo = if (paymentInfo is OfflinePaymentData.Cancel) paymentInfo.authCode else "",
             inputApprovalDate = if (paymentInfo is OfflinePaymentData.Cancel) "20" + paymentInfo.authDate else "",

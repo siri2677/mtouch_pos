@@ -5,7 +5,9 @@ import com.kwonps.data.remote.dto.request.RequestDirectPayment
 import com.kwonps.data.remote.dto.response.ResponseDirectPayment
 import com.kwonps.data.remote.handleApiResultDetail
 import com.kwonps.domain.model.ApiResult
+import com.kwonps.domain.model.payment.AmountData
 import com.kwonps.domain.model.payment.DirectPaymentData
+import com.kwonps.domain.model.payment.Installment
 import com.kwonps.domain.model.payment.PaymentDetailData
 import com.kwonps.domain.repository.DirectPaymentRepository
 import kotlinx.coroutines.flow.Flow
@@ -112,40 +114,46 @@ class DirectPaymentRepositoryImpl @Inject constructor(
     )
 
     private fun ResponseDirectPayment.DirectPayment.toPaymentDetailInfo() = PaymentDetailData(
-        totalAmount = pay!!.amount.toString(),
-        taxAmount = null,
-        freeAmount = null,
-        supplyAmount = null,
-        serviceAmount = null,
-        installment = pay.card.installment.toString(),
-        trackId = pay.trackId,
-        cardNumber = "${pay.card.bin}${"**********"}${pay.card.last4}",
-        issuerName = pay.card.issuer,
-        purchaseName = pay.product.name,
-        authDate = result.create,
-        authCode = pay.authCd!!,
-        trxId = pay.trxId,
-        cardType = null,
+        amount = AmountData(totalAmount = pay!!.amount),
+        installment = Installment(pay.card.installment.toString()),
+        approval = PaymentDetailData.ApprovalInfo(
+            authCode = pay.authCd!!,
+            authDate = result.create
+        ),
+        tracking = PaymentDetailData.TrackingInfo(
+            trackId = pay.trackId,
+            trxId = pay.trxId,
+            trxResult = pay.trxType,
+        ),
+        card = PaymentDetailData.CardInfo(
+            cardNumber = "${pay.card.bin}${"**********"}${pay.card.last4}",
+            cardType = null,
+            issuerName = pay.card.issuer,
+            purchaseName = pay.product.name,
+        ),
         remainAmount = null,
-        trxResult = pay.trxType,
     )
 
     private fun ResponseDirectPayment.DirectCancelPayment.toPaymentDetailInfo(
         directPaymentData: DirectPaymentData.Cancel
     ) = PaymentDetailData(
-        totalAmount = refund!!.amount,
-        taxAmount = null,
-        freeAmount = null,
-        supplyAmount = null,
-        serviceAmount = null,
-        installment = directPaymentData.installment,
-        trackId = refund!!.trackId,
-        authDate = result.create,
-        authCode = refund!!.authCd!!,
-        trxId = refund!!.trxId!!,
-        trxResult = refund.trxType,
-        cardType = null,
+        amount = AmountData(totalAmount = refund!!.amount.toInt()),
+        installment = Installment(directPaymentData.installment),
+        approval = PaymentDetailData.ApprovalInfo(
+            authCode = refund!!.authCd!!,
+            authDate = result.create
+        ),
+        tracking = PaymentDetailData.TrackingInfo(
+            trackId = refund!!.trackId,
+            trxId = refund!!.trxId!!,
+            trxResult = refund.trxType
+        ),
+        card = PaymentDetailData.CardInfo(
+            cardNumber = directPaymentData.cardNumber,
+            cardType = null,
+            issuerName = null,
+            purchaseName = null
+        ),
         remainAmount = null,
-        cardNumber = directPaymentData.cardNumber
     )
 }

@@ -21,11 +21,11 @@ class CommunicateQ2(
                 is OfflinePaymentData.Approve -> "1"
                 is OfflinePaymentData.Cancel -> "0"
             },
-            splpc = paymentInfo.amountData.getSupplyAmount().toString(),
+            splpc = paymentInfo.amountData.supplyAmount.toString(),
             svcpc = paymentInfo.amountData.serviceAmount.toString(),
-            vat = paymentInfo.amountData.getVat().toString(),
+            vat = paymentInfo.amountData.vatAmount.toString(),
             taxxpt = paymentInfo.amountData.freeAmount.toString(),
-            installment = paymentInfo.installment,
+            installment = paymentInfo.installment.value,
             callbackAppUrl = callBack.url,
             srcConfmNo = if (paymentInfo is OfflinePaymentData.Cancel) paymentInfo.authCode else "",
             srcConfmDe = if (paymentInfo is OfflinePaymentData.Cancel) paymentInfo.authDate else ""

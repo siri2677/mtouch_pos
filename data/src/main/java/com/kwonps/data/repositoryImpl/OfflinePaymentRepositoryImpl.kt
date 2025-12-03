@@ -6,13 +6,15 @@ import com.kwonps.data.remote.DataFormat
 import com.kwonps.data.remote.apiservice.TmsAPIService
 import com.kwonps.data.remote.handleApiResult
 import com.kwonps.data.remote.handleApiResultDetail
-import com.kwonps.domain.model.ApiResult
 import com.kwonps.domain.model.cardreader.CardReaderStatus
 import com.kwonps.domain.model.payment.PaymentDetailData
+import com.kwonps.domain.model.payment.PaymentError
+import com.kwonps.domain.model.payment.PaymentResult
 import com.kwonps.domain.model.payment.OfflinePaymentData
 import com.kwonps.domain.model.payment.OfflinePaymentPushData
 import com.kwonps.domain.model.payment.VanData
 import com.kwonps.domain.repository.OfflinePaymentRepository
+import com.kwonps.domain.service.payment.PaymentAmountCalculator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -21,13 +23,13 @@ import javax.inject.Inject
 class OfflinePaymentRepositoryImpl @Inject constructor(
     private val apiService: TmsAPIService,
     private val token: String
-): OfflinePaymentRepository {
-    override suspend fun invoke(
+) : OfflinePaymentRepository {
+    override suspend fun requestPayment(
         offlinePaymentData: OfflinePaymentData
-    ): Flow<ApiResult<VanData>> = flow {
+    ): Flow<PaymentResult<VanData>> = flow {
         fun OfflinePaymentData.toRequestPaymentModel() = RequestOffPayment.Payment(
             amount = amountData.totalAmount.toString(),
-            installment = installment,
+            installment = installment.value,
             trackId = trackId
         )
 
@@ -35,7 +37,7 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
             rootTrxId: String
         ) = RequestOffPayment.CancelPayment(
             amount = amountData.totalAmount.toString(),
-            installment = installment,
+            installment = installment.value,
             trxId = rootTrxId,
             trackId = trackId
         )
@@ -47,21 +49,24 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
             dptId = secondKey
         )
 
-        when(offlinePaymentData) {
+        val apiResult = when (offlinePaymentData) {
             is OfflinePaymentData.Approve -> apiService.rule(
                 token, DataFormat(offlinePaymentData.toRequestPaymentModel())
             )
+
             is OfflinePaymentData.Cancel -> apiService.crule(
                 token, DataFormat(offlinePaymentData.toRequestCancelPaymentModel(offlinePaymentData.rootTrxId!!))
             )
-        }.let { emit(it.handleApiResult { response -> response.data.toPaymentVanInfo() }) }
-    }.catch { e -> emit(ApiResult.Exception(e)) }
+        }.handleApiResult { response -> response.data.toPaymentVanInfo() }
 
-    override suspend fun ksnetSocketCommunicate(
+        emit(apiResult.toPaymentResult())
+    }.catch { e -> emit(PaymentResult.Failure(PaymentError.Unknown(e))) }
+
+    override suspend fun communicateWithVan(
         resultCommunicateData: CardReaderStatus.Communication.result,
         offlinePaymentData: OfflinePaymentData,
         paymentVanInfo: VanData,
-    ): Flow<ApiResult<PaymentDetailData>> = flow {
+    ): Flow<PaymentResult<PaymentDetailData>> = flow {
         fun mappingKsnetSocketCommunicateModel() = RequestOffPayment.KsnetSocketCommunicate(
             RequestOffPayment.KsnetSocketCommunicateTms(
                 toRequestKsnetSocketCommunicateDataModel(
@@ -80,88 +85,108 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         fun ResponseOffPayment.KsnetSocketCommunicate.toPaymentDetailInfo(
             trackId: String?,
             installment: String
-        ) = PaymentDetailData(
-            totalAmount = resultData!!.totalAmount,
-            taxAmount = resultData.taxAmount,
-            freeAmount = resultData.freeAmount,
-            supplyAmount = resultData.supplyAmount,
-            serviceAmount = resultData.serviceAmount,
-            installment = installment,
-            authCode = resultData.authNum,
-            authDate = resultData.authDate,
-            issuerName = resultData.issuerName,
-            purchaseName = resultData.purchaseName,
-            cardNumber = resultData.cardNum,
-            trackId = trackId,
-            trxId = trxId,
-            trxResult = resultData.telegramType,
-            cardType = resultData.cardType,
-            remainAmount = null
-        )
+        ): PaymentDetailData {
+            val amountData = com.kwonps.domain.model.payment.AmountData(
+                totalAmount = resultData?.totalAmount?.toIntOrZero() ?: 0,
+                freeAmount = resultData?.freeAmount?.toIntOrZero() ?: 0,
+                serviceAmount = resultData?.serviceAmount?.toIntOrZero() ?: 0
+            )
+
+            return PaymentDetailData(
+                amount = amountData,
+                installment = com.kwonps.domain.model.payment.Installment(installment),
+                approval = PaymentDetailData.ApprovalInfo(
+                    authCode = resultData!!.authNum,
+                    authDate = resultData.authDate,
+                    rootRegDate = resultData.rootRegDate
+                ),
+                tracking = PaymentDetailData.TrackingInfo(
+                    trackId = trackId,
+                    trxId = trxId,
+                    trxResult = resultData.telegramType
+                ),
+                card = PaymentDetailData.CardInfo(
+                    cardNumber = resultData.cardNum,
+                    cardType = resultData.cardType,
+                    issuerName = resultData.issuerName,
+                    purchaseName = resultData.purchaseName
+                ),
+                remainAmount = null
+            )
+        }
 
         apiService.socketKsnet(
             token,
             mappingKsnetSocketCommunicateModel()
         ).handleApiResultDetail {
-            if(it.data.result == "오류") {
-                ApiResult.Error(it.data.resultMsg!!)
+            if (it.data.result == "오류") {
+                PaymentResult.Failure(PaymentError.Communication(it.data.resultMsg!!))
             } else {
-                ApiResult.Success(
+                PaymentResult.Success(
                     it.data.toPaymentDetailInfo(
                         trackId = paymentVanInfo.vanTrackId,
-                        installment = offlinePaymentData.installment
+                        installment = offlinePaymentData.installment.value
                     )
                 )
             }
         }.let { emit(it) }
-    }.catch { e -> emit(ApiResult.Exception(e)) }
+    }.catch { e -> emit(PaymentResult.Failure(PaymentError.Unknown(e))) }
 
-    override suspend fun push(
+    override suspend fun pushReceipt(
         offlinePaymentPushData: OfflinePaymentPushData
-    ): Flow<ApiResult<PaymentDetailData>> = flow {
+    ): Flow<PaymentResult<PaymentDetailData>> = flow {
         fun OfflinePaymentPushData.toPushCompletedPaymentModel() = RequestOffPayment.Push(
-            amount = amount,
-            installment = installment,
-            trackId = trackId,
-            rootTrxId = rootTrxId,
-            vanTrxId = vanTrxId,
-            authCd = authCode,
-            regDate = authDate,
+            amount = amount.totalAmount.toString(),
+            installment = installment.value,
+            trackId = identifiers.trackId,
+            rootTrxId = identifiers.rootTrxId,
+            vanTrxId = identifiers.vanTrxId,
+            authCd = approval.authCode,
+            regDate = approval.authDate,
             number = cardNumber
         )
 
-        fun ResponseOffPayment.PushResultData.toPaymentDetailData(trxId: String) = PaymentDetailData(
-            totalAmount = amount,
-            taxAmount = null,
-            freeAmount = null,
-            supplyAmount = null,
-            serviceAmount = null,
-            installment = installment,
-            authCode = authCode,
-            authDate = authDate.substring(2),
-            trackId = trackId,
-            trxId = trxId,
-            trxResult = trxResult,
-            cardNumber = cardNumber,
-            issuerName = issuerName,
-            cardType = null,
-            remainAmount = null
-        )
+        fun ResponseOffPayment.PushResultData.toPaymentDetailData(trxId: String, pushData: OfflinePaymentPushData) =
+            PaymentDetailData(
+                amount = com.kwonps.domain.model.payment.AmountData(totalAmount = amount.toIntOrZero()),
+                installment = pushData.installment,
+                approval = PaymentDetailData.ApprovalInfo(
+                    authCode = authCode,
+                    authDate = authDate.substring(2)
+                ),
+                tracking = PaymentDetailData.TrackingInfo(
+                    trackId = trackId,
+                    trxId = trxId,
+                    trxResult = trxResult
+                ),
+                card = PaymentDetailData.CardInfo(
+                    cardNumber = cardNumber,
+                    cardType = null,
+                    issuerName = issuerName,
+                    purchaseName = null
+                ),
+                remainAmount = null
+            )
 
         apiService.push(
             token = token,
             body = DataFormat(offlinePaymentPushData.toPushCompletedPaymentModel())
         ).handleApiResultDetail {
-            if(it.data.resultCd == "0000") {
-                it.data.result?.let {
-                    pushResultData -> ApiResult.Success(pushResultData.toPaymentDetailData(it.data.trxId))
-                } ?: ApiResult.Error("서버 응답을 받는 중 오류가 발생 하였습니다.")
+            if (it.data.resultCd == "0000") {
+                it.data.result?.let { pushResultData ->
+                    PaymentResult.Success(
+                        pushResultData.toPaymentDetailData(
+                            trxId = it.data.trxId,
+                            pushData = offlinePaymentPushData
+                        )
+                    )
+                } ?: PaymentResult.Failure(PaymentError.Communication("서버 응답을 받는 중 오류가 발생 하였습니다."))
             } else {
-                ApiResult.Error(it.data.resultMsg)
+                PaymentResult.Failure(PaymentError.Communication(it.data.resultMsg))
             }
         }.let { emit(it) }
     }.catch { e ->
-        emit(ApiResult.Exception(e))
+        emit(PaymentResult.Failure(PaymentError.Unknown(e)))
     }
 
     private fun toRequestKsnetSocketCommunicateDataModel(
@@ -172,12 +197,12 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         van = paymentVanInfo.van,
         vanId = paymentVanInfo.vanId,
         trackId = paymentVanInfo.vanTrackId,
-        trxId = when(offlinePaymentData) {
+        trxId = when (offlinePaymentData) {
             is OfflinePaymentData.Approve -> null
             is OfflinePaymentData.Cancel -> offlinePaymentData.rootTrxId
         },
         walletSettle = "N",
-        vanPayment = if(paymentVanInfo.van == null) "true" else "false",
+        vanPayment = if (paymentVanInfo.van == null) "true" else "false",
         cardNumber = cardNumber
     )
 
@@ -193,34 +218,39 @@ class OfflinePaymentRepositoryImpl @Inject constructor(
         posEntry = "S".toByteArray(),
         filler = "".toByteArray(),
         signData = "".toByteArray(),
-        telegramType = when(offlinePaymentData) {
+        telegramType = when (offlinePaymentData) {
             is OfflinePaymentData.Approve -> "0200"
             is OfflinePaymentData.Cancel -> "0420"
         }.toByteArray(),
         dptId = paymentVanInfo.dptId.toByteArray(),
-        payType = offlinePaymentData.installment.toByteArray(),
+        payType = offlinePaymentData.installment.value.toByteArray(),
         totalAmount = offlinePaymentData.amountData.totalAmount.toAmountByteArray(),
-        amount = offlinePaymentData.amountData.totalAmount.setSupplyAmount(),
+        amount = offlinePaymentData.amountData.supplyAmount.toAmountByteArray(),
         serviceAmount = offlinePaymentData.amountData.serviceAmount.toAmountByteArray(),
-        taxAmount = (offlinePaymentData.amountData.totalAmount - offlinePaymentData.amountData.freeAmount).setTaxAmount(),
+        taxAmount = offlinePaymentData.amountData.vatAmount.toAmountByteArray(),
         freeAmount = offlinePaymentData.amountData.freeAmount.toAmountByteArray(),
-        signTran = offlinePaymentData.amountData.totalAmount.setSignTran(),
+        signTran = PaymentAmountCalculator.signTranFlag(offlinePaymentData.amountData.totalAmount).toByteArray(),
         readerModelNum = resultCommunicateData.readerModelNum,
         encryptInfo = resultCommunicateData.encryptInfo,
         reqEMVData = resultCommunicateData.reqEMVData,
         trackII = resultCommunicateData.trackII,
-        rootAuthCode = when(offlinePaymentData) {
+        rootAuthCode = when (offlinePaymentData) {
             is OfflinePaymentData.Approve -> null
             is OfflinePaymentData.Cancel -> offlinePaymentData.authCode.toByteArray()
         },
-        rootRegDate = when(offlinePaymentData) {
+        rootRegDate = when (offlinePaymentData) {
             is OfflinePaymentData.Approve -> null
             is OfflinePaymentData.Cancel -> offlinePaymentData.authDate.substring(0, 6).toByteArray()
         }
     )
 
     private fun Int.toAmountByteArray() = String.format("%012d", this).toByteArray()
-    private fun Int.setSupplyAmount() = (this - (this / 11)).toAmountByteArray()
-    private fun Int.setTaxAmount() = (this / 11).toAmountByteArray()
-    private fun Int.setSignTran() = (if (this > 50000) "S" else "N").toByteArray()
+
+    private fun String.toIntOrZero(): Int = toIntOrNull() ?: 0
+
+    private fun <T> com.kwonps.domain.model.ApiResult<T>.toPaymentResult(): PaymentResult<T> = when (this) {
+        is com.kwonps.domain.model.ApiResult.Error -> PaymentResult.Failure(PaymentError.Communication(message))
+        is com.kwonps.domain.model.ApiResult.Exception -> PaymentResult.Failure(PaymentError.Unknown(exception))
+        is com.kwonps.domain.model.ApiResult.Success -> PaymentResult.Success(value)
+    }
 }

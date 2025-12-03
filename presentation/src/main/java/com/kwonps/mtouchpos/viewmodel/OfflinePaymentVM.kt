@@ -2,18 +2,22 @@ package com.kwonps.mtouchpos.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kwonps.domain.model.ApiResult
 import com.kwonps.domain.model.cardreader.CardReaderData
 import com.kwonps.domain.model.cardreader.CardReaderStatus
+import com.kwonps.domain.model.payment.AmountData
+import com.kwonps.domain.model.payment.Installment
 import com.kwonps.domain.model.payment.OfflinePaymentData
 import com.kwonps.domain.model.payment.OfflinePaymentPushData
+import com.kwonps.domain.model.payment.PaymentError
+import com.kwonps.domain.model.payment.PaymentResult
+import com.kwonps.domain.model.payment.ReceiptIdentifiers
 import com.kwonps.domain.model.payment.VanData
 import com.kwonps.domain.usecase.cardreader.CommunicateKsnetCardReader
 import com.kwonps.domain.usecase.cardreader.FetchConnectedDeviceInfo
 import com.kwonps.domain.usecase.cardreader.PrintCompletedTransaction
-import com.kwonps.domain.usecase.offlinePayment.KsnetSocketCommunicate
-import com.kwonps.domain.usecase.offlinePayment.PushOfflinePayment
+import com.kwonps.domain.usecase.offlinePayment.ProcessOfflinePayment
 import com.kwonps.domain.usecase.offlinePayment.RequestOfflinePayment
+import com.kwonps.domain.usecase.offlinePayment.SyncReceipt
 import com.kwonps.domain.usecase.user.FetchConnectedUserInfo
 import com.kwonps.mtouchpos.intent.CardTerminalCommunicateManager
 import com.kwonps.mtouchpos.viewmodel.mapper.toApprovePaymentData
@@ -41,8 +45,8 @@ class OfflinePaymentVM @Inject constructor(
     private val fetchConnectedUserInfo: FetchConnectedUserInfo,
     private val requestOfflinePaymentUseCase: RequestOfflinePayment,
     private val communicateKsnetCardReader: CommunicateKsnetCardReader,
-    private val socketCommunicateVan: KsnetSocketCommunicate,
-    private val pushOfflinePaymentUseCase: PushOfflinePayment,
+    private val processOfflinePayment: ProcessOfflinePayment,
+    private val syncReceipt: SyncReceipt,
     private val printCompletedTransaction: PrintCompletedTransaction
 ) : ViewModel(), Serializable {
     companion object {
@@ -140,10 +144,9 @@ class OfflinePaymentVM @Inject constructor(
     ) {
         requestOfflinePaymentUseCase(paymentData).collect { paymentProcessState ->
             when(paymentProcessState) {
-                is ApiResult.Error -> emit(PaymentProcessState.Error(paymentProcessState.message))
-                is ApiResult.Exception -> emit(PaymentProcessState.Error(paymentProcessState.exception.toString()))
-                is ApiResult.Success -> {
-                    emit(PaymentProcessState.Approve(paymentProcessState.value.vanTrackId!!))
+                is PaymentResult.Failure -> emit(PaymentProcessState.Error(mapError(paymentProcessState.error)))
+                is PaymentResult.Success -> {
+                    paymentProcessState.value.vanTrackId?.let { emit(PaymentProcessState.Approve(it)) }
                     processTerminalOrReader(communicateCardTerminal, paymentProcessState.value, paymentData, deviceInfo)
                 }
             }
@@ -193,15 +196,16 @@ class OfflinePaymentVM @Inject constructor(
         serialResult: CardReaderStatus.Communication.result,
         paymentData: OfflinePaymentData
     ) {
-        socketCommunicateVan(
-            offlinePaymentData = paymentData,
-            paymentVanInfo = vanData.copy(),
-            resultCommunicateData = serialResult
+        processOfflinePayment(
+            ProcessOfflinePayment.Input(
+                payment = paymentData,
+                communicationResult = serialResult,
+                presetVanData = vanData.copy()
+            )
         ).map {
             when(it) {
-                is ApiResult.Error -> PaymentProcessState.Error(it.message)
-                is ApiResult.Exception -> PaymentProcessState.Error(it.exception.toString())
-                is ApiResult.Success -> PaymentProcessState.Complete(it.value.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat))
+                is PaymentResult.Failure -> PaymentProcessState.Error(mapError(it.error))
+                is PaymentResult.Success -> PaymentProcessState.Complete(it.value.paymentDetail.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat))
             }
         }.collect { paymentProcessState ->
             emit(paymentProcessState)
@@ -213,40 +217,47 @@ class OfflinePaymentVM @Inject constructor(
     ) {
         viewModelScope.launch {
             val vanTrxId = (paymentProcessState.value as PaymentProcessState.Approve).vanTrackId
-            when(val offlinePaymentInfo = _offlinePaymentInfo.value) {
+            val pushData = when(val offlinePaymentInfo = _offlinePaymentInfo.value) {
                 is OfflinePaymentInfo.Cancel -> {
                     OfflinePaymentPushData(
-                        amount = completePaymentViewInfo.totalAmount,
-                        trackId = offlinePaymentInfo.trackId,
-                        vanTrxId = vanTrxId,
-                        installment = completePaymentViewInfo.installment,
-                        authCode = completePaymentViewInfo.authCode,
-                        authDate = completePaymentViewInfo.authDate,
-                        cardNumber = completePaymentViewInfo.cardNumber,
-                        rootTrxId = offlinePaymentInfo.rootTrxId
+                        amount = completePaymentViewInfo.toAmountData(),
+                        installment = Installment(completePaymentViewInfo.installment),
+                        identifiers = ReceiptIdentifiers(
+                            vanTrxId = vanTrxId,
+                            rootTrxId = offlinePaymentInfo.rootTrxId,
+                            trackId = offlinePaymentInfo.trackId
+                        ),
+                        approval = com.kwonps.domain.model.payment.PaymentDetailData.ApprovalInfo(
+                            authCode = completePaymentViewInfo.authCode,
+                            authDate = completePaymentViewInfo.authDate
+                        ),
+                        cardNumber = completePaymentViewInfo.cardNumber
                     )
                 }
 
                 is OfflinePaymentInfo.Approve -> {
                     OfflinePaymentPushData(
-                        amount = completePaymentViewInfo.totalAmount,
-                        trackId = offlinePaymentInfo.trackId,
-                        vanTrxId = vanTrxId,
-                        installment = completePaymentViewInfo.installment,
-                        authCode = completePaymentViewInfo.authCode,
-                        authDate = completePaymentViewInfo.authDate,
-                        cardNumber = completePaymentViewInfo.cardNumber,
-                        rootTrxId = null
+                        amount = completePaymentViewInfo.toAmountData(),
+                        installment = Installment(completePaymentViewInfo.installment),
+                        identifiers = ReceiptIdentifiers(
+                            vanTrxId = vanTrxId,
+                            rootTrxId = null,
+                            trackId = offlinePaymentInfo.trackId
+                        ),
+                        approval = com.kwonps.domain.model.payment.PaymentDetailData.ApprovalInfo(
+                            authCode = completePaymentViewInfo.authCode,
+                            authDate = completePaymentViewInfo.authDate
+                        ),
+                        cardNumber = completePaymentViewInfo.cardNumber
                     )
                 }
-            }.let {
-                pushOfflinePaymentUseCase(it)
-            }.map { apiResult ->
-                when(apiResult) {
-                    is ApiResult.Error -> PaymentProcessState.Error(apiResult.message)
-                    is ApiResult.Exception -> PaymentProcessState.Error(apiResult.exception.toString())
-                    is ApiResult.Success -> PaymentProcessState.Complete(
-                        apiResult.value.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat).copy(
+            }
+
+            syncReceipt(pushData).map { result ->
+                when(result) {
+                    is PaymentResult.Failure -> PaymentProcessState.Error(mapError(result.error))
+                    is PaymentResult.Success -> PaymentProcessState.Complete(
+                        result.value.toCompletePaymentInfo(fetchConnectedUserInfo()?.vat).copy(
                             issuer = completePaymentViewInfo.issuer,
                             acquirer = completePaymentViewInfo.acquirer
                         )
@@ -287,4 +298,19 @@ class OfflinePaymentVM @Inject constructor(
             ).collect {}
         }
     }
+
+    private fun mapError(error: PaymentError): String = when(error) {
+        is PaymentError.Communication -> error.message
+        is PaymentError.Conflict -> error.reason
+        is PaymentError.Validation -> error.reason
+        is PaymentError.Unknown -> error.throwable.message ?: "알 수 없는 오류가 발생했습니다."
+    }
+
+    private fun ApprovedPaymentType.CompletePaymentViewInfo.toAmountData() = AmountData(
+        totalAmount = totalAmount.toIntOrZero(),
+        freeAmount = freeAmount?.toIntOrZero() ?: 0,
+        serviceAmount = serviceAmount?.toIntOrZero() ?: 0
+    )
+
+    private fun String.toIntOrZero(): Int = toIntOrNull() ?: 0
 }

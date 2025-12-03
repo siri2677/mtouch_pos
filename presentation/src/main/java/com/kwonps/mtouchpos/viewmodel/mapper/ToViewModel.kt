@@ -21,19 +21,19 @@ fun <T, R> ApiResult<T>.toUseCaseResult(transform: (T) -> R): UseCaseResult<R> =
     }
 
 fun PaymentDetailData.toCompletePaymentInfo(vat: String?) = ApprovedPaymentType.CompletePaymentViewInfo(
-    purchaseType = if(trxResult == PurchaseType.APPROVE.code) PurchaseType.APPROVE else PurchaseType.REFUND,
-    totalAmount = totalAmount,
-    freeAmount = freeAmount ?: if(vat == null || vat == "N") "0" else totalAmount,
-    serviceAmount = serviceAmount ?: "0",
-    installment = installment,
-    trackId = trackId,
-    authDate = authDate,
-    authCode = authCode,
-    trxId = trxId,
-    cardNumber = cardNumber,
-    issuer = issuerName ?: "",
-    acquirer = purchaseName ?: "",
-    cardType = cardType,
+    purchaseType = if(tracking.trxResult == PurchaseType.APPROVE.code) PurchaseType.APPROVE else PurchaseType.REFUND,
+    totalAmount = amount.totalAmount.toString(),
+    freeAmount = if(vat == null || vat == "N") amount.vatAmount.toString() else amount.totalAmount.toString(),
+    serviceAmount = amount.serviceAmount.toString(),
+    installment = installment.value,
+    trackId = tracking.trackId,
+    authDate = approval.authDate,
+    authCode = approval.authCode,
+    trxId = tracking.trxId,
+    cardNumber = card.cardNumber,
+    issuer = card.issuerName ?: "",
+    acquirer = card.purchaseName ?: "",
+    cardType = card.cardType,
     remainAmount = remainAmount
 )
 
