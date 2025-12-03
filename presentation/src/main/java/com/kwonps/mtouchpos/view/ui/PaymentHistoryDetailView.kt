@@ -32,7 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.kwonps.mtouchpos.navigation.rememberOfflinePaymentRouter
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
 
 import com.kwonps.mtouchpos.view.util.ColumnKeyValueTextBox
@@ -52,14 +52,14 @@ fun PaymentHistoryDetailView(
 ) {
     val context = LocalContext.current as ComponentActivity
     val screenWidth = LocalConfiguration.current.screenWidthDp
-    val offlinePaymentCoordinator = OfflinePaymentCoordinator(
+    val offlinePaymentCoordinator = rememberOfflinePaymentRouter(
         navController = navController,
         offlinePaymentViewModel = offlinePaymentViewModel,
         componentActivity = context,
         route = NavigationGraphState.PaymentHistoryView.PaymentHistoryDetail.name
     )
 
-    offlinePaymentCoordinator.CardTerminalNewIntent()
+    offlinePaymentCoordinator.cardTerminalNewIntent()
 
     Scaffold(
         topBar = {

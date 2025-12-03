@@ -43,7 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.OfflinePaymentCoordinator
+import com.kwonps.mtouchpos.navigation.rememberOfflinePaymentRouter
 import com.kwonps.mtouchpos.view.navgraph.NavigationBundleKey
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
 import com.kwonps.mtouchpos.view.ui.theme.TopNavigation
@@ -61,7 +61,7 @@ fun OfflinePaymentView(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val context = LocalContext.current as ComponentActivity
 
-    val offlinePaymentCoordinator = OfflinePaymentCoordinator(
+    val offlinePaymentCoordinator = rememberOfflinePaymentRouter(
         navController = navController,
         offlinePaymentViewModel = offlinePaymentViewModel,
         componentActivity = context,
@@ -71,7 +71,7 @@ fun OfflinePaymentView(
     val offlinePaymentInfo = offlinePaymentViewModel.offlinePaymentInfo
         .collectAsStateWithLifecycle().value as OfflinePaymentVM.OfflinePaymentInfo.Approve
 
-    offlinePaymentCoordinator.CardTerminalNewIntent()
+    offlinePaymentCoordinator.cardTerminalNewIntent()
 
     Scaffold(
         topBar = { TopNavigation("신용 결제", navController) }

@@ -38,7 +38,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.window.Dialog
 import com.kwonps.mtouchpos.R
-import com.kwonps.mtouchpos.coordinator.DirectPaymentCoordinator
+import com.kwonps.mtouchpos.navigation.rememberDirectPaymentRouter
 import com.kwonps.mtouchpos.view.navgraph.NavigationBundleKey
 import com.kwonps.mtouchpos.view.navgraph.NavigationGraphState
 import com.kwonps.mtouchpos.view.ui.theme.TopNavigation
@@ -77,12 +77,12 @@ fun DirectPaymentView(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val uiState = directPaymentViewModel.uiState.collectAsStateWithLifecycle().value
     val directPaymentViewInfo = uiState.directPaymentInfo
+    val directPaymentRouter = rememberDirectPaymentRouter(navController)
 
     LaunchedEffect(Unit) {
         directPaymentViewModel.uiEvent.collectLatest { event ->
             when (event) {
-                is DirectPaymentUiEvent.NavigateToComplete -> DirectPaymentCoordinator(navController)
-                    .navigateToCompletePaymentView(event.data)
+                is DirectPaymentUiEvent.NavigateToComplete -> directPaymentRouter.navigateToCompletePaymentView(event.data)
             }
         }
     }
