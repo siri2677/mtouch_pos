@@ -12,4 +12,8 @@ dependencies {
     implementation(rootProject.libs.coroutines)
     implementation(rootProject.libs.gson)
     implementation(rootProject.libs.javax.inject)
+
+    testImplementation(rootProject.libs.junit)
+    testImplementation(rootProject.libs.coroutines.test)
+    testImplementation(rootProject.libs.turbine)
 }
