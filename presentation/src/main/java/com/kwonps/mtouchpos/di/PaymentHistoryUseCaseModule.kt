@@ -1,4 +1,4 @@
-package com.kwonps.data.di
+package com.kwonps.mtouchpos.di
 
 import com.kwonps.domain.repository.PaymentHistoryRepository
 import com.kwonps.domain.usecase.paymentHistory.CheckDirectPayment
@@ -8,32 +8,32 @@ import com.kwonps.domain.usecase.paymentHistory.FetchSalesHistory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ViewModelComponent
-import dagger.hilt.android.scopes.ViewModelScoped
+import dagger.hilt.android.components.ActivityRetainedComponent
+import dagger.hilt.android.scopes.ActivityRetainedScoped
 
 @Module
-@InstallIn(ViewModelComponent::class)
+@InstallIn(ActivityRetainedComponent::class)
 object PaymentHistoryUseCaseModule {
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideCheckDirectPayment(
         paymentHistoryRepository: PaymentHistoryRepository
     ): CheckDirectPayment = CheckDirectPayment(paymentHistoryRepository)
 
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideGetPaymentHistoryList(
         paymentHistoryRepository: PaymentHistoryRepository
     ): FetchPaymentHistoryList = FetchPaymentHistoryList(paymentHistoryRepository)
 
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideGetPaymentHistoryStatistics(
         paymentHistoryRepository: PaymentHistoryRepository
     ): FetchPaymentHistoryStatistics = FetchPaymentHistoryStatistics(paymentHistoryRepository)
 
     @Provides
-    @ViewModelScoped
+    @ActivityRetainedScoped
     fun provideGetSalesHistory(
         paymentHistoryRepository: PaymentHistoryRepository
     ): FetchSalesHistory = FetchSalesHistory(paymentHistoryRepository)
